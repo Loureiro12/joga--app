@@ -27,6 +27,8 @@ type ScreenProps = {
   insideTabs?: boolean;
   /** Remove o padding (ex.: Detalhes, com header sangrado). */
   bleed?: boolean;
+  /** Conteúdo fixo no topo: fica parado enquanto o resto rola por baixo. */
+  header?: ReactNode;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -34,20 +36,34 @@ type ScreenProps = {
  * Container padrão de tela. Com `scroll`, o conteúdo cresce até a altura da tela
  * (`flexGrow: 1`) para que um `<Spacer />` empurre o CTA para o rodapé.
  */
-export function Screen({ children, bg = colors.background, scroll = true, gap = spacing.blockGap, insideTabs, bleed, style }: ScreenProps) {
+export function Screen({ children, bg = colors.background, scroll = true, gap = spacing.blockGap, insideTabs, bleed, header, style }: ScreenProps) {
   const pad = useScreenPadding();
   const padding = bleed
     ? undefined
     : { ...pad, paddingBottom: insideTabs ? spacing.screenBottom : pad.paddingBottom };
 
+  // Com header fixo, o padding do topo vai para o header e o conteúdo começa logo abaixo dele.
+  const fixedHeader = header ? (
+    <View style={{ backgroundColor: bg, paddingTop: pad.paddingTop, paddingHorizontal: pad.paddingHorizontal, paddingBottom: gap / 2, zIndex: 1 }}>
+      {header}
+    </View>
+  ) : null;
+  const contentPadding = header && padding ? { ...padding, paddingTop: gap / 2 } : padding;
+
   if (!scroll) {
-    return <View style={[{ flex: 1, backgroundColor: bg, gap }, padding, style]}>{children}</View>;
+    return (
+      <View style={{ flex: 1, backgroundColor: bg }}>
+        {fixedHeader}
+        <View style={[{ flex: 1, gap }, contentPadding, style]}>{children}</View>
+      </View>
+    );
   }
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {fixedHeader}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[{ flexGrow: 1, gap }, padding, style]}
+        contentContainerStyle={[{ flexGrow: 1, gap }, contentPadding, style]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

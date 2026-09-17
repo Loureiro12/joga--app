@@ -86,16 +86,19 @@ export function LoginScreen() {
   };
 
   return (
-    <Screen gap={20}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <LogoLockup />
-        <Pressable accessibilityRole="button" onPress={authActions.guest} hitSlop={8} style={{ padding: 8 }}>
-          <Txt font="body600" size={14} color={colors.muted}>
-            Entrar como convidado
-          </Txt>
-        </Pressable>
-      </View>
-
+    <Screen
+      gap={20}
+      header={
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <LogoLockup />
+          <Pressable accessibilityRole="button" onPress={authActions.guest} hitSlop={8} style={{ padding: 8 }}>
+            <Txt font="body600" size={14} color={colors.muted}>
+              Entrar como convidado
+            </Txt>
+          </Pressable>
+        </View>
+      }
+    >
       <Segmented
         value={tab}
         onChange={(t) => {
