@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+html{background:#08080B}body{margin:0;min-height:100%;background:#08080B;color:#FAFAFA;font-family:"DM Sans",system-ui,sans-serif}
+a{color:#A78BFA}a:hover{color:#FACC15}
+@keyframes bora-in{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes bora-pop{0%{opacity:0;transform:scale(.6) rotate(-6deg)}60%{transform:scale(1.06) rotate(1deg)}100%{opacity:1;transform:none}}
+@keyframes bora-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes bora-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes bora-blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes bora-look{0%,30%{transform:translateX(0)}45%,65%{transform:translateX(5px)}80%,100%{transform:translateX(0)}}
+@keyframes bora-lid{0%,88%,100%{transform:scaleY(0)}93%{transform:scaleY(1)}}
+@keyframes bora-spin{to{transform:rotate(360deg)}}
+@keyframes bora-dots{0%,80%,100%{opacity:.2}40%{opacity:1}}
+</style>
+</helmet>
+
+<div style="padding:40px 44px 8px;max-width:1500px">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:12px"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><span style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.3px">Joga<span style="color:#FACC15">ê</span></span></div>
+    <div style="font:500 14px/1.4 'DM Sans',sans-serif;color:#A1A1AA">Protótipo navegável · fluxo principal · <a href="Jogae - Design System.dc.html" style="text-decoration:none">Design System →</a></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:22px;font:400 13px/1.55 'DM Sans',sans-serif;color:#A1A1AA;max-width:1100px">
+    <div><div style="color:#FAFAFA;font-weight:600;margin-bottom:4px">Premissas</div>Nome: Jogaê — o "ê" amarelo é a assinatura do wordmark; o símbolo é o olho. Um único jogo — Impostor — percorre todo o fluxo. O celular é sempre do host; o papel revelado pode ser trocado nos Tweaks.</div>
+    <div><div style="color:#FAFAFA;font-weight:600;margin-bottom:4px">Sistema</div>Roxo #7C3AED é a marca; cada jogo tem sua cor secundária (Impostor roxo, Mais provável amarelo, Desafio secreto verde). Barlow Condensed para títulos e números; DM Sans para o resto. Cards grandes, raio 24, sem gradientes.</div>
+    <div><div style="color:#FAFAFA;font-weight:600;margin-bottom:4px">Ilustrações</div>Linguagem geométrica própria: olhos, máscara, dado, troféu, mão — formas chapadas em 2–3 cores, prontas para ícone, splash e loja.</div>
+  </div>
+</div>
+
+<section id="proto" style="padding:28px 44px 40px;border-bottom:1px solid rgba(255,255,255,.08)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 20px">
+    <a href="#proto" style="font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#FAFAFA;color:#0F0F13;border-radius:4px;text-decoration:none">P</a>
+    <span style="font:600 13px/1.2 'DM Sans',sans-serif">Protótipo navegável — Home → Detalhes → Criar sala → Lobby → Revelação → Rodada → Votação → Resultado → Placar → Fim</span>
+  </div>
+  <div style="display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap">
+    <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+      <div style="height:100%;display:flex;flex-direction:column;background:#0F0F13;color:#FAFAFA;font-family:'DM Sans',system-ui,sans-serif;position:relative;overflow:hidden">
+
+        <!-- HOME -->
+        <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:22px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font:500 16px/1.3 'DM Sans',sans-serif;color:#A1A1AA">Boa noite 👋</div>
+                <div style="font:800 44px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px;margin-top:2px">Bora jogar?</div>
+              </div>
+              <div onClick="{{ goProfile }}" style="width:44px;height:44px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;cursor:pointer">V</div>
+            </div>
+
+            <div onClick="{{ goDetail }}" style="background:#7C3AED;border-radius:28px;padding:22px 22px 20px;position:relative;overflow:hidden;cursor:pointer;min-height:250px;display:flex;flex-direction:column;justify-content:flex-end" style-active="transform:scale(.98)">
+              <svg viewBox="0 0 200 120" style="position:absolute;right:-10px;top:14px;width:210px;height:126px" aria-hidden="true">
+                <ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse>
+                <ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse>
+                <g style="animation:bora-blink 5s infinite;transform-origin:105px 60px">
+                  <circle cx="76" cy="62" r="17" fill="#0F0F13"></circle>
+                  <circle cx="166" cy="62" r="17" fill="#0F0F13"></circle>
+                  <circle cx="82" cy="56" r="5" fill="#FAFAFA"></circle>
+                  <circle cx="172" cy="56" r="5" fill="#FAFAFA"></circle>
+                </g>
+              </svg>
+              <div style="position:relative;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;gap:6px">
+                  <span style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:rgba(15,15,19,.35);padding:6px 9px;border-radius:99px">Dedução</span>
+                  <span style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#FACC15;color:#0F0F13;padding:6px 9px;border-radius:99px">Em alta</span>
+                </div>
+                <div style="font:800 52px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Impostor</div>
+                <div style="font:500 15px/1.35 'DM Sans',sans-serif;color:rgba(250,250,250,.85);max-width:240px">Todo mundo sabe a palavra. Menos um.</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+                  <div style="font:600 13px 'DM Sans',sans-serif;color:rgba(250,250,250,.8);display:flex;gap:12px"><span>3–12 jogadores</span><span>10–20 min</span></div>
+                  <div style="background:#FAFAFA;color:#0F0F13;border-radius:99px;padding:12px 18px;font:700 17px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.3px">Jogar agora</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="background:#FACC15;color:#0F0F13;border-radius:24px;padding:18px 16px 16px;min-height:196px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;cursor:pointer" style-active="transform:scale(.98)">
+                <svg viewBox="0 0 80 60" style="position:absolute;right:8px;top:10px;width:84px;height:63px" aria-hidden="true">
+                  <rect x="4" y="24" width="52" height="20" rx="10" fill="#0F0F13"></rect>
+                  <path d="M50 20 L78 34 L50 48 Z" fill="#0F0F13"></path>
+                  <circle cx="14" cy="34" r="4" fill="#FACC15"></circle>
+                </svg>
+                <div style="font:600 10px/1 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;opacity:.7;margin-bottom:6px">Polêmico</div>
+                <div style="font:800 24px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Quem é mais provável?</div>
+                <div style="font:500 12px/1.35 'DM Sans',sans-serif;opacity:.8;margin-top:6px">Descubra o que seus amigos pensam.</div>
+                <div style="font:600 12px 'DM Sans',sans-serif;margin-top:10px;opacity:.75">3+ jogadores</div>
+              </div>
+              <div style="background:#22C55E;color:#0F0F13;border-radius:24px;padding:18px 16px 16px;min-height:196px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;cursor:pointer" style-active="transform:scale(.98)">
+                <svg viewBox="0 0 90 50" style="position:absolute;right:6px;top:12px;width:90px;height:50px" aria-hidden="true">
+                  <path d="M2 14 Q45 -6 88 14 L82 40 Q45 52 8 40 Z" fill="#0F0F13"></path>
+                  <ellipse cx="30" cy="26" rx="12" ry="7" fill="#22C55E"></ellipse>
+                  <ellipse cx="60" cy="26" rx="12" ry="7" fill="#22C55E"></ellipse>
+                </svg>
+                <div style="font:600 10px/1 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;opacity:.7;margin-bottom:6px">Festa</div>
+                <div style="font:800 24px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Desafio secreto</div>
+                <div style="font:500 12px/1.35 'DM Sans',sans-serif;opacity:.8;margin-top:6px">Complete sua missão sem ninguém perceber.</div>
+                <div style="font:600 12px 'DM Sans',sans-serif;margin-top:10px;opacity:.75">3+ jogadores</div>
+              </div>
+            </div>
+
+            <div onClick="{{ goJoin }}" style="display:flex;align-items:center;gap:14px;background:#19191F;border:1px solid #27272F;border-radius:20px;padding:14px 16px;cursor:pointer" style-active="transform:scale(.98)">
+              <div style="width:40px;height:40px;border-radius:12px;background:#27272F;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FACC15" stroke-width="2.4" stroke-linecap="round"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4M4 12h16"></path></svg></div>
+              <div style="flex:1"><div style="font:700 17px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Entrar em uma sala</div><div style="font:400 12px/1.3 'DM Sans',sans-serif;color:#A1A1AA;margin-top:3px">Código de 4 dígitos ou QR Code do host.</div></div>
+              <div style="font-size:18px;color:#A1A1AA">→</div>
+            </div>
+            <div onClick="{{ goAI }}" style="display:flex;align-items:center;gap:14px;background:#19191F;border:1px solid #27272F;border-radius:20px;padding:14px 16px;cursor:pointer" style-active="transform:scale(.98)">
+              <div style="width:40px;height:40px;border-radius:12px;background:#27272F;display:flex;align-items:center;justify-content:center;font-size:18px">✨</div>
+              <div style="flex:1"><div style="font:700 17px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Criar jogo com IA</div><div style="font:400 12px/1.3 'DM Sans',sans-serif;color:#A1A1AA;margin-top:3px">Descreva o grupo e a gente monta a brincadeira.</div></div>
+              <div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#7C3AED;padding:5px 8px;border-radius:99px">Premium</div>
+            </div>
+
+            <div>
+              <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:12px">Escolha o clima</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <sc-for list="{{ moods }}" as="m" hint-placeholder-count="7">
+                  <div style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif;display:flex;gap:6px;align-items:center;cursor:pointer" style-hover="border-color:#A78BFA"><span>{{ m.e }}</span><span>{{ m.n }}</span></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- EXPLORAR -->
+        <sc-if value="{{ isExplore }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Explorar</div>
+            <div style="display:flex;gap:8px;overflow:auto;margin:0 -20px;padding:0 20px;scrollbar-width:none">
+              <sc-for list="{{ exploreCats }}" as="c" hint-placeholder-count="7">
+                <div style="flex:none;background:{{ c.bg }};color:{{ c.fg }};border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif;white-space:nowrap">{{ c.n }}</div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <sc-for list="{{ exploreGames }}" as="g" hint-placeholder-count="6">
+                <div onClick="{{ goDetail }}" style="background:{{ g.bg }};color:{{ g.fg }};border-radius:22px;padding:16px;min-height:150px;display:flex;flex-direction:column;justify-content:space-between;cursor:pointer" style-active="transform:scale(.98)">
+                  <div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 10px/1 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;opacity:.75">{{ g.cat }}</span><span style="font-size:22px">{{ g.e }}</span></div>
+                  <div><div style="font:800 22px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ g.n }}</div><div style="font:500 12px/1.3 'DM Sans',sans-serif;opacity:.8;margin-top:5px">{{ g.p }} · {{ g.t }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- PERFIL -->
+        <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;align-items:center;gap:16px">
+              <div style="width:72px;height:72px;border-radius:50%;background:{{ avatarBg }};color:{{ avatarFg }};display:flex;align-items:center;justify-content:center;font:800 30px 'Barlow Condensed',sans-serif">{{ profileInitial }}</div>
+              <div style="flex:1"><div style="font:800 30px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ profileName }}</div><div style="font:500 14px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:4px">@{{ profileUser }}</div></div>
+              <div style="display:flex;gap:6px">
+                <div onClick="{{ goEditProfile }}" style="width:40px;height:40px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FAFAFA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg></div>
+                <div onClick="{{ goSettings }}" style="width:40px;height:40px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FAFAFA" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+              <div onClick="{{ goHistory }}" style="background:#19191F;border-radius:18px;padding:14px;text-align:center;cursor:pointer"><div style="font:800 30px/1 'Barlow Condensed',sans-serif">32</div><div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:4px">🎮 partidas</div></div>
+              <div style="background:#19191F;border-radius:18px;padding:14px;text-align:center"><div style="font:800 30px/1 'Barlow Condensed',sans-serif;color:#FACC15">8</div><div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:4px">🏆 vitórias</div></div>
+              <div onClick="{{ goFriends }}" style="background:#19191F;border-radius:18px;padding:14px;text-align:center;cursor:pointer"><div style="font:800 30px/1 'Barlow Condensed',sans-serif">14</div><div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:4px">👥 amigos</div></div>
+            </div>
+            <div>
+              <div style="font:800 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:10px">Conquistas</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif">🕵️ Mestre do disfarce</div>
+                <div style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif">🔥 10 partidas</div>
+                <div style="background:#7C3AED;border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif">👑 Rei do grupo</div>
+              </div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><div style="font:800 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Partidas recentes</div><div onClick="{{ goHistory }}" style="font:600 13px 'DM Sans',sans-serif;color:#A78BFA;cursor:pointer">Ver todas</div></div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ history }}" as="h" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px">
+                    <div style="width:38px;height:38px;border-radius:12px;background:{{ h.bg }};display:flex;align-items:center;justify-content:center;font-size:18px">{{ h.e }}</div>
+                    <div style="flex:1"><div style="font:600 15px 'DM Sans',sans-serif">{{ h.n }}</div><div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA">{{ h.d }}</div></div>
+                    <div style="font:700 15px 'Barlow Condensed',sans-serif;color:{{ h.c }}">{{ h.r }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div onClick="{{ goPremium }}" style="background:#19191F;border:1px solid #7C3AED;border-radius:20px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer" style-active="transform:scale(.98)">
+              <div style="flex:1"><div style="font:800 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Desbloqueie tudo.</div><div style="font:400 12px/1.3 'DM Sans',sans-serif;color:#A1A1AA;margin-top:4px">Jogos com IA, categorias exclusivas, partidas ilimitadas.</div></div>
+              <div style="background:#FACC15;color:#0F0F13;border-radius:99px;padding:10px 14px;font:700 15px 'Barlow Condensed',sans-serif;text-transform:uppercase">Premium</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- IA -->
+        <sc-if value="{{ isAI }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div onClick="{{ goHome }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div>
+            <div><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A78BFA">✨ Premium</div><div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:6px">Que tipo de jogo vocês querem?</div></div>
+            <div style="background:#19191F;border:1px solid #27272F;border-radius:20px;padding:16px;font:400 16px/1.45 'DM Sans',sans-serif;min-height:120px;color:#FAFAFA">Somos 7 amigos em uma viagem e queremos algo engraçado para jogar durante uns 20 minutos.<span style="display:inline-block;width:2px;height:18px;background:#A78BFA;vertical-align:-3px;margin-left:2px"></span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div style="background:#27272F;border-radius:99px;padding:8px 12px;font:600 13px 'DM Sans',sans-serif">😂 engraçado</div>
+              <div style="background:#27272F;border-radius:99px;padding:8px 12px;font:600 13px 'DM Sans',sans-serif">👥 7 pessoas</div>
+              <div style="background:#27272F;border-radius:99px;padding:8px 12px;font:600 13px 'DM Sans',sans-serif">⏱ 20 min</div>
+            </div>
+            <div style="background:#7C3AED;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:10px;animation:bora-in .5s ease">
+              <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;opacity:.8">Sugestão</div>
+              <div style="font:800 36px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Caos na viagem</div>
+              <div style="font:500 13px 'DM Sans',sans-serif;opacity:.85">7 jogadores · ~20 minutos</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px">
+                <div style="background:rgba(15,15,19,.3);border-radius:14px;padding:10px;text-align:center"><div style="font:800 24px/1 'Barlow Condensed',sans-serif">12</div><div style="font:500 11px 'DM Sans',sans-serif;opacity:.8">perguntas</div></div>
+                <div style="background:rgba(15,15,19,.3);border-radius:14px;padding:10px;text-align:center"><div style="font:800 24px/1 'Barlow Condensed',sans-serif">8</div><div style="font:500 11px 'DM Sans',sans-serif;opacity:.8">desafios</div></div>
+                <div style="background:rgba(15,15,19,.3);border-radius:14px;padding:10px;text-align:center"><div style="font:800 24px/1 'Barlow Condensed',sans-serif">3</div><div style="font:500 11px 'DM Sans',sans-serif;opacity:.8">especiais</div></div>
+              </div>
+            </div>
+            <div onClick="{{ goCreate }}" style="height:58px;border-radius:18px;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Começar</div>
+          </div>
+        </sc-if>
+
+        <!-- DETALHES -->
+        <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;display:flex;flex-direction:column">
+            <div style="background:#7C3AED;padding:60px 20px 26px;position:relative;min-height:330px;display:flex;flex-direction:column;justify-content:space-between">
+              <div onClick="{{ goHome }}" style="width:44px;height:44px;border-radius:50%;background:rgba(15,15,19,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div>
+              <svg viewBox="0 0 200 120" style="width:260px;height:156px;align-self:center;margin:6px 0" aria-hidden="true">
+                <ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse>
+                <ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse>
+                <g style="animation:bora-blink 4s infinite;transform-origin:105px 60px">
+                  <circle cx="76" cy="62" r="17" fill="#0F0F13"></circle>
+                  <circle cx="166" cy="62" r="17" fill="#0F0F13"></circle>
+                  <circle cx="82" cy="56" r="5" fill="#FAFAFA"></circle>
+                  <circle cx="172" cy="56" r="5" fill="#FAFAFA"></circle>
+                </g>
+              </svg>
+              <div style="font:800 60px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase">Impostor</div>
+            </div>
+            <div style="padding:22px 20px 24px;display:flex;flex-direction:column;gap:18px;flex:1">
+              <div style="font:400 17px/1.45 'DM Sans',sans-serif;color:#FAFAFA;text-wrap:pretty">Todos recebem uma palavra secreta, menos o impostor. Dê pistas sem entregar demais e descubra quem está perdido.</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <div style="background:#19191F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">👥 3–12 jogadores</div>
+                <div style="background:#19191F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">⏱ 10–20 minutos</div>
+                <div style="background:#19191F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">🎯 Fácil de aprender</div>
+              </div>
+              <div style="flex:1"></div>
+              <div onClick="{{ goCreate }}" style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Criar partida</div>
+              <div onClick="{{ openSheet }}" style="height:58px;border-radius:18px;background:#19191F;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Como jogar</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- CRIAR -->
+        <sc-if value="{{ isCreate }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:22px">
+            <div style="display:flex;align-items:center;gap:12px"><div onClick="{{ goDetail }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div><div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Criar partida</div></div>
+            <div style="background:#19191F;border-radius:24px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between">
+              <div style="font:600 16px 'DM Sans',sans-serif">Jogadores</div>
+              <div style="display:flex;align-items:center;gap:14px">
+                <div onClick="{{ decPlayers }}" style="width:48px;height:48px;border-radius:50%;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 26px 'Barlow Condensed',sans-serif;cursor:pointer" style-active="background:#7C3AED">−</div>
+                <div style="font:800 40px/1 'Barlow Condensed',sans-serif;min-width:44px;text-align:center">{{ players }}</div>
+                <div onClick="{{ incPlayers }}" style="width:48px;height:48px;border-radius:50%;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 26px 'Barlow Condensed',sans-serif;cursor:pointer" style-active="background:#7C3AED">+</div>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 16px 'DM Sans',sans-serif;margin-bottom:10px">Categoria</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <sc-for list="{{ cats }}" as="c" hint-placeholder-count="5">
+                  <div onClick="{{ c.pick }}" style="background:{{ c.bg }};border:1px solid {{ c.border }};border-radius:99px;padding:11px 15px;font:600 15px 'DM Sans',sans-serif;display:flex;gap:6px;cursor:pointer;transition:all .15s"><span>{{ c.e }}</span><span>{{ c.n }}</span></div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 16px 'DM Sans',sans-serif;margin-bottom:10px">Rodadas</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#19191F;padding:6px;border-radius:18px">
+                <sc-for list="{{ roundOpts }}" as="r" hint-placeholder-count="3">
+                  <div onClick="{{ r.pick }}" style="height:48px;border-radius:13px;background:{{ r.bg }};display:flex;align-items:center;justify-content:center;font:800 24px 'Barlow Condensed',sans-serif;cursor:pointer;transition:background .15s">{{ r.n }}</div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <div style="font:400 13px 'DM Sans',sans-serif;color:#A1A1AA;text-align:center">Impostor · {{ cat }} · {{ rounds }} rodadas · {{ players }} jogadores</div>
+            <div onClick="{{ goLobby }}" style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Criar sala</div>
+          </div>
+        </sc-if>
+
+        <!-- LOBBY -->
+        <sc-if value="{{ isLobby }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ lobbyTitle }}</div><div onClick="{{ leaveLobby }}" style="font:600 14px 'DM Sans',sans-serif;color:#A1A1AA;cursor:pointer">{{ lobbyLeave }}</div></div>
+            <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#19191F;border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+                <div style="width:44px;height:44px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">A</div>
+                <div style="flex:1"><div style="font:600 15px 'DM Sans',sans-serif">Sala do André</div><div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA">Impostor · {{ cat }} · {{ rounds }} rodadas</div></div>
+                <div style="font:800 26px 'Barlow Condensed',sans-serif;color:#FACC15;letter-spacing:2px">4827</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#19191F;border-radius:28px;padding:22px;display:flex;align-items:center;gap:18px">
+              <div style="flex:1">
+                <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Código da sala</div>
+                <div style="font:800 72px/1 'Barlow Condensed',sans-serif;letter-spacing:6px;color:#FACC15;margin-top:6px">4827</div>
+                <div style="display:flex;gap:8px;margin-top:12px">
+                  <div style="background:#27272F;border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif;cursor:pointer">Copiar</div>
+                  <div style="background:#27272F;border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif;cursor:pointer">Compartilhar</div>
+                </div>
+              </div>
+              <svg viewBox="0 0 84 84" style="width:96px;height:96px;background:#FAFAFA;border-radius:14px;padding:8px;box-sizing:border-box;flex:none" aria-hidden="true">
+                <path fill="#0F0F13" d="M0 0h28v28H0zM8 8h12v12H8zM56 0h28v28H56zM64 8h12v12H64zM0 56h28v28H0zM8 64h12v12H8zM36 0h8v8h-8zM36 16h8v12h-8zM32 36h8v8h-8zM48 32h12v8H48zM64 36h8v12h-8zM76 32h8v8h-8zM36 48h12v8H36zM56 56h8v8h-8zM72 56h12v8H72zM56 72h8v12h-8zM72 72h12v12H72zM36 64h8v8h-8zM32 76h12v8H32zM0 36h8v8H0zM16 40h8v8h-8z"></path>
+                <path fill="#FAFAFA" d="M10 10h8v8h-8zM66 10h8v8h-8zM10 66h8v8h-8z"></path>
+              </svg>
+            </div>
+            </sc-if>
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font:800 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ joinedLabel }}</div><div style="font:500 13px 'DM Sans',sans-serif;color:#A1A1AA">de {{ players }}</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px;border:1px solid #7C3AED">
+                <div style="width:40px;height:40px;border-radius:50%;background:{{ avatarBg }};color:{{ avatarFg }};display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">{{ profileInitial }}</div>
+                <div style="flex:1;font:600 16px 'DM Sans',sans-serif">Você</div>
+                <div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:{{ youBadgeBg }};padding:5px 8px;border-radius:99px">{{ youBadge }}</div>
+              </div>
+              <sc-for list="{{ joinedPlayers }}" as="p" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px;animation:bora-in .45s cubic-bezier(.2,.8,.2,1) both">
+                  <div style="width:40px;height:40px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">{{ p.i }}</div>
+                  <div style="flex:1;font:600 16px 'DM Sans',sans-serif">{{ p.n }}</div>
+                  <div style="width:24px;height:24px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div>
+                </div>
+              </sc-for>
+              <sc-if value="{{ waiting }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:12px;border:1px dashed #27272F;border-radius:16px;padding:12px 14px;color:#A1A1AA">
+                  <div style="width:40px;height:40px;border-radius:50%;border:1px dashed #A1A1AA"></div>
+                  <div style="flex:1;font:500 15px 'DM Sans',sans-serif">Aguardando<span style="animation:bora-dots 1.2s infinite">.</span><span style="animation:bora-dots 1.2s .2s infinite">.</span><span style="animation:bora-dots 1.2s .4s infinite">.</span></div>
+                </div>
+              </sc-if>
+            </div>
+            <div style="flex:1"></div>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ startGame }}" style="height:58px;border-radius:18px;background:{{ startBg }};color:{{ startFg }};display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .3s" style-active="transform:scale(.97)">{{ startLabel }}</div>
+              <div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA;text-align:center">Só o host pode iniciar</div>
+            </sc-if>
+            <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+              <div style="height:58px;border-radius:18px;background:#19191F;display:flex;align-items:center;justify-content:center;gap:12px;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;color:#A1A1AA"><div style="width:18px;height:18px;border-radius:50%;border:3px solid #27272F;border-top-color:#FACC15;animation:bora-spin 1s linear infinite"></div>Aguardando o host começar</div>
+              <div onClick="{{ startGame }}" style="font:600 12px 'DM Sans',sans-serif;color:#A78BFA;text-align:center;cursor:pointer;padding:4px">Simular: André começou a partida →</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- REVELAÇÃO DO PAPEL -->
+        <sc-if value="{{ isReveal }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:hidden;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;background:{{ revealBg }};transition:background .5s">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Rodada {{ round }} · {{ cat }}</div><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Só você vê isso</div></div>
+            <sc-if value="{{ notRevealed }}" hint-placeholder-val="{{ true }}">
+              <div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;text-wrap:pretty">Seu papel<br>está pronto.</div>
+              <div style="flex:1;display:flex;align-items:center;justify-content:center">
+                <div style="width:250px;height:340px;border-radius:28px;background:#7C3AED;position:relative;overflow:hidden;box-shadow:0 30px 60px rgba(124,58,237,.35);animation:bora-pulse 2.4s ease-in-out infinite;transform:scale({{ holdScale }})">
+                  <div style="position:absolute;inset:14px;border-radius:18px;border:2px solid rgba(250,250,250,.25)"></div>
+                  <svg viewBox="0 0 100 100" style="position:absolute;left:50%;top:50%;width:120px;height:120px;transform:translate(-50%,-50%)" aria-hidden="true">
+                    <ellipse cx="50" cy="50" rx="42" ry="26" fill="#FAFAFA"></ellipse>
+                    <circle cx="50" cy="52" r="14" fill="#0F0F13"></circle>
+                    <circle cx="55" cy="47" r="4" fill="#FAFAFA"></circle>
+                  </svg>
+                  <div style="position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(15,15,19,.35)"><div style="height:100%;background:#FACC15;width:{{ holdPct }}%;transition:width .05s linear"></div></div>
+                  <div style="position:absolute;top:22px;left:0;right:0;text-align:center;font:800 14px 'Barlow Condensed',sans-serif;letter-spacing:2px;text-transform:uppercase;opacity:.8">Jogaê</div>
+                </div>
+              </div>
+              <div onMouseDown="{{ holdStart }}" onMouseUp="{{ holdEnd }}" onMouseLeave="{{ holdEnd }}" onTouchStart="{{ holdStart }}" onTouchEnd="{{ holdEnd }}" style="height:64px;border-radius:20px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;user-select:none;-webkit-user-select:none;position:relative;overflow:hidden">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:{{ holdPct }}%;background:#FACC15;transition:width .05s linear"></div>
+                <span style="position:relative">{{ holdLabel }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ revealed }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;animation:bora-pop .6s cubic-bezier(.2,.9,.3,1.3) both">
+                <sc-if value="{{ isWordRole }}" hint-placeholder-val="{{ true }}">
+                  <div style="border-radius:28px;background:#FAFAFA;color:#0F0F13;padding:36px 24px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center">
+                    <div style="font:600 12px/1 'DM Sans',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#71717A">Sua palavra</div>
+                    <div style="font-size:64px;line-height:1">🍕</div>
+                    <div style="font:800 64px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Pizza</div>
+                    <div style="font:500 14px 'DM Sans',sans-serif;color:#71717A">Categoria: {{ cat }}</div>
+                  </div>
+                  <div style="font:800 26px/1.1 'Barlow Condensed',sans-serif;text-transform:uppercase;text-align:center">Não deixe o impostor descobrir.</div>
+                </sc-if>
+                <sc-if value="{{ isImpostorRole }}" hint-placeholder-val="{{ false }}">
+                  <div style="border-radius:28px;background:#0F0F13;border:2px solid #EF4444;color:#FAFAFA;padding:36px 24px;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center">
+                    <svg viewBox="0 0 200 120" style="width:170px;height:102px" aria-hidden="true">
+                      <ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse>
+                      <circle cx="60" cy="62" r="17" fill="#EF4444"></circle><circle cx="150" cy="62" r="17" fill="#EF4444"></circle>
+                      <circle cx="60" cy="62" r="8" fill="#0F0F13"></circle><circle cx="150" cy="62" r="8" fill="#0F0F13"></circle>
+                    </svg>
+                    <div style="font:800 48px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;color:#EF4444">Você é o<br>impostor</div>
+                  </div>
+                  <div style="font:800 26px/1.1 'Barlow Condensed',sans-serif;text-transform:uppercase;text-align:center">Descubra a palavra sem ser descoberto.</div>
+                </sc-if>
+              </div>
+              <div onClick="{{ goRound }}" style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Entendi, esconder</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- RODADA + CRONÔMETRO -->
+        <sc-if value="{{ isRound }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Rodada {{ round }}<span style="color:#A1A1AA;font-size:22px">/{{ rounds }}</span></div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;background:#19191F;padding:8px 10px;border-radius:99px;color:#A1A1AA">{{ cat }}</div>
+                <div onClick="{{ pauseGame }}" style="width:40px;height:40px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer" style-active="background:#27272F"><div style="display:flex;gap:4px"><div style="width:4px;height:14px;border-radius:2px;background:#FAFAFA"></div><div style="width:4px;height:14px;border-radius:2px;background:#FAFAFA"></div></div></div>
+              </div>
+            </div>
+            <div style="background:#19191F;border-radius:24px;padding:18px 20px;display:flex;align-items:center;gap:16px">
+              <svg viewBox="0 0 60 60" style="width:56px;height:56px;flex:none" aria-hidden="true">
+                <rect x="4" y="4" width="52" height="52" rx="14" fill="#FACC15"></rect>
+                <circle cx="18" cy="18" r="5" fill="#0F0F13"></circle><circle cx="42" cy="18" r="5" fill="#0F0F13"></circle><circle cx="30" cy="30" r="5" fill="#0F0F13"></circle><circle cx="18" cy="42" r="5" fill="#0F0F13"></circle><circle cx="42" cy="42" r="5" fill="#0F0F13"></circle>
+              </svg>
+              <div><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Quem começa</div><div style="font:800 34px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:4px">Lucas</div></div>
+            </div>
+            <div style="font:500 17px/1.4 'DM Sans',sans-serif;color:#FAFAFA">Dê uma pista relacionada à palavra. Uma frase, sem repetir a dos outros.</div>
+            <div style="display:flex;align-items:center;gap:18px;background:#19191F;border-radius:24px;padding:18px 20px">
+              <div style="width:96px;height:96px;border-radius:50%;background:conic-gradient({{ timerColor }} {{ timerDeg }}deg, #27272F 0);display:flex;align-items:center;justify-content:center;flex:none;transition:background .3s">
+                <div style="width:78px;height:78px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;font:800 30px 'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums">{{ timerLabel }}</div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Cronômetro da rodada</div>
+                <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;gap:8px">
+                  <div onClick="{{ toggleTimer }}" style="flex:1;height:44px;border-radius:14px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer" style-active="transform:scale(.97)">{{ timerBtn }}</div>
+                  <div onClick="{{ resetTimer }}" style="width:44px;height:44px;border-radius:14px;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 16px 'Barlow Condensed',sans-serif;cursor:pointer">↺</div>
+                </div>
+                </sc-if>
+                <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}"><div style="font:500 13px/1.4 'DM Sans',sans-serif;color:#A1A1AA">O host controla o tempo. Quando todos derem pistas, a votação abre sozinha.</div></sc-if>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-bottom:10px">Ordem</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <sc-for list="{{ order }}" as="p" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:12px;padding:8px 6px;opacity:{{ p.op }}">
+                    <div style="font:800 14px 'Barlow Condensed',sans-serif;color:#A1A1AA;width:16px">{{ p.k }}</div>
+                    <div style="width:34px;height:34px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font:800 15px 'Barlow Condensed',sans-serif">{{ p.i }}</div>
+                    <div style="flex:1;font:600 16px 'DM Sans',sans-serif">{{ p.n }}</div>
+                    <div style="font:600 12px 'DM Sans',sans-serif;color:{{ p.sc }}">{{ p.s }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}"><div onClick="{{ goVote }}" style="height:58px;border-radius:18px;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Todos deram pistas → Votar</div></sc-if>
+            <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+              <div style="height:58px;border-radius:18px;background:#19191F;display:flex;align-items:center;justify-content:center;gap:12px;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;color:#A1A1AA"><div style="width:18px;height:18px;border-radius:50%;border:3px solid #27272F;border-top-color:#FACC15;animation:bora-spin 1s linear infinite"></div>Aguardando o host abrir a votação</div>
+              <div onClick="{{ goVote }}" style="font:600 12px 'DM Sans',sans-serif;color:#A78BFA;text-align:center;cursor:pointer;padding:4px">Simular: votação aberta →</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- VOTAÇÃO -->
+        <sc-if value="{{ isVote }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div><div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Hora de votar 👀</div><div style="font:500 16px/1.4 'DM Sans',sans-serif;color:#A1A1AA;margin-top:6px">Quem você acha que é o impostor?</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <sc-for list="{{ voteCards }}" as="p" hint-placeholder-count="4">
+                <div onClick="{{ p.pick }}" style="background:{{ p.cardBg }};border:2px solid {{ p.border }};border-radius:24px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;transition:all .18s;transform:scale({{ p.scale }});position:relative">
+                  <div style="width:64px;height:64px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font:800 28px 'Barlow Condensed',sans-serif">{{ p.i }}</div>
+                  <div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ p.n }}</div>
+                  <div style="position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;background:#FACC15;color:#0F0F13;display:{{ p.check }};align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1"></div>
+            <sc-if value="{{ notConfirmed }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ confirmVote }}" style="height:58px;border-radius:18px;background:{{ confirmBg }};color:{{ confirmFg }};display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .2s" style-active="transform:scale(.97)">{{ confirmLabel }}</div>
+            </sc-if>
+
+          </div>
+        </sc-if>
+
+        <!-- RESULTADO -->
+        <sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;background:{{ resultBg }};transition:background .6s">
+            <sc-if value="{{ phase0 }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
+                <div style="font:800 44px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;text-align:center">O grupo<br>escolheu...</div>
+                <div style="display:flex;gap:10px"><div style="width:14px;height:14px;border-radius:50%;background:#FACC15;animation:bora-dots 1s infinite"></div><div style="width:14px;height:14px;border-radius:50%;background:#FACC15;animation:bora-dots 1s .2s infinite"></div><div style="width:14px;height:14px;border-radius:50%;background:#FACC15;animation:bora-dots 1s .4s infinite"></div></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ phase1 }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;animation:bora-pop .7s cubic-bezier(.2,.9,.3,1.3) both">
+                <div style="width:130px;height:130px;border-radius:50%;background:#7C3AED;color:#FAFAFA;display:flex;align-items:center;justify-content:center;font:800 56px 'Barlow Condensed',sans-serif;box-shadow:0 0 0 12px rgba(124,58,237,.25)">L</div>
+                <div style="font:800 72px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">👀 Lucas</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ phase2 }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:18px;flex:1">
+                <div style="text-align:center;animation:bora-pop .6s cubic-bezier(.2,.9,.3,1.3) both;padding-top:10px">
+                  <div style="font-size:60px;line-height:1">{{ outcomeEmoji }}</div>
+                  <div style="font:800 52px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:10px;text-wrap:balance">{{ outcomeTitle }}</div>
+                  <div style="font:500 15px/1.4 'DM Sans',sans-serif;color:rgba(250,250,250,.85);margin-top:8px">{{ outcomeSub }}</div>
+                </div>
+                <div style="background:rgba(15,15,19,.45);border-radius:24px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;animation:bora-in .6s .3s ease both">
+                  <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:rgba(250,250,250,.7)">Votação</div>
+                  <sc-for list="{{ tally }}" as="t" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:12px">
+                      <div style="width:32px;height:32px;border-radius:50%;background:{{ t.bg }};color:{{ t.fg }};display:flex;align-items:center;justify-content:center;font:800 14px 'Barlow Condensed',sans-serif">{{ t.i }}</div>
+                      <div style="width:64px;font:600 15px 'DM Sans',sans-serif">{{ t.n }}</div>
+                      <div style="flex:1;height:12px;border-radius:99px;background:rgba(250,250,250,.15);overflow:hidden"><div style="height:100%;border-radius:99px;background:{{ t.bar }};width:{{ t.w }}%;transition:width .8s .4s cubic-bezier(.2,.8,.2,1)"></div></div>
+                      <div style="font:800 18px 'Barlow Condensed',sans-serif;width:56px;text-align:right">{{ t.v }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="background:rgba(15,15,19,.45);border-radius:24px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;animation:bora-in .6s .5s ease both">
+                  <div style="font:600 14px 'DM Sans',sans-serif">Pontos da rodada</div>
+                  <div style="font:800 28px 'Barlow Condensed',sans-serif;color:#FACC15">{{ roundPts }}</div>
+                </div>
+                <div style="flex:1"></div>
+                <div onClick="{{ goRanking }}" style="height:58px;border-radius:18px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Ver placar</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- PLACAR -->
+        <sc-if value="{{ isRanking }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <svg viewBox="0 0 60 60" style="width:52px;height:52px" aria-hidden="true"><path d="M16 6h28v14a14 14 0 0 1-28 0z" fill="#FACC15"></path><path d="M10 10h6v8a6 6 0 0 1-6-6zM44 10h6v2a6 6 0 0 1-6 6z" fill="#FACC15"></path><rect x="26" y="32" width="8" height="10" fill="#FACC15"></rect><rect x="16" y="42" width="28" height="8" rx="3" fill="#FACC15"></rect></svg>
+              <div><div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Placar</div><div style="font:500 13px 'DM Sans',sans-serif;color:#A1A1AA">Depois da rodada {{ round }} de {{ rounds }}</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ ranking }}" as="r" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:12px;background:{{ r.cardBg }};border-radius:20px;padding:14px 16px;animation:bora-in .5s ease both;animation-delay:{{ r.delay }}">
+                  <div style="width:30px;font:800 22px 'Barlow Condensed',sans-serif;color:{{ r.posColor }};text-align:center">{{ r.pos }}</div>
+                  <div style="width:44px;height:44px;border-radius:50%;background:{{ r.bg }};color:{{ r.fg }};display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">{{ r.i }}</div>
+                  <div style="flex:1"><div style="font:700 18px 'DM Sans',sans-serif">{{ r.n }}</div><div style="font:500 12px 'DM Sans',sans-serif;color:{{ r.deltaColor }}">{{ r.delta }}</div></div>
+                  <div style="font:800 26px 'Barlow Condensed',sans-serif">{{ r.pts }}<span style="font-size:14px;color:#A1A1AA;margin-left:3px">pts</span></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="flex:1"></div>
+            <sc-if value="{{ isHost }}" hint-placeholder-val="{{ true }}"><div onClick="{{ nextRound }}" style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">{{ nextLabel }}</div></sc-if>
+            <sc-if value="{{ isGuest }}" hint-placeholder-val="{{ false }}">
+              <div style="height:58px;border-radius:18px;background:#19191F;display:flex;align-items:center;justify-content:center;gap:12px;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;color:#A1A1AA"><div style="width:18px;height:18px;border-radius:50%;border:3px solid #27272F;border-top-color:#FACC15;animation:bora-spin 1s linear infinite"></div>O host inicia a próxima</div>
+              <div onClick="{{ nextRound }}" style="font:600 12px 'DM Sans',sans-serif;color:#A78BFA;text-align:center;cursor:pointer;padding:4px">Simular: host avançou →</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- FIM -->
+        <sc-if value="{{ isEnd }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;background:#7C3AED">
+            <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;opacity:.8">Fim da partida · Impostor · {{ rounds }} rodadas</div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;animation:bora-pop .7s cubic-bezier(.2,.9,.3,1.3) both">
+              <svg viewBox="0 0 60 60" style="width:120px;height:120px" aria-hidden="true"><path d="M16 6h28v14a14 14 0 0 1-28 0z" fill="#FACC15"></path><path d="M10 10h6v8a6 6 0 0 1-6-6zM44 10h6v2a6 6 0 0 1-6 6z" fill="#FACC15"></path><rect x="26" y="32" width="8" height="10" fill="#FACC15"></rect><rect x="16" y="42" width="28" height="8" rx="3" fill="#FACC15"></rect></svg>
+              <div style="font:800 76px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase;text-align:center">André<br><span style="font-size:32px;color:#FACC15">venceu!</span></div>
+              <div style="font:500 15px 'DM Sans',sans-serif;opacity:.85">1.250 pts · 2 impostores descobertos</div>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center">
+              <div style="background:rgba(15,15,19,.3);border-radius:99px;padding:8px 12px;font:600 13px 'DM Sans',sans-serif">🥈 Carol 980</div>
+              <div style="background:rgba(15,15,19,.3);border-radius:99px;padding:8px 12px;font:600 13px 'DM Sans',sans-serif">🥉 Lucas 850</div>
+            </div>
+            <div onClick="{{ playAgain }}" style="height:58px;border-radius:18px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Jogar novamente</div>
+            <div onClick="{{ goExplore }}" style="height:58px;border-radius:18px;background:rgba(15,15,19,.35);display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Escolher outro jogo</div>
+          </div>
+        </sc-if>
+
+        <!-- SPLASH -->
+        <sc-if value="{{ isSplash }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ skipSplash }}" style="flex:1;background:#7C3AED;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;position:relative;overflow:hidden;cursor:pointer">
+            <svg viewBox="0 0 40 40" style="width:150px;height:150px;animation:bora-pop .7s cubic-bezier(.2,.9,.3,1.3) both" aria-hidden="true">
+              <ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse>
+              <g style="animation:bora-look 2.4s .6s ease-in-out infinite both">
+                <circle cx="20" cy="20" r="6.5" fill="#0F0F13"></circle>
+                <circle cx="22.5" cy="17.5" r="2.2" fill="#FACC15"></circle>
+              </g>
+              <ellipse cx="20" cy="20" rx="17.6" ry="11.6" fill="#7C3AED" style="animation:bora-lid 2.4s .6s ease-in-out infinite both;transform-origin:20px 20px;transform:scaleY(0)"></ellipse>
+            </svg>
+            <div style="font:800 64px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px;animation:bora-in .6s .3s ease both">Joga<span style="color:#FACC15">ê</span></div>
+            <div style="font:500 15px 'DM Sans',sans-serif;opacity:.8;animation:bora-in .6s .5s ease both">Bora jogar?</div>
+            <div style="position:absolute;bottom:56px;left:0;right:0;display:flex;justify-content:center;gap:8px;animation:bora-in .6s .8s ease both"><div style="width:8px;height:8px;border-radius:50%;background:#FACC15;animation:bora-dots 1s infinite"></div><div style="width:8px;height:8px;border-radius:50%;background:#FACC15;animation:bora-dots 1s .2s infinite"></div><div style="width:8px;height:8px;border-radius:50%;background:#FACC15;animation:bora-dots 1s .4s infinite"></div></div>
+          </div>
+        </sc-if>
+
+        <!-- ONBOARDING -->
+        <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:hidden;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;background:{{ obBg }};transition:background .5s">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 40 40" width="26" height="26" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><span style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.3px">Joga<span style="color:#FACC15">ê</span></span></div>
+              <div onClick="{{ finishOnboarding }}" style="font:600 14px 'DM Sans',sans-serif;opacity:.8;cursor:pointer;padding:8px">Pular</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px">
+              <div style="display:flex;justify-content:center;min-height:180px;align-items:center;animation:bora-pop .6s cubic-bezier(.2,.9,.3,1.3) both">
+                <sc-if value="{{ ob0 }}" hint-placeholder-val="{{ true }}"><svg viewBox="0 0 200 120" style="width:260px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><g style="animation:bora-blink 4s infinite;transform-origin:105px 60px"><circle cx="76" cy="62" r="17" fill="#0F0F13"></circle><circle cx="166" cy="62" r="17" fill="#0F0F13"></circle><circle cx="82" cy="56" r="5" fill="#FAFAFA"></circle><circle cx="172" cy="56" r="5" fill="#FAFAFA"></circle></g></svg></sc-if>
+                <sc-if value="{{ ob1 }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 60 60" style="width:180px" aria-hidden="true"><rect x="4" y="4" width="52" height="52" rx="14" fill="#0F0F13"></rect><circle cx="18" cy="18" r="5" fill="#FACC15"></circle><circle cx="42" cy="18" r="5" fill="#FACC15"></circle><circle cx="30" cy="30" r="5" fill="#FACC15"></circle><circle cx="18" cy="42" r="5" fill="#FACC15"></circle><circle cx="42" cy="42" r="5" fill="#FACC15"></circle></svg></sc-if>
+                <sc-if value="{{ ob2 }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 60 60" style="width:180px" aria-hidden="true"><path d="M16 6h28v14a14 14 0 0 1-28 0z" fill="#0F0F13"></path><path d="M10 10h6v8a6 6 0 0 1-6-6zM44 10h6v2a6 6 0 0 1-6 6z" fill="#0F0F13"></path><rect x="26" y="32" width="8" height="10" fill="#0F0F13"></rect><rect x="16" y="42" width="28" height="8" rx="3" fill="#0F0F13"></rect></svg></sc-if>
+              </div>
+              <div style="animation:bora-in .5s ease both">
+                <div style="font:800 56px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase;text-wrap:balance">{{ obTitle }}</div>
+                <div style="font:500 17px/1.4 'DM Sans',sans-serif;opacity:.85;margin-top:14px;max-width:300px;text-wrap:pretty">{{ obSub }}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ obDots }}" as="d" hint-placeholder-count="3"><div style="height:6px;border-radius:99px;background:{{ d.bg }};width:{{ d.w }};transition:all .3s"></div></sc-for>
+            </div>
+            <div onClick="{{ nextOnboarding }}" style="height:58px;border-radius:18px;background:{{ obBtnBg }};color:{{ obBtnFg }};display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">{{ obBtn }}</div>
+          </div>
+        </sc-if>
+
+        <!-- LOGIN / CADASTRO -->
+        <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 40 40" width="26" height="26" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><span style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.3px">Joga<span style="color:#FACC15">ê</span></span></div>
+              <div onClick="{{ goHome }}" style="font:600 14px 'DM Sans',sans-serif;color:#A1A1AA;cursor:pointer;padding:8px">Entrar como convidado</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#19191F;padding:6px;border-radius:18px">
+              <div onClick="{{ authLoginTab }}" style="height:44px;border-radius:13px;background:{{ authTabLoginBg }};display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer;transition:background .15s">Entrar</div>
+              <div onClick="{{ authSignupTab }}" style="height:44px;border-radius:13px;background:{{ authTabSignupBg }};display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer;transition:background .15s">Criar conta</div>
+            </div>
+            <div style="font:800 44px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;text-wrap:balance">{{ authTitle }}</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div onClick="{{ authGoogle }}" style="height:56px;border-radius:18px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;gap:12px;font:600 16px 'DM Sans',sans-serif;cursor:pointer" style-active="transform:scale(.97)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.3-1.6 3.8-5.4 3.8-3.3 0-5.9-2.7-5.9-6s2.6-6 5.9-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.3 14.6 2.3 12 2.3 6.6 2.3 2.3 6.6 2.3 12S6.6 21.7 12 21.7c5.6 0 9.3-3.9 9.3-9.5 0-.6-.1-1.1-.2-1.6H12z"></path></svg>Continuar com Google</div>
+              <div onClick="{{ authApple }}" style="height:56px;border-radius:18px;background:#19191F;border:1px solid #27272F;display:flex;align-items:center;justify-content:center;gap:12px;font:600 16px 'DM Sans',sans-serif;cursor:pointer" style-active="transform:scale(.97)"><svg viewBox="0 0 24 24" width="22" height="22" fill="#FAFAFA" aria-hidden="true"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8-.7 0-1.9-.8-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.2 1.8 2.4 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.1.8 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.7-1-2.7-4zM14.2 5.8c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.7-1.3z"></path></svg>Continuar com Apple</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;color:#A1A1AA;font:500 12px 'DM Sans',sans-serif"><div style="flex:1;height:1px;background:#27272F"></div>ou com e-mail<div style="flex:1;height:1px;background:#27272F"></div></div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-if value="{{ authIsSignup }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ focusName }}" style="background:#19191F;border:2px solid {{ nameBorder }};border-radius:16px;padding:0 16px;height:56px;display:flex;align-items:center;gap:12px;cursor:text;transition:border-color .15s">
+                  <div style="width:40px;height:40px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif;flex:none">{{ nameInitial }}</div>
+                  <input value="{{ name }}" onChange="{{ setName }}" onFocus="{{ focusName }}" onBlur="{{ blurField }}" placeholder="Seu nome" style="flex:1;background:transparent;border:0;outline:0;color:#FAFAFA;font:500 16px 'DM Sans',sans-serif;min-width:0"></input>
+                </div>
+              </sc-if>
+              <div style="background:#19191F;border:2px solid {{ emailBorder }};border-radius:16px;padding:0 16px;height:56px;display:flex;align-items:center;transition:border-color .15s">
+                <input value="{{ email }}" onChange="{{ setEmail }}" onFocus="{{ focusEmail }}" onBlur="{{ blurField }}" placeholder="E-mail" type="email" style="flex:1;background:transparent;border:0;outline:0;color:#FAFAFA;font:500 16px 'DM Sans',sans-serif;min-width:0"></input>
+              </div>
+              <div style="background:#19191F;border:2px solid {{ passBorder }};border-radius:16px;padding:0 16px;height:56px;display:flex;align-items:center;gap:10px;transition:border-color .15s">
+                <input value="{{ pass }}" onChange="{{ setPass }}" onFocus="{{ focusPass }}" onBlur="{{ blurField }}" placeholder="Senha" type="{{ passType }}" style="flex:1;background:transparent;border:0;outline:0;color:#FAFAFA;font:500 16px 'DM Sans',sans-serif;min-width:0"></input>
+                <div onClick="{{ togglePass }}" style="font:600 12px 'DM Sans',sans-serif;color:#A78BFA;cursor:pointer;padding:6px">{{ passToggle }}</div>
+              </div>
+              <sc-if value="{{ authError }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;color:#EF4444;font:600 13px 'DM Sans',sans-serif;animation:bora-shake .4s ease"><div style="width:20px;height:20px;border-radius:50%;background:#EF4444;color:#FAFAFA;display:flex;align-items:center;justify-content:center;font-size:12px;flex:none">!</div>{{ authErrorMsg }}</div></sc-if>
+              <sc-if value="{{ authIsLogin }}" hint-placeholder-val="{{ true }}"><div onClick="{{ goForgot }}" style="font:600 13px 'DM Sans',sans-serif;color:#A78BFA;align-self:flex-end;cursor:pointer;padding:2px 4px">Esqueci a senha</div></sc-if>
+            </div>
+            <div style="flex:1"></div>
+            <div onClick="{{ submitAuth }}" style="height:58px;border-radius:18px;background:{{ authBtnBg }};color:{{ authBtnFg }};display:flex;align-items:center;justify-content:center;gap:10px;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .2s" style-active="transform:scale(.97)"><sc-if value="{{ authLoading }}" hint-placeholder-val="{{ false }}"><div style="width:20px;height:20px;border-radius:50%;border:3px solid rgba(250,250,250,.3);border-top-color:#FAFAFA;animation:bora-spin .8s linear infinite"></div></sc-if>{{ authBtn }}</div>
+            <sc-if value="{{ authIsSignup }}" hint-placeholder-val="{{ false }}"><div style="font:400 12px/1.4 'DM Sans',sans-serif;color:#A1A1AA;text-align:center">Ao criar conta você aceita os <span style="color:#A78BFA">Termos</span> e a <span style="color:#A78BFA">Privacidade</span>.</div></sc-if>
+          </div>
+        </sc-if>
+
+        <!-- ESQUECI A SENHA -->
+        <sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:20px">
+            <div onClick="{{ goAuth }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div>
+            <sc-if value="{{ forgotNotSent }}" hint-placeholder-val="{{ true }}">
+              <div><div style="font:800 44px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Esqueceu a senha?</div><div style="font:500 16px/1.4 'DM Sans',sans-serif;color:#A1A1AA;margin-top:10px">Sem drama. Mandamos um link para você criar uma nova.</div></div>
+              <div style="background:#19191F;border:2px solid {{ forgotBorder }};border-radius:16px;padding:0 16px;height:56px;display:flex;align-items:center;transition:border-color .15s">
+                <input value="{{ forgotEmail }}" onChange="{{ setForgotEmail }}" onFocus="{{ focusForgot }}" onBlur="{{ blurField }}" placeholder="E-mail da conta" type="email" style="flex:1;background:transparent;border:0;outline:0;color:#FAFAFA;font:500 16px 'DM Sans',sans-serif;min-width:0"></input>
+              </div>
+              <sc-if value="{{ forgotError }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;color:#EF4444;font:600 13px 'DM Sans',sans-serif;animation:bora-shake .4s ease"><div style="width:20px;height:20px;border-radius:50%;background:#EF4444;color:#FAFAFA;display:flex;align-items:center;justify-content:center;font-size:12px">!</div>Esse e-mail não parece válido.</div></sc-if>
+              <div style="flex:1"></div>
+              <div onClick="{{ sendForgot }}" style="height:58px;border-radius:18px;background:{{ forgotBtnBg }};color:{{ forgotBtnFg }};display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .2s" style-active="transform:scale(.97)">Enviar link</div>
+            </sc-if>
+            <sc-if value="{{ forgotSent }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;animation:bora-pop .6s cubic-bezier(.2,.9,.3,1.3) both">
+                <div style="width:96px;height:96px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 44px 'Barlow Condensed',sans-serif">✓</div>
+                <div style="font:800 40px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Link enviado</div>
+                <div style="font:500 15px/1.45 'DM Sans',sans-serif;color:#A1A1AA;max-width:280px">Confira <span style="color:#FAFAFA">{{ forgotEmail }}</span>. O link vale por 30 minutos.</div>
+                <div onClick="{{ resendForgot }}" style="font:600 14px 'DM Sans',sans-serif;color:#A78BFA;cursor:pointer;padding:6px">Não chegou? Reenviar</div>
+              </div>
+              <div onClick="{{ goAuth }}" style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Voltar para entrar</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- EDITAR PERFIL -->
+        <sc-if value="{{ isEditProfile }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;align-items:center;gap:12px"><div onClick="{{ goProfile }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div><div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Editar perfil</div></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+              <div style="width:110px;height:110px;border-radius:50%;background:{{ avatarBg }};color:{{ avatarFg }};display:flex;align-items:center;justify-content:center;font:800 48px 'Barlow Condensed',sans-serif;transition:background .2s">{{ profileInitial }}</div>
+              <div style="display:flex;gap:10px">
+                <sc-for list="{{ avatarColors }}" as="c" hint-placeholder-count="6">
+                  <div onClick="{{ c.pick }}" style="width:36px;height:36px;border-radius:50%;background:{{ c.v }};border:3px solid {{ c.ring }};box-sizing:border-box;cursor:pointer;transition:border-color .15s"></div>
+                </sc-for>
+              </div>
+              <div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA">Sua cor aparece no lobby, na votação e no placar.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Nome</div>
+              <div style="background:#19191F;border:2px solid {{ pNameBorder }};border-radius:16px;padding:0 16px;height:56px;display:flex;align-items:center;transition:border-color .15s"><input value="{{ profileName }}" onChange="{{ setProfileName }}" onFocus="{{ focusPName }}" onBlur="{{ blurField }}" style="flex:1;background:transparent;border:0;outline:0;color:#FAFAFA;font:500 16px 'DM Sans',sans-serif;min-width:0"></input></div>
+              <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-top:6px">Username</div>
+              <div style="background:#19191F;border:2px solid {{ pUserBorder }};border-radius:16px;padding:0 16px;height:56px;display:flex;align-items:center;gap:4px;transition:border-color .15s"><span style="color:#A1A1AA;font:500 16px 'DM Sans',sans-serif">@</span><input value="{{ profileUser }}" onChange="{{ setProfileUser }}" onFocus="{{ focusPUser }}" onBlur="{{ blurField }}" style="flex:1;background:transparent;border:0;outline:0;color:#FAFAFA;font:500 16px 'DM Sans',sans-serif;min-width:0"></input><span style="font:600 12px 'DM Sans',sans-serif;color:{{ userAvailColor }}">{{ userAvail }}</span></div>
+            </div>
+            <div style="flex:1"></div>
+            <div onClick="{{ saveProfile }}" style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Salvar</div>
+          </div>
+        </sc-if>
+
+        <!-- CONFIGURAÇÕES -->
+        <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;align-items:center;gap:12px"><div onClick="{{ goProfile }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div><div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Configurações</div></div>
+            <div>
+              <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-bottom:8px">Partida</div>
+              <div style="background:#19191F;border-radius:20px;overflow:hidden">
+                <sc-for list="{{ toggles }}" as="t" hint-placeholder-count="4">
+                  <div onClick="{{ t.flip }}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #27272F;cursor:pointer">
+                    <div style="font-size:18px;width:26px;text-align:center">{{ t.e }}</div>
+                    <div style="flex:1"><div style="font:600 15px 'DM Sans',sans-serif">{{ t.n }}</div><div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA">{{ t.d }}</div></div>
+                    <div style="width:50px;height:30px;border-radius:99px;background:{{ t.bg }};position:relative;transition:background .2s;flex:none"><div style="position:absolute;top:3px;left:{{ t.knob }};width:24px;height:24px;border-radius:50%;background:#FAFAFA;transition:left .2s"></div></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-bottom:8px">Conta</div>
+              <div style="background:#19191F;border-radius:20px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #27272F"><div style="font-size:18px;width:26px;text-align:center">🌎</div><div style="flex:1;font:600 15px 'DM Sans',sans-serif">Idioma</div><div style="font:500 14px 'DM Sans',sans-serif;color:#A1A1AA">Português (BR) ›</div></div>
+                <div onClick="{{ goPremium }}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #27272F;cursor:pointer"><div style="font-size:18px;width:26px;text-align:center">✨</div><div style="flex:1;font:600 15px 'DM Sans',sans-serif">Assinatura</div><div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#27272F;padding:5px 8px;border-radius:99px;color:#A1A1AA">Grátis</div></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #27272F"><div style="font-size:18px;width:26px;text-align:center">🔒</div><div style="flex:1;font:600 15px 'DM Sans',sans-serif">Privacidade e termos</div><div style="color:#A1A1AA">›</div></div>
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 16px"><div style="font-size:18px;width:26px;text-align:center">💬</div><div style="flex:1;font:600 15px 'DM Sans',sans-serif">Ajuda e feedback</div><div style="color:#A1A1AA">›</div></div>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <div onClick="{{ goAuth }}" style="height:56px;border-radius:18px;background:#19191F;color:#EF4444;display:flex;align-items:center;justify-content:center;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Sair da conta</div>
+            <div style="font:400 12px 'DM Sans',sans-serif;color:#52525B;text-align:center">Jogaê v1.0 · @vinicosta</div>
+          </div>
+        </sc-if>
+
+        <!-- AMIGOS -->
+        <sc-if value="{{ isFriends }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:center;gap:12px"><div onClick="{{ goProfile }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div><div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Amigos <span style="color:#A1A1AA;font-size:20px">14</span></div></div>
+            <div style="background:#7C3AED;border-radius:24px;padding:18px 20px;display:flex;align-items:center;gap:14px">
+              <div style="flex:1"><div style="font:800 24px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Convide a galera</div><div style="font:500 13px/1.35 'DM Sans',sans-serif;opacity:.85;margin-top:4px">Quem entrar pelo seu link vira amigo na hora.</div></div>
+              <div onClick="{{ copyInvite }}" style="background:#FAFAFA;color:#0F0F13;border-radius:99px;padding:12px 16px;font:700 16px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer;white-space:nowrap" style-active="transform:scale(.96)">{{ inviteLabel }}</div>
+            </div>
+            <div style="background:#19191F;border:1px solid #27272F;border-radius:16px;padding:0 16px;height:50px;display:flex;align-items:center;gap:10px;color:#A1A1AA"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><span style="font:500 15px 'DM Sans',sans-serif">Buscar por nome ou @username</span></div>
+            <div>
+              <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-bottom:8px">Jogando agora</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ friendsOnline }}" as="f" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px">
+                    <div style="width:44px;height:44px;border-radius:50%;background:{{ f.bg }};color:{{ f.fg }};display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif;position:relative">{{ f.i }}<div style="position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;border-radius:50%;background:#22C55E;border:2px solid #19191F"></div></div>
+                    <div style="flex:1"><div style="font:600 16px 'DM Sans',sans-serif">{{ f.n }}</div><div style="font:400 12px 'DM Sans',sans-serif;color:#22C55E">{{ f.s }}</div></div>
+                    <div onClick="{{ goJoin }}" style="background:#7C3AED;border-radius:99px;padding:9px 13px;font:700 14px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">Entrar</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-bottom:8px">Todos</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ friendsAll }}" as="f" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px">
+                    <div style="width:44px;height:44px;border-radius:50%;background:{{ f.bg }};color:{{ f.fg }};display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">{{ f.i }}</div>
+                    <div style="flex:1"><div style="font:600 16px 'DM Sans',sans-serif">{{ f.n }}</div><div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA">{{ f.s }}</div></div>
+                    <div style="font:700 14px 'Barlow Condensed',sans-serif;color:#A1A1AA">{{ f.w }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- HISTÓRICO -->
+        <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;align-items:center;gap:12px"><div onClick="{{ goProfile }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div><div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Histórico</div></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+              <div style="background:#19191F;border-radius:18px;padding:14px;text-align:center"><div style="font:800 30px/1 'Barlow Condensed',sans-serif">32</div><div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:4px">partidas</div></div>
+              <div style="background:#19191F;border-radius:18px;padding:14px;text-align:center"><div style="font:800 30px/1 'Barlow Condensed',sans-serif;color:#FACC15">25%</div><div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:4px">vitórias</div></div>
+              <div style="background:#19191F;border-radius:18px;padding:14px;text-align:center"><div style="font:800 30px/1 'Barlow Condensed',sans-serif">👀</div><div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:4px">favorito</div></div>
+            </div>
+            <div style="display:flex;gap:8px;overflow:auto;margin:0 -20px;padding:0 20px;scrollbar-width:none">
+              <sc-for list="{{ histFilters }}" as="f" hint-placeholder-count="4">
+                <div onClick="{{ f.pick }}" style="flex:none;background:{{ f.bg }};color:{{ f.fg }};border:1px solid #27272F;border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif;white-space:nowrap;cursor:pointer">{{ f.n }}</div>
+              </sc-for>
+            </div>
+            <sc-for list="{{ histGroups }}" as="g" hint-placeholder-count="2">
+              <div>
+                <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-bottom:8px">{{ g.label }}</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <sc-for list="{{ g.items }}" as="h" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px">
+                      <div style="width:44px;height:44px;border-radius:14px;background:{{ h.bg }};display:flex;align-items:center;justify-content:center;font-size:20px">{{ h.e }}</div>
+                      <div style="flex:1"><div style="font:600 15px 'DM Sans',sans-serif">{{ h.n }}</div><div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA">{{ h.d }}</div></div>
+                      <div style="text-align:right"><div style="font:700 16px 'Barlow Condensed',sans-serif;color:{{ h.c }}">{{ h.r }}</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">{{ h.pts }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <!-- AGUARDANDO VOTOS -->
+        <sc-if value="{{ isWaitVotes }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:hidden;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Rodada {{ round }} · Votação</div><div style="display:flex;align-items:center;gap:6px;font:600 12px 'DM Sans',sans-serif;color:#22C55E"><div style="width:8px;height:8px;border-radius:50%;background:#22C55E"></div>Seu voto está guardado</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center">
+              <div style="position:relative;width:180px;height:180px;display:flex;align-items:center;justify-content:center">
+                <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(#FACC15 {{ votesDeg }}deg, #27272F 0);transition:background .5s"></div>
+                <div style="position:absolute;inset:12px;border-radius:50%;background:#0F0F13"></div>
+                <div style="position:relative;font:800 72px/1 'Barlow Condensed',sans-serif">{{ votesIn }}<span style="font-size:28px;color:#A1A1AA">/{{ votesTotal }}</span></div>
+              </div>
+              <div><div style="font:800 40px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ waitTitle }}</div><div style="font:500 15px/1.4 'DM Sans',sans-serif;color:#A1A1AA;margin-top:8px">Ninguém vê os votos até todos confirmarem.</div></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+                <sc-for list="{{ voteStatus }}" as="p" hint-placeholder-count="5">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:6px;opacity:{{ p.op }};transition:opacity .3s">
+                    <div style="width:48px;height:48px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif;position:relative">{{ p.i }}<div style="position:absolute;right:-3px;bottom:-3px;width:18px;height:18px;border-radius:50%;background:#22C55E;color:#0F0F13;border:2px solid #0F0F13;display:{{ p.check }};align-items:center;justify-content:center;font:700 10px 'DM Sans',sans-serif">✓</div></div>
+                    <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">{{ p.n }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA;text-align:center">{{ waitFoot }}</div>
+          </div>
+        </sc-if>
+
+        <!-- HOST SAIU / JOGADORES INSUFICIENTES -->
+        <sc-if value="{{ isAbort }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;animation:bora-pop .6s cubic-bezier(.2,.9,.3,1.3) both">
+              <svg viewBox="0 0 200 120" style="width:200px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="60" cy="72" r="17" fill="#0F0F13"></circle><circle cx="150" cy="72" r="17" fill="#0F0F13"></circle></svg>
+              <div style="font:800 48px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;text-wrap:balance">{{ abortTitle }}</div>
+              <div style="font:500 15px/1.45 'DM Sans',sans-serif;color:#A1A1AA;max-width:290px">{{ abortSub }}</div>
+              <div style="display:flex;gap:-6px;justify-content:center">
+                <sc-for list="{{ abortPlayers }}" as="p" hint-placeholder-count="3">
+                  <div style="width:40px;height:40px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif;border:3px solid #0F0F13;margin-left:-8px">{{ p.i }}</div>
+                </sc-for>
+                <div style="font:500 13px 'DM Sans',sans-serif;color:#A1A1AA;align-self:center;margin-left:8px">{{ abortCount }}</div>
+              </div>
+            </div>
+            <div onClick="{{ abortPrimary }}" style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">{{ abortPrimaryLabel }}</div>
+            <div onClick="{{ goHome }}" style="height:58px;border-radius:18px;background:#19191F;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Voltar ao início</div>
+          </div>
+        </sc-if>
+
+        <!-- ENTRAR COM CÓDIGO / QR -->
+        <sc-if value="{{ isJoin }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;align-items:center;gap:12px"><div onClick="{{ goHome }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">←</div><div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Entrar na sala</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#19191F;padding:6px;border-radius:18px">
+              <div onClick="{{ joinCodeTab }}" style="height:44px;border-radius:13px;background:{{ joinTabCodeBg }};display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer;transition:background .15s">Código</div>
+              <div onClick="{{ joinQrTab }}" style="height:44px;border-radius:13px;background:{{ joinTabQrBg }};display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer;transition:background .15s">QR Code</div>
+            </div>
+            <sc-if value="{{ joinIsCode }}" hint-placeholder-val="{{ true }}">
+              <div style="font:500 16px/1.4 'DM Sans',sans-serif;color:#A1A1AA">Peça o código de 4 dígitos ao host.</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+                <sc-for list="{{ codeDigits }}" as="d" hint-placeholder-count="4">
+                  <div style="height:84px;border-radius:20px;background:#19191F;border:2px solid {{ d.border }};display:flex;align-items:center;justify-content:center;font:800 44px 'Barlow Condensed',sans-serif;transition:border-color .15s">{{ d.v }}<div style="width:2px;height:34px;background:#A78BFA;display:{{ d.caret }}"></div></div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ joinError }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:10px;color:#EF4444;font:600 14px 'DM Sans',sans-serif;animation:bora-shake .4s ease"><div style="width:22px;height:22px;border-radius:50%;background:#EF4444;color:#FAFAFA;display:flex;align-items:center;justify-content:center;font-size:13px">!</div>Sala não encontrada. Confira o código com o host.</div></sc-if>
+              <div style="flex:1"></div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <sc-for list="{{ keypad }}" as="k" hint-placeholder-count="12">
+                  <div onClick="{{ k.press }}" style="height:56px;border-radius:16px;background:{{ k.bg }};display:flex;align-items:center;justify-content:center;font:800 26px 'Barlow Condensed',sans-serif;cursor:pointer;user-select:none;color:{{ k.fg }}" style-active="background:#7C3AED">{{ k.n }}</div>
+                </sc-for>
+              </div>
+              <div onClick="{{ submitCode }}" style="height:58px;border-radius:18px;background:{{ joinBtnBg }};color:{{ joinBtnFg }};display:flex;align-items:center;justify-content:center;gap:10px;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .2s" style-active="transform:scale(.97)"><sc-if value="{{ joinLoading }}" hint-placeholder-val="{{ false }}"><div style="width:20px;height:20px;border-radius:50%;border:3px solid rgba(250,250,250,.3);border-top-color:#FAFAFA;animation:bora-spin .8s linear infinite"></div></sc-if>{{ joinBtn }}</div>
+            </sc-if>
+            <sc-if value="{{ joinIsQr }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px">
+                <div style="width:260px;height:260px;border-radius:28px;background:#19191F;position:relative;overflow:hidden">
+                  <div style="position:absolute;inset:22px;border-radius:18px;border:3px solid #FACC15;mask:linear-gradient(#000 0 0) top/100% 34px no-repeat,linear-gradient(#000 0 0) bottom/100% 34px no-repeat,linear-gradient(#000 0 0) left/34px 100% no-repeat,linear-gradient(#000 0 0) right/34px 100% no-repeat;-webkit-mask:linear-gradient(#000 0 0) top/100% 34px no-repeat,linear-gradient(#000 0 0) bottom/100% 34px no-repeat,linear-gradient(#000 0 0) left/34px 100% no-repeat,linear-gradient(#000 0 0) right/34px 100% no-repeat"></div>
+                  <div style="position:absolute;left:30px;right:30px;height:2px;background:#FACC15;top:{{ scanY }};transition:top 1.2s ease-in-out;box-shadow:0 0 14px #FACC15"></div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:500 13px 'DM Sans',sans-serif;color:#A1A1AA">Câmera</div>
+                </div>
+                <div style="font:500 16px/1.4 'DM Sans',sans-serif;color:#A1A1AA;text-align:center;max-width:260px">Aponte para o QR Code na tela do host.</div>
+              </div>
+              <div onClick="{{ simulateScan }}" style="height:58px;border-radius:18px;background:#19191F;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Simular leitura</div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- PREMIUM -->
+        <sc-if value="{{ isPremium }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;padding:64px 20px 24px;display:flex;flex-direction:column;gap:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div onClick="{{ goProfile }}" style="width:44px;height:44px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">✕</div>
+              <div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#0F0F13;border:1px solid #A78BFA;color:#A78BFA;padding:6px 10px;border-radius:99px">✨ Premium</div>
+            </div>
+            <div style="background:#7C3AED;border-radius:28px;padding:24px;position:relative;overflow:hidden;min-height:250px;display:flex;flex-direction:column;justify-content:flex-end">
+              <svg viewBox="0 0 60 60" style="position:absolute;right:20px;top:18px;width:96px;opacity:.95" aria-hidden="true"><path d="M16 6h28v14a14 14 0 0 1-28 0z" fill="#FACC15"></path><path d="M10 10h6v8a6 6 0 0 1-6-6zM44 10h6v2a6 6 0 0 1-6 6z" fill="#FACC15"></path><rect x="26" y="32" width="8" height="10" fill="#FACC15"></rect><rect x="16" y="42" width="28" height="8" rx="3" fill="#FACC15"></rect></svg>
+              <div style="font:800 56px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase">Desbloqueie<br>tudo.</div>
+              <div style="font:500 14px 'DM Sans',sans-serif;opacity:.85;margin-top:10px">Para o grupo inteiro — só um assina.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ perks }}" as="p" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:14px;padding:10px 4px"><div style="width:40px;height:40px;border-radius:12px;background:#19191F;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none">{{ p.e }}</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">{{ p.n }}</div><div style="width:22px;height:22px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 12px 'DM Sans',sans-serif">✓</div></div>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div onClick="{{ pickMonthly }}" style="border-radius:22px;padding:18px 16px;background:#19191F;border:2px solid {{ planMonthlyBorder }};display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:border-color .15s">
+                <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Mensal</div>
+                <div style="font:800 34px/1 'Barlow Condensed',sans-serif">R$ 14,90</div>
+                <div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA">por mês</div>
+              </div>
+              <div onClick="{{ pickYearly }}" style="border-radius:22px;padding:18px 16px;background:#19191F;border:2px solid {{ planYearlyBorder }};display:flex;flex-direction:column;gap:6px;cursor:pointer;position:relative;transition:border-color .15s">
+                <div style="position:absolute;top:-10px;right:12px;font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#FACC15;color:#0F0F13;padding:5px 8px;border-radius:99px">−45%</div>
+                <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Anual</div>
+                <div style="font:800 34px/1 'Barlow Condensed',sans-serif">R$ 99</div>
+                <div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA">R$ 8,25 / mês</div>
+              </div>
+            </div>
+            <div style="flex:1"></div>
+            <div onClick="{{ goProfile }}" style="height:58px;border-radius:18px;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">{{ premiumBtn }}</div>
+            <div style="font:400 12px/1.4 'DM Sans',sans-serif;color:#A1A1AA;text-align:center">7 dias grátis. Cancele quando quiser.</div>
+          </div>
+        </sc-if>
+
+        <!-- BOTTOM NAV -->
+        <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;justify-content:space-around;align-items:center;padding:10px 16px 34px;background:#0F0F13;border-top:1px solid #19191F">
+            <div onClick="{{ goHome }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 18px;border-radius:14px;cursor:pointer;color:{{ navHome }}"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l7-7 7 7v8H5z"></path></svg><span style="font:700 12px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.6px">Jogar</span></div>
+            <div onClick="{{ goExplore }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 18px;border-radius:14px;cursor:pointer;color:{{ navExplore }}"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"></rect><rect x="13" y="3" width="8" height="8" rx="2"></rect><rect x="3" y="13" width="8" height="8" rx="2"></rect><rect x="13" y="13" width="8" height="8" rx="2"></rect></svg><span style="font:700 12px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.6px">Explorar</span></div>
+            <div onClick="{{ goProfile }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 18px;border-radius:14px;cursor:pointer;color:{{ navProfile }}"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font:700 12px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.6px">Perfil</span></div>
+          </div>
+        </sc-if>
+
+        <!-- OVERLAY: PAUSA / SAIR -->
+        <sc-if value="{{ paused }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:rgba(15,15,19,.82);display:flex;align-items:center;justify-content:center;padding:24px;z-index:6">
+            <div style="width:100%;background:#19191F;border-radius:28px;padding:26px 22px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;border:1px solid #27272F;animation:bora-pop .4s cubic-bezier(.2,.9,.3,1.2) both">
+              <sc-if value="{{ pauseMain }}" hint-placeholder-val="{{ true }}">
+                <div style="width:64px;height:64px;border-radius:50%;background:#27272F;display:flex;align-items:center;justify-content:center"><div style="display:flex;gap:6px"><div style="width:7px;height:24px;border-radius:3px;background:#FAFAFA"></div><div style="width:7px;height:24px;border-radius:3px;background:#FAFAFA"></div></div></div>
+                <div style="font:800 34px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Partida pausada</div>
+                <div style="font:400 14px/1.4 'DM Sans',sans-serif;color:#A1A1AA">O cronômetro parou para todos. Rodada {{ round }} de {{ rounds }}.</div>
+                <div onClick="{{ resumeGame }}" style="width:100%;height:56px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;margin-top:6px" style-active="transform:scale(.97)">Continuar</div>
+                <div style="display:flex;gap:8px;width:100%">
+                  <div onClick="{{ openSheet }}" style="flex:1;height:50px;border-radius:16px;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">Regras</div>
+                  <div onClick="{{ askQuit }}" style="flex:1;height:50px;border-radius:16px;background:#27272F;color:#EF4444;display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">Sair da partida</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ pauseQuit }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:40px">👋</div>
+                <div style="font:800 34px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ quitTitle }}</div>
+                <div style="font:400 14px/1.4 'DM Sans',sans-serif;color:#A1A1AA">{{ quitSub }}</div>
+                <div style="display:flex;gap:8px;width:100%;margin-top:6px">
+                  <div onClick="{{ cancelQuit }}" style="flex:1;height:56px;border-radius:18px;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">Ficar</div>
+                  <div onClick="{{ confirmQuit }}" style="flex:1;height:56px;border-radius:18px;background:#EF4444;display:flex;align-items:center;justify-content:center;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">Sair</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- OVERLAY: SEM CONEXÃO -->
+        <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:rgba(15,15,19,.7);display:flex;align-items:center;justify-content:center;padding:24px;z-index:7">
+            <div style="width:100%;background:#19191F;border-radius:28px;padding:26px 22px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center;border:1px solid #27272F;animation:bora-in .3s ease both">
+              <sc-if value="{{ reconnecting }}" hint-placeholder-val="{{ true }}">
+                <div style="width:64px;height:64px;border-radius:50%;border:4px solid #27272F;border-top-color:#FACC15;animation:bora-spin 1s linear infinite"></div>
+                <div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Reconectando…</div>
+                <div style="font:400 14px/1.4 'DM Sans',sans-serif;color:#A1A1AA">Sua vaga e seus pontos estão guardados. A partida espera até {{ offlineSecs }}s.</div>
+                <div style="width:100%;height:6px;border-radius:99px;background:#27272F;overflow:hidden;margin-top:4px"><div style="height:100%;background:#FACC15;width:{{ offlinePct }}%;transition:width 1s linear"></div></div>
+              </sc-if>
+              <sc-if value="{{ reconnectFailed }}" hint-placeholder-val="{{ false }}">
+                <div style="width:64px;height:64px;border-radius:50%;background:#EF4444;display:flex;align-items:center;justify-content:center;font:800 32px 'Barlow Condensed',sans-serif">!</div>
+                <div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Sem conexão</div>
+                <div style="font:400 14px/1.4 'DM Sans',sans-serif;color:#A1A1AA">Não conseguimos voltar para a sala 4827. Confira o Wi-Fi ou os dados móveis.</div>
+                <div onClick="{{ retryOffline }}" style="width:100%;height:56px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;margin-top:6px" style-active="transform:scale(.97)">Tentar de novo</div>
+                <div onClick="{{ leaveOffline }}" style="font:600 14px 'DM Sans',sans-serif;color:#A1A1AA;cursor:pointer;padding:6px">Sair da partida</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- TOAST -->
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;left:16px;right:16px;top:58px;z-index:8;display:flex;align-items:center;gap:12px;background:#FAFAFA;color:#0F0F13;border-radius:16px;padding:12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.5);animation:bora-in .35s ease both">
+            <div style="width:28px;height:28px;border-radius:50%;background:{{ toastBg }};color:{{ toastFg }};display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">{{ toastIcon }}</div>
+            <div style="flex:1;font:600 15px 'DM Sans',sans-serif">{{ toastMsg }}</div>
+          </div>
+        </sc-if>
+
+        <!-- BOTTOM SHEET: Como jogar -->
+        <sc-if value="{{ sheet }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(15,15,19,.6);display:flex;align-items:flex-end;z-index:5">
+            <div style="width:100%;background:#19191F;border-radius:28px 28px 0 0;padding:12px 20px 40px;display:flex;flex-direction:column;gap:14px;animation:bora-in .35s ease">
+              <div style="width:40px;height:4px;border-radius:99px;background:#27272F;align-self:center"></div>
+              <div style="font:800 30px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Como jogar</div>
+              <div style="display:flex;gap:12px"><div style="width:32px;height:32px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 16px 'Barlow Condensed',sans-serif;flex:none">1</div><div style="font:400 15px/1.4 'DM Sans',sans-serif">Todos recebem a mesma palavra secreta. Um jogador recebe apenas "impostor".</div></div>
+              <div style="display:flex;gap:12px"><div style="width:32px;height:32px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 16px 'Barlow Condensed',sans-serif;flex:none">2</div><div style="font:400 15px/1.4 'DM Sans',sans-serif">Em ordem, cada um dá uma pista curta. Nem óbvia demais, nem vaga demais.</div></div>
+              <div style="display:flex;gap:12px"><div style="width:32px;height:32px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 16px 'Barlow Condensed',sans-serif;flex:none">3</div><div style="font:400 15px/1.4 'DM Sans',sans-serif">Votem em quem parece perdido. Se acertarem, o grupo pontua. Se não, o impostor leva.</div></div>
+              <div style="height:52px;border-radius:16px;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:6px">Entendi</div>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </x-import>
+
+    <div style="display:flex;flex-direction:column;gap:14px;max-width:300px;font:400 13px/1.55 'DM Sans',sans-serif;color:#A1A1AA;padding-top:8px">
+      <div style="font:800 18px 'Barlow Condensed',sans-serif;text-transform:uppercase;color:#FAFAFA">Como testar</div>
+      <div>Clique no card <b style="color:#FAFAFA">Impostor</b> → <b style="color:#FAFAFA">Criar partida</b> → <b style="color:#FAFAFA">Criar sala</b>. Os jogadores entram sozinhos no lobby.</div>
+      <div><b style="color:#FAFAFA">Segure</b> o botão amarelo para revelar o papel. Nos Tweaks é possível trocar para o impostor e escolher se o grupo acerta.</div>
+      <div>Na rodada há cronômetro; na votação toque em um jogador e confirme; o resultado tem 3 tempos de revelação.</div>
+      <div><b style="color:#FAFAFA">Convidado</b>: o toggle abaixo troca o celular para a visão de quem entrou pelo código — sem controles de host, com "aguardando" e atalhos de simulação. Após confirmar o voto, a tela cheia <b style="color:#FAFAFA">Aguardando votos</b> avança sozinha. Na Rodada há botão de <b style="color:#FAFAFA">pausa</b> (com sair). Botões abaixo simulam <b style="color:#FAFAFA">queda de conexão</b> e <b style="color:#FAFAFA">host saiu</b>. Perfil → editar, configurações, amigos, histórico.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div onClick="{{ toggleGuest }}" style="border:1px solid {{ guestBorder }};color:{{ guestColor }};background:{{ guestBg }};border-radius:99px;padding:7px 11px;font:600 11px 'DM Sans',sans-serif;cursor:pointer">{{ guestLabel }}</div>
+        <div onClick="{{ simOffline }}" style="border:1px solid #27272F;color:#A1A1AA;border-radius:99px;padding:7px 11px;font:600 11px 'DM Sans',sans-serif;cursor:pointer">Simular queda de conexão</div>
+        <div onClick="{{ simHostLeft }}" style="border:1px solid #27272F;color:#A1A1AA;border-radius:99px;padding:7px 11px;font:600 11px 'DM Sans',sans-serif;cursor:pointer">Simular host saiu</div>
+        <div onClick="{{ simFewPlayers }}" style="border:1px solid #27272F;color:#A1A1AA;border-radius:99px;padding:7px 11px;font:600 11px 'DM Sans',sans-serif;cursor:pointer">Simular jogadores insuficientes</div>
+      </div>
+      <div><b style="color:#FAFAFA">Login / Cadastro</b> vem depois do onboarding: Google/Apple entram direto; por e-mail, os campos validam (e-mail sem "@" ou senha curta dão erro). "Entrar como convidado" pula.</div>
+      <div>Novas: <b style="color:#FAFAFA">Onboarding</b> (3 passos), <b style="color:#FAFAFA">Entrar</b> por código (teclado; 4827 entra, outro código dá erro) ou QR, e <b style="color:#FAFAFA">Premium</b> via Perfil.</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+        <sc-for list="{{ jumpList }}" as="j" hint-placeholder-count="10">
+          <div onClick="{{ j.go }}" style="border:1px solid {{ j.border }};color:{{ j.color }};border-radius:99px;padding:6px 10px;font:600 11px 'DM Sans',sans-serif;cursor:pointer">{{ j.n }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t1" style="padding:36px 44px 40px">
+  <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 20px">
+    <a href="#t1" style="font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#FAFAFA;color:#0F0F13;border-radius:4px;text-decoration:none">1</a>
+    <span style="font:600 13px/1.2 'DM Sans',sans-serif">Home — <a href="#1a" style="text-decoration:none">1a</a> escolhida ✓ · 1b e 1c mantidas para referência</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px">
+      <div style="display:flex;align-items:baseline;gap:8px;font:400 12px 'DM Sans',sans-serif;color:#A1A1AA"><a href="#1a" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:#FACC15;color:#0F0F13;border-radius:5px;text-decoration:none">1a</a>Card-herói + dupla · <b style="color:#FACC15">escolhida</b></div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="height:100%;background:#0F0F13;color:#FAFAFA;font-family:'DM Sans',system-ui,sans-serif;padding:64px 20px 24px;display:flex;flex-direction:column;gap:22px;overflow:hidden">
+          <div><div style="font:500 16px/1.3 'DM Sans',sans-serif;color:#A1A1AA">Boa noite 👋</div><div style="font:800 44px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px">Bora jogar?</div></div>
+          <div style="background:#7C3AED;border-radius:28px;padding:22px;min-height:250px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden">
+            <svg viewBox="0 0 200 120" style="position:absolute;right:-10px;top:14px;width:210px;height:126px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="76" cy="62" r="17" fill="#0F0F13"></circle><circle cx="166" cy="62" r="17" fill="#0F0F13"></circle><circle cx="82" cy="56" r="5" fill="#FAFAFA"></circle><circle cx="172" cy="56" r="5" fill="#FAFAFA"></circle></svg>
+            <div style="font:800 52px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Impostor</div>
+            <div style="font:500 15px/1.35 'DM Sans',sans-serif;opacity:.85;margin-top:8px">Todo mundo sabe a palavra. Menos um.</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span style="font:600 13px 'DM Sans',sans-serif;opacity:.8">3–12 · 10–20 min</span><span style="background:#FAFAFA;color:#0F0F13;border-radius:99px;padding:12px 18px;font:700 17px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Jogar agora</span></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:#FACC15;color:#0F0F13;border-radius:24px;padding:18px 16px;min-height:180px;display:flex;flex-direction:column;justify-content:flex-end"><div style="font:800 24px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Quem é mais provável?</div><div style="font:600 12px 'DM Sans',sans-serif;opacity:.75;margin-top:8px">3+ jogadores</div></div>
+            <div style="background:#22C55E;color:#0F0F13;border-radius:24px;padding:18px 16px;min-height:180px;display:flex;flex-direction:column;justify-content:flex-end"><div style="font:800 24px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Desafio secreto</div><div style="font:600 12px 'DM Sans',sans-serif;opacity:.75;margin-top:8px">3+ jogadores</div></div>
+          </div>
+          <div><div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:12px">Escolha o clima</div><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">😂 Engraçado</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">🔥 Caótico</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">👀 Polêmico</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">❤️ Casais</span></div></div>
+        </div>
+      </x-import>
+    </div>
+
+    <div id="1b" style="display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px">
+      <div style="display:flex;align-items:baseline;gap:8px;font:400 12px 'DM Sans',sans-serif;color:#A1A1AA"><a href="#1b" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:#27272F;color:#FAFAFA;border-radius:5px;text-decoration:none">1b</a>Baralho · cards empilhados em leque, clima primeiro</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="height:100%;background:#0F0F13;color:#FAFAFA;font-family:'DM Sans',system-ui,sans-serif;padding:64px 0 24px;display:flex;flex-direction:column;gap:20px;overflow:hidden">
+          <div style="padding:0 20px"><div style="font:500 16px/1.3 'DM Sans',sans-serif;color:#A1A1AA">Boa noite 👋</div><div style="font:800 56px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px">Bora<br>jogar?</div></div>
+          <div style="display:flex;gap:8px;padding:0 20px;overflow:hidden"><span style="background:#FAFAFA;color:#0F0F13;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif;white-space:nowrap">🔥 Caótico</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif;white-space:nowrap">😂 Engraçado</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif;white-space:nowrap">👀 Polêmico</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif;white-space:nowrap">🎉 Festa</span></div>
+          <div style="position:relative;height:420px;margin:10px 0 0">
+            <div style="position:absolute;left:44px;right:44px;top:0;height:380px;border-radius:28px;background:#22C55E;transform:rotate(-6deg) translateY(10px);transform-origin:bottom center;opacity:.9"></div>
+            <div style="position:absolute;left:32px;right:32px;top:0;height:380px;border-radius:28px;background:#FACC15;transform:rotate(4deg) translateY(4px);transform-origin:bottom center"></div>
+            <div style="position:absolute;left:20px;right:20px;top:0;height:380px;border-radius:28px;background:#7C3AED;padding:24px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 20px 50px rgba(0,0,0,.5)">
+              <div style="display:flex;justify-content:space-between"><span style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:rgba(15,15,19,.35);padding:6px 9px;border-radius:99px">Dedução · 10–20 min</span><span style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#FACC15;color:#0F0F13;padding:6px 9px;border-radius:99px">1 / 8</span></div>
+              <svg viewBox="0 0 200 120" style="width:230px;height:138px;align-self:center" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="76" cy="62" r="17" fill="#0F0F13"></circle><circle cx="166" cy="62" r="17" fill="#0F0F13"></circle><circle cx="82" cy="56" r="5" fill="#FAFAFA"></circle><circle cx="172" cy="56" r="5" fill="#FAFAFA"></circle></svg>
+              <div><div style="font:800 58px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase">Impostor</div><div style="font:500 15px/1.35 'DM Sans',sans-serif;opacity:.85;margin-top:8px">Todo mundo sabe a palavra. Menos um.</div><div style="font:600 13px 'DM Sans',sans-serif;opacity:.75;margin-top:6px">3–12 jogadores</div></div>
+            </div>
+          </div>
+          <div style="padding:0 20px;display:flex;gap:10px"><div style="flex:1;height:58px;border-radius:18px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">Jogar agora</div><div style="width:58px;height:58px;border-radius:18px;background:#19191F;display:flex;align-items:center;justify-content:center;font-size:22px">→</div></div>
+        </div>
+      </x-import>
+    </div>
+
+    <div id="1c" style="display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px">
+      <div style="display:flex;align-items:baseline;gap:8px;font:400 12px 'DM Sans',sans-serif;color:#A1A1AA"><a href="#1c" style="font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:#27272F;color:#FAFAFA;border-radius:5px;text-decoration:none">1c</a>Cartaz · lista tipográfica, uma cor por jogo, tudo visível</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="height:100%;background:#0F0F13;color:#FAFAFA;font-family:'DM Sans',system-ui,sans-serif;padding:64px 20px 24px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font:500 16px/1.3 'DM Sans',sans-serif;color:#A1A1AA">Boa noite 👋</div><div style="font:800 44px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px">Bora jogar?</div></div><div style="font:600 12px 'DM Sans',sans-serif;color:#A78BFA">8 jogos</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+            <div style="background:#7C3AED;border-radius:22px;padding:18px 20px;display:flex;align-items:center;gap:14px;min-height:112px"><div style="flex:1"><div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;opacity:.75">Dedução · 3–12 · 15 min</div><div style="font:800 40px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:4px">Impostor</div></div><svg viewBox="0 0 200 120" style="width:96px;height:58px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="76" cy="62" r="17" fill="#0F0F13"></circle><circle cx="166" cy="62" r="17" fill="#0F0F13"></circle></svg></div>
+            <div style="background:#FACC15;color:#0F0F13;border-radius:22px;padding:18px 20px;display:flex;align-items:center;gap:14px;min-height:112px"><div style="flex:1"><div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;opacity:.7">Polêmico · 3+ · 10 min</div><div style="font:800 34px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:4px">Quem é mais provável?</div></div><svg viewBox="0 0 80 60" style="width:80px;height:60px" aria-hidden="true"><rect x="4" y="24" width="52" height="20" rx="10" fill="#0F0F13"></rect><path d="M50 20 L78 34 L50 48 Z" fill="#0F0F13"></path></svg></div>
+            <div style="background:#22C55E;color:#0F0F13;border-radius:22px;padding:18px 20px;display:flex;align-items:center;gap:14px;min-height:112px"><div style="flex:1"><div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;opacity:.7">Festa · 3+ · 20 min</div><div style="font:800 40px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:4px">Desafio secreto</div></div><svg viewBox="0 0 90 50" style="width:90px;height:50px" aria-hidden="true"><path d="M2 14 Q45 -6 88 14 L82 40 Q45 52 8 40 Z" fill="#0F0F13"></path><ellipse cx="30" cy="26" rx="12" ry="7" fill="#22C55E"></ellipse><ellipse cx="60" cy="26" rx="12" ry="7" fill="#22C55E"></ellipse></svg></div>
+            <div style="background:#EF4444;border-radius:22px;padding:18px 20px;display:flex;align-items:center;gap:14px;min-height:112px"><div style="flex:1"><div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;opacity:.8">Caótico · 4+ · 15 min</div><div style="font:800 40px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:4px">Bomba-relógio</div></div><svg viewBox="0 0 60 60" style="width:60px;height:60px" aria-hidden="true"><circle cx="28" cy="34" r="22" fill="#0F0F13"></circle><rect x="24" y="4" width="8" height="12" rx="2" fill="#0F0F13"></rect><path d="M28 4 Q40 -2 46 8" stroke="#FACC15" stroke-width="3" fill="none"></path></svg></div>
+            <div style="background:#19191F;border:1px solid #27272F;border-radius:22px;padding:14px 20px;display:flex;align-items:center;gap:12px"><span style="font-size:18px">✨</span><div style="flex:1;font:800 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Criar jogo com IA</div><span style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#7C3AED;padding:5px 8px;border-radius:99px">Premium</span></div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+  </div>
+  <p style="margin:22px 0 0;font:12px/1.5 'DM Sans',sans-serif;color:#A1A1AA">Pedidos possíveis: "usar <a href="#1b" style="text-decoration:none">1b</a> no protótipo" · "mais como <a href="#1c" style="text-decoration:none">1c</a>, mas com cards maiores" · "novas direções para a Home"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;word&quot;,&quot;impostor&quot;],&quot;default&quot;:&quot;word&quot;,&quot;tsType&quot;:&quot;'word'|'impostor'&quot;,&quot;section&quot;:&quot;Partida&quot;},&quot;outcome&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;caught&quot;,&quot;escaped&quot;],&quot;default&quot;:&quot;caught&quot;,&quot;tsType&quot;:&quot;'caught'|'escaped'&quot;,&quot;section&quot;:&quot;Partida&quot;},&quot;rounds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:1,&quot;max&quot;:10,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Partida&quot;},&quot;reconnect&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Simulações&quot;}}">
+class Component extends DCLogic {
+  state = { screen:'splash', ob:0, guest:false, paused:false, quitAsk:false, offline:false, offlineSecs:30, offlineFailed:false, toast:null, votesIn:1, forgotEmail:'', forgotErr:false, forgotSent:false, pName:'Vini Costa', pUser:'vinicosta', pColor:'#FACC15', settings:{sound:true,vibe:true,keep:true,notif:false}, histFilter:'Todas', abortReason:'host', inviteCopied:false, authTab:'login', name:'', email:'', pass:'', showPass:false, focus:null, authErr:null, authLoading:false, joinTab:'code', code:'', joinErr:false, joinLoading:false, scanY:'30px', plan:'yearly', players:6, cat:'Comidas', rounds:5, joined:0, holdPct:0, revealed:false, timer:60, running:false, vote:null, confirmed:false, phase:0, round:1, sheet:false };
+  P = [
+    {n:'André',i:'A',bg:'#7C3AED',fg:'#FAFAFA'},
+    {n:'Carol',i:'C',bg:'#FACC15',fg:'#0F0F13'},
+    {n:'Lucas',i:'L',bg:'#22C55E',fg:'#0F0F13'},
+    {n:'Pedro',i:'P',bg:'#A78BFA',fg:'#0F0F13'},
+    {n:'João',i:'J',bg:'#EF4444',fg:'#FAFAFA'},
+  ];
+  clear(){ ['lobbyT','holdT','timerT','resT1','resT2','scanT','joinT','authT','votesT','offT','toastT'].forEach(k=>{ if(this[k]){clearInterval(this[k]);clearTimeout(this[k]);this[k]=null;} }); }
+  componentWillUnmount(){ this.clear(); }
+  componentDidMount(){ this.armSplash(); }
+  armSplash(){ clearTimeout(this.splashT); this.splashT=setTimeout(()=>{ if(this.state.screen==='splash') this.go('onboarding'); },2600); }
+  go(s){
+    this.clear();
+    const st={screen:s,sheet:false,paused:false,quitAsk:false,offline:false};
+    if(s==='waitvotes'){ st.votesIn=1; this.votesT=setInterval(()=>{ this.setState(p=>{ const n=p.votesIn+1; if(n>=5){ clearInterval(this.votesT); setTimeout(()=>this.go('result'),900); return {votesIn:5}; } return {votesIn:n}; }); },1100); }
+    if(s==='forgot'){ st.forgotSent=false; st.forgotErr=false; }
+    if(s==='splash'){ this.armSplash(); }
+    if(s==='lobby'){ st.joined=0; this.lobbyT=setInterval(()=>{ this.setState(p=>{ const j=Math.min(p.joined+1,Math.min(p.players-1,this.P.length)); if(j>=Math.min(p.players-1,this.P.length)) clearInterval(this.lobbyT); return {joined:j}; }); },900); }
+    if(s==='reveal'){ st.holdPct=0; st.revealed=false; }
+    if(s==='join'){ st.code=''; st.joinErr=false; st.joinLoading=false; st.joinTab='code'; this.startScan(); }
+    if(s==='round'){ st.timer=60; st.running=false; }
+    if(s==='vote'){ st.vote=null; st.confirmed=false; }
+    if(s==='result'){ st.phase=0; this.resT1=setTimeout(()=>this.setState({phase:1}),1600); this.resT2=setTimeout(()=>this.setState({phase:2}),3300); }
+    this.setState(st);
+  }
+  holdStart=(e)=>{ if(e&&e.preventDefault) e.preventDefault(); if(this.state.revealed) return; clearInterval(this.holdT); this.holdT=setInterval(()=>{ this.setState(p=>{ const v=Math.min(100,p.holdPct+2.5); if(v>=100){ clearInterval(this.holdT); return {holdPct:100,revealed:true}; } return {holdPct:v}; }); },20); };
+  submitAuth=()=>{ const s=this.state; if(s.authLoading) return; const signup=s.authTab==='signup';
+    if(signup&&s.name.trim().length<2){ this.setState({authErr:'Digite seu nome (pelo menos 2 letras).'}); return; }
+    if(!/^\S+@\S+\.\S+$/.test(s.email)){ this.setState({authErr:'E-mail inválido. Confira e tente de novo.'}); return; }
+    if(s.pass.length<6){ this.setState({authErr:'A senha precisa ter pelo menos 6 caracteres.'}); return; }
+    this.setState({authLoading:true,authErr:null}); this.authT=setTimeout(()=>{ this.setState({authLoading:false}); this.go('home'); },900); };
+  showToast(icon,msg,bg,fg){ clearTimeout(this.toastT); this.setState({toast:{icon,msg,bg:bg||'#22C55E',fg:fg||'#0F0F13'}}); this.toastT=setTimeout(()=>this.setState({toast:null}),2200); }
+  simOffline=()=>{ clearInterval(this.offT); this.setState({offline:true,offlineFailed:false,offlineSecs:30}); this.offT=setInterval(()=>this.setState(p=>{ const n=p.offlineSecs-1; if(n<=24){ clearInterval(this.offT); const ok=this.props.reconnect??true; if(ok){ this.showToast('✓','Conexão restabelecida'); return {offline:false,offlineSecs:30}; } return {offlineFailed:true}; } return {offlineSecs:n}; }),1000); };
+  startScan(){ clearInterval(this.scanT); this.scanT=setInterval(()=>this.setState(p=>({scanY:p.scanY==='30px'?'226px':'30px'})),1300); }
+  pressKey(k){ const s=this.state; if(s.joinLoading) return; if(k==='⌫'){ this.setState({code:s.code.slice(0,-1),joinErr:false}); return; } if(s.code.length<4) this.setState({code:s.code+k,joinErr:false}); }
+  submitCode=()=>{ const s=this.state; if(s.code.length<4||s.joinLoading) return; this.setState({joinLoading:true,joinErr:false}); this.joinT=setTimeout(()=>{ if(s.code==='4827'){ this.setState({joinLoading:false}); this.go('lobby'); } else this.setState({joinLoading:false,joinErr:true,code:''}); },900); };
+  holdEnd=()=>{ clearInterval(this.holdT); if(!this.state.revealed) this.setState({holdPct:0}); };
+  renderVals(){
+    const s=this.state, role=this.props.role??'word', outcome=this.props.outcome??'caught', maxRounds=this.props.rounds??s.rounds;
+    const inGame=['reveal','round','vote','result','ranking','end'].includes(s.screen);
+    const cats=[['🍔','Comidas'],['🎬','Filmes'],['⚽','Futebol'],['🌎','Lugares'],['🎲','Aleatório']].map(([e,n])=>({e,n,bg:s.cat===n?'#7C3AED':'#19191F',border:s.cat===n?'#7C3AED':'#27272F',pick:()=>this.setState({cat:n})}));
+    const roundOpts=[3,5,10].map(n=>({n,bg:s.rounds===n?'#7C3AED':'transparent',pick:()=>this.setState({rounds:n})}));
+    const joinedPlayers=this.P.slice(0,s.joined);
+    const total=s.joined+1, canStart=total>=3;
+    const voters=this.P.slice(0,4);
+    const voteCards=voters.map((p,k)=>({...p,pick:()=>{ if(!s.confirmed) this.setState({vote:k}); },cardBg:s.vote===k?'#27272F':'#19191F',border:s.vote===k?'#FACC15':'transparent',scale:s.vote===k?1.03:1,check:s.vote===k?'flex':'none'}));
+    const order=[2,1,0,3].map((idx,k)=>({...this.P[idx],k:k+1,s:k===0?'Agora':k===1?'Próximo':'',sc:k===0?'#FACC15':'#A1A1AA',op:k===0?1:.75}));
+    const tallyRaw=[[2,4],[0,1],[3,1]];
+    const tally=tallyRaw.map(([idx,v])=>({...this.P[idx],v:v+(v>1?' votos':' voto'),w:v/4*100,bar:idx===2?'#FACC15':'rgba(250,250,250,.6)'}));
+    const caught=outcome==='caught';
+    const ptsBase=[[0,1250,'+250'],[1,980,'+200'],[2,850,'+300'],[3,720,'+150'],[4,610,'+0']];
+    const ranking=ptsBase.map(([idx,pts,d],k)=>({...this.P[idx],pos:k<3?['🥇','🥈','🥉'][k]:(k+1)+'º',posColor:k<3?'#FAFAFA':'#A1A1AA',pts:pts.toLocaleString('pt-BR'),delta:d+' nesta rodada',deltaColor:d==='+0'?'#A1A1AA':'#22C55E',cardBg:k===0?'#27272F':'#19191F',delay:(k*0.07)+'s'}));
+    const last=s.round>=maxRounds;
+    const timerPct=s.timer/60, timerColor=s.timer<=10?'#EF4444':s.timer<=20?'#FACC15':'#7C3AED';
+    const obSteps=[
+      {bg:'#7C3AED',t:'Bora jogar?',s:'Escolha um jogo, crie a sala e chame o grupo. O app conduz as regras — vocês só se divertem.'},
+      {bg:'#FACC15',t:'Todos no mesmo lugar.',s:'Cada um entra pelo próprio celular com um código. Papéis secretos, votações e revelações, sem spoiler.'},
+      {bg:'#22C55E',t:'Quem leva o troféu?',s:'Pontos a cada rodada, placar ao vivo e um campeão no fim da noite.'},
+    ];
+    const ob=obSteps[s.ob], obLast=s.ob===obSteps.length-1, obDark=s.ob!==0;
+    const keys=['1','2','3','4','5','6','7','8','9','','0','⌫'];
+    const signup=s.authTab==='signup', authReady=s.email.length>0&&s.pass.length>0&&(!signup||s.name.length>0);
+    const fb=(k)=>s.authErr?'#EF4444':s.focus===k?'#A78BFA':'#27272F';
+    const g=s.guest, me={i:(s.pName.trim()[0]||'?').toUpperCase(),bg:s.pColor,fg:['#FACC15','#22C55E','#A78BFA'].includes(s.pColor)?'#0F0F13':'#FAFAFA'};
+    const voteStatusList=[me,...this.P.slice(0,4)].map((p,k)=>({...p,n:k===0?'Você':p.n,done:k<s.votesIn}));
+    const histAll=[
+      {g:'Esta semana',n:'Impostor',d:'Ontem · 5 jogadores · Comidas',e:'👀',bg:'#7C3AED',r:'🥇 1º',c:'#FACC15',pts:'1.250 pts',cat:'Dedução'},
+      {g:'Esta semana',n:'Desafio secreto',d:'Sábado · 7 jogadores',e:'🕵️',bg:'#22C55E',r:'3º',c:'#A1A1AA',pts:'860 pts',cat:'Festa'},
+      {g:'Esta semana',n:'Quem é mais provável?',d:'Sexta · 4 jogadores',e:'👉',bg:'#FACC15',r:'2º',c:'#A1A1AA',pts:'720 pts',cat:'Polêmico'},
+      {g:'Semana passada',n:'Impostor',d:'Dom · 6 jogadores · Filmes',e:'👀',bg:'#7C3AED',r:'4º',c:'#A1A1AA',pts:'540 pts',cat:'Dedução'},
+      {g:'Semana passada',n:'Bomba-relógio',d:'Sáb · 8 jogadores',e:'💣',bg:'#EF4444',r:'🥇 1º',c:'#FACC15',pts:'1.400 pts',cat:'Caótico'},
+      {g:'Semana passada',n:'Impostor',d:'Qui · 4 jogadores · Lugares',e:'👀',bg:'#7C3AED',r:'2º',c:'#A1A1AA',pts:'910 pts',cat:'Dedução'},
+      {g:'Agosto',n:'Casal perfeito',d:'28 ago · 4 jogadores',e:'❤️',bg:'#27272F',r:'🥇 1º',c:'#FACC15',pts:'1.100 pts',cat:'Casais'},
+      {g:'Agosto',n:'Desafio secreto',d:'21 ago · 6 jogadores',e:'🕵️',bg:'#22C55E',r:'5º',c:'#A1A1AA',pts:'410 pts',cat:'Festa'},
+    ].filter(h=>s.histFilter==='Todas'||(s.histFilter==='Vitórias'?h.r.includes('1º'):h.cat===s.histFilter));
+    const histGroups=[...new Set(histAll.map(h=>h.g))].map(label=>({label,items:histAll.filter(h=>h.g===label)}));
+    const togglesDef=[['sound','🔊','Sons','Efeitos nas revelações e votações'],['vibe','📳','Vibração','Ao revelar o papel e no fim do tempo'],['keep','💡','Tela sempre acesa','Durante a partida'],['notif','🔔','Notificações','Quando um amigo cria uma sala']];
+    const abortHost=s.abortReason==='host';
+    const jump=[['Splash','splash'],['Onboarding','onboarding'],['Login','auth'],['Esqueci senha','forgot'],['Entrar','join'],['Premium','premium'],['Editar perfil','editprofile'],['Config','settings'],['Amigos','friends'],['Histórico','history'],['Aguardando votos','waitvotes'],['Host saiu','abort'],['Home','home'],['Detalhes','detail'],['Criar','create'],['Lobby','lobby'],['Revelação','reveal'],['Rodada','round'],['Votação','vote'],['Resultado','result'],['Placar','ranking'],['Fim','end'],['Explorar','explore'],['Perfil','profile'],['IA','ai']];
+    return {
+      isSplash:s.screen==='splash', skipSplash:()=>this.go('onboarding'),
+      isOnboarding:s.screen==='onboarding', isJoin:s.screen==='join', isPremium:s.screen==='premium',
+      ob0:s.ob===0, ob1:s.ob===1, ob2:s.ob===2, obBg:ob.bg, obTitle:ob.t, obSub:ob.s,
+      obDots:obSteps.map((_,k)=>({bg:k===s.ob?(obDark?'#0F0F13':'#FAFAFA'):(obDark?'rgba(15,15,19,.3)':'rgba(250,250,250,.3)'),w:k===s.ob?'28px':'8px'})),
+      obBtn:obLast?'Bora jogar':'Continuar', obBtnBg:obDark?'#0F0F13':'#FAFAFA', obBtnFg:obDark?'#FAFAFA':'#0F0F13',
+      nextOnboarding:()=>{ if(obLast) this.go('auth'); else this.setState({ob:s.ob+1}); }, finishOnboarding:()=>this.go('auth'),
+      isAuth:s.screen==='auth', authIsLogin:!signup, authIsSignup:signup,
+      authTabLoginBg:!signup?'#7C3AED':'transparent', authTabSignupBg:signup?'#7C3AED':'transparent',
+      authLoginTab:()=>this.setState({authTab:'login',authErr:null}), authSignupTab:()=>this.setState({authTab:'signup',authErr:null}),
+      authTitle:signup?'Crie sua conta em segundos.':'Bom te ver de novo.',
+      authGoogle:()=>this.go('home'), authApple:()=>this.go('home'),
+      name:s.name, email:s.email, pass:s.pass, nameInitial:(s.name.trim()[0]||'?').toUpperCase(),
+      setName:(e)=>this.setState({name:e.target.value,authErr:null}), setEmail:(e)=>this.setState({email:e.target.value,authErr:null}), setPass:(e)=>this.setState({pass:e.target.value,authErr:null}),
+      focusName:()=>this.setState({focus:'name'}), focusEmail:()=>this.setState({focus:'email'}), focusPass:()=>this.setState({focus:'pass'}), blurField:()=>this.setState({focus:null}),
+      nameBorder:fb('name'), emailBorder:fb('email'), passBorder:fb('pass'),
+      passType:s.showPass?'text':'password', passToggle:s.showPass?'Ocultar':'Mostrar', togglePass:()=>this.setState({showPass:!s.showPass}),
+      authError:!!s.authErr, authErrorMsg:s.authErr||'', authLoading:s.authLoading, submitAuth:this.submitAuth,
+      authBtn:s.authLoading?(signup?'Criando conta':'Entrando'):signup?'Criar conta':'Entrar',
+      authBtnBg:authReady?'#7C3AED':'#27272F', authBtnFg:authReady?'#FAFAFA':'#A1A1AA',
+      goJoin:()=>this.go('join'), goPremium:()=>this.go('premium'),
+      joinIsCode:s.joinTab==='code', joinIsQr:s.joinTab==='qr', joinTabCodeBg:s.joinTab==='code'?'#7C3AED':'transparent', joinTabQrBg:s.joinTab==='qr'?'#7C3AED':'transparent',
+      joinCodeTab:()=>this.setState({joinTab:'code'}), joinQrTab:()=>this.setState({joinTab:'qr'}),
+      codeDigits:[0,1,2,3].map(k=>({v:s.code[k]||'',border:s.joinErr?'#EF4444':k===s.code.length?'#A78BFA':s.code[k]?'#7C3AED':'#27272F',caret:k===s.code.length&&!s.joinErr?'block':'none'})),
+      keypad:keys.map(k=>({n:k,bg:k===''?'transparent':k==='⌫'?'#27272F':'#19191F',fg:k==='⌫'?'#A1A1AA':'#FAFAFA',press:()=>{ if(k) this.pressKey(k); }})),
+      joinError:s.joinErr, joinLoading:s.joinLoading, submitCode:this.submitCode,
+      joinBtn:s.joinLoading?'Entrando':s.code.length<4?'Digite o código':'Entrar na sala', joinBtnBg:s.code.length<4?'#27272F':'#7C3AED', joinBtnFg:s.code.length<4?'#A1A1AA':'#FAFAFA',
+      scanY:s.scanY, simulateScan:()=>this.go('lobby'),
+      perks:[['✨','Jogos criados com IA'],['🎮','Todos os jogos'],['🔥','Categorias exclusivas'],['♾️','Partidas ilimitadas'],['🎨','Criação de jogos personalizados']].map(([e,n])=>({e,n})),
+      planMonthlyBorder:s.plan==='monthly'?'#FACC15':'transparent', planYearlyBorder:s.plan==='yearly'?'#FACC15':'transparent',
+      pickMonthly:()=>this.setState({plan:'monthly'}), pickYearly:()=>this.setState({plan:'yearly'}),
+      premiumBtn:s.plan==='yearly'?'Começar 7 dias grátis · R$ 99/ano':'Começar 7 dias grátis · R$ 14,90/mês',
+      isHome:s.screen==='home', isExplore:s.screen==='explore', isProfile:s.screen==='profile', isAI:s.screen==='ai', isDetail:s.screen==='detail', isCreate:s.screen==='create', isLobby:s.screen==='lobby', isReveal:s.screen==='reveal', isRound:s.screen==='round', isVote:s.screen==='vote', isResult:s.screen==='result', isRanking:s.screen==='ranking', isEnd:s.screen==='end',
+      showNav:['home','explore','profile'].includes(s.screen),
+      navHome:s.screen==='home'?'#FACC15':'#A1A1AA', navExplore:s.screen==='explore'?'#FACC15':'#A1A1AA', navProfile:s.screen==='profile'?'#FACC15':'#A1A1AA',
+      goHome:()=>this.go('home'), goExplore:()=>this.go('explore'), goProfile:()=>this.go('profile'), goAI:()=>this.go('ai'), goDetail:()=>this.go('detail'), goCreate:()=>this.go('create'), goLobby:()=>this.go('lobby'), goRound:()=>this.go('round'), goVote:()=>this.go('vote'), goResult:()=>this.go('result'), goRanking:()=>this.go('ranking'),
+      startGame:()=>{ if(canStart) this.go('reveal'); },
+      nextRound:()=>{ if(last) this.go('end'); else { this.setState({round:s.round+1}); this.go('reveal'); } },
+      nextLabel:last?'Ver resultado final':'Próxima rodada',
+      playAgain:()=>{ this.setState({round:1}); this.go('lobby'); },
+      openSheet:()=>this.setState({sheet:true}), closeSheet:()=>this.setState({sheet:false}), sheet:s.sheet,
+      moods:[['😂','Engraçado'],['🔥','Caótico'],['👀','Polêmico'],['❤️','Casais'],['🎉','Festa'],['👨‍👩‍👧','Família'],['⚽','Futebol']].map(([e,n])=>({e,n})),
+      exploreCats:[['🔥 Em alta',true],['😂 Engraçados'],['👀 Dedução'],['🎉 Festa'],['❤️ Casais'],['👨‍👩‍👧 Família'],['⚡ Rápidos']].map(([n,on])=>({n,bg:on?'#FAFAFA':'#19191F',fg:on?'#0F0F13':'#FAFAFA'})),
+      exploreGames:[
+        {n:'Impostor',cat:'Dedução',e:'👀',p:'3–12',t:'15 min',bg:'#7C3AED',fg:'#FAFAFA'},
+        {n:'Quem é mais provável?',cat:'Polêmico',e:'👉',p:'3+',t:'10 min',bg:'#FACC15',fg:'#0F0F13'},
+        {n:'Desafio secreto',cat:'Festa',e:'🕵️',p:'3+',t:'20 min',bg:'#22C55E',fg:'#0F0F13'},
+        {n:'Bomba-relógio',cat:'Caótico',e:'💣',p:'4+',t:'15 min',bg:'#EF4444',fg:'#FAFAFA'},
+        {n:'Verdade ou mito',cat:'Rápido',e:'⚡',p:'2+',t:'5 min',bg:'#A78BFA',fg:'#0F0F13'},
+        {n:'Casal perfeito',cat:'Casais',e:'❤️',p:'2–8',t:'20 min',bg:'#19191F',fg:'#FAFAFA'},
+      ],
+      history:[{n:'Impostor',d:'Ontem · 5 jogadores',e:'👀',bg:'#7C3AED',r:'🥇 1º',c:'#FACC15'},{n:'Desafio secreto',d:'Sábado · 7 jogadores',e:'🕵️',bg:'#22C55E',r:'3º',c:'#A1A1AA'},{n:'Quem é mais provável?',d:'Sexta · 4 jogadores',e:'👉',bg:'#FACC15',r:'2º',c:'#A1A1AA'}],
+      players:s.players, cat:s.cat, rounds:s.rounds, round:s.round,
+      incPlayers:()=>this.setState(p=>({players:Math.min(12,p.players+1)})), decPlayers:()=>this.setState(p=>({players:Math.max(3,p.players-1)})),
+      cats, roundOpts,
+      joinedPlayers, joinedLabel:total+(total>1?' jogadores conectados':' jogador conectado'), waiting:total<s.players,
+      startBg:canStart?'#7C3AED':'#27272F', startFg:canStart?'#FAFAFA':'#A1A1AA', startLabel:canStart?'Começar partida':'Mínimo 3 jogadores',
+      holdPct:s.holdPct, holdScale:1+s.holdPct/100*0.06, holdLabel:s.holdPct>0?'Continue segurando…':'Segure para revelar', notRevealed:!s.revealed, revealed:s.revealed,
+      revealBg:s.revealed?(role==='impostor'?'#1A0F14':'#0F0F13'):'#0F0F13',
+      isWordRole:role!=='impostor', isImpostorRole:role==='impostor', holdStart:this.holdStart, holdEnd:this.holdEnd,
+      timerLabel:Math.floor(s.timer/60)+':'+String(s.timer%60).padStart(2,'0'), timerDeg:Math.round(timerPct*360), timerColor, timerBtn:s.running?'Pausar':s.timer===0?'Acabou':'Iniciar',
+      toggleTimer:()=>{ if(s.running){ clearInterval(this.timerT); this.setState({running:false}); } else if(s.timer>0){ this.setState({running:true}); this.timerT=setInterval(()=>this.setState(p=>{ if(p.timer<=1){ clearInterval(this.timerT); return {timer:0,running:false}; } return {timer:p.timer-1}; }),1000); } },
+      resetTimer:()=>{ clearInterval(this.timerT); this.setState({timer:60,running:false}); },
+      order,
+      voteCards, notConfirmed:!s.confirmed, confirmed:s.confirmed,
+      confirmBg:s.vote===null?'#27272F':'#FACC15', confirmFg:s.vote===null?'#A1A1AA':'#0F0F13', confirmLabel:s.vote===null?'Escolha alguém':'Confirmar voto em '+voters[s.vote].n,
+      confirmVote:()=>{ if(s.vote!==null){ this.setState({confirmed:true}); this.go('waitvotes'); } },
+      isWaitVotes:s.screen==='waitvotes', votesIn:s.votesIn, votesTotal:5, votesDeg:Math.round(s.votesIn/5*360),
+      waitTitle:s.votesIn>=5?'Todos votaram!':'Aguardando votos…', waitFoot:s.votesIn>=5?'Revelando o resultado…':'Faltam '+(5-s.votesIn)+' — dá para trocar de ideia? Não. Voto é voto.',
+      voteStatus:voteStatusList.map(p=>({...p,op:p.done?1:.4,check:p.done?'flex':'none'})),
+      // convidado
+      isGuest:g, isHost:!g, toggleGuest:()=>this.setState({guest:!g}),
+      guestLabel:g?'👤 Vendo como convidado':'👑 Vendo como host', guestBorder:g?'#FACC15':'#27272F', guestColor:g?'#0F0F13':'#A1A1AA', guestBg:g?'#FACC15':'transparent',
+      lobbyTitle:g?'Você entrou 🎉':'Sala criada 🎉', lobbyLeave:g?'Sair da sala':'Fechar', leaveLobby:()=>this.go(g?'home':'create'),
+      youBadge:g?'Você':'Host', youBadgeBg:g?'#27272F':'#7C3AED',
+      // pausa / sair
+      paused:s.paused, pauseMain:!s.quitAsk, pauseQuit:s.quitAsk,
+      pauseGame:()=>{ clearInterval(this.timerT); this.setState({paused:true,quitAsk:false,running:false}); }, resumeGame:()=>this.setState({paused:false}),
+      askQuit:()=>this.setState({quitAsk:true}), cancelQuit:()=>this.setState({quitAsk:false}),
+      confirmQuit:()=>{ this.go('home'); this.showToast('👋','Você saiu da partida','#27272F','#FAFAFA'); },
+      quitTitle:g?'Sair da partida?':'Encerrar para todos?', quitSub:g?'Os outros continuam sem você. Você perde os pontos desta rodada.':'Você é o host: sair encerra a sala 4827 para os '+(s.joined+1)+' jogadores.',
+      // conexão
+      offline:s.offline, reconnecting:!s.offlineFailed, reconnectFailed:s.offlineFailed, offlineSecs:s.offlineSecs, offlinePct:Math.round((30-s.offlineSecs)/6*100),
+      simOffline:this.simOffline, retryOffline:this.simOffline, leaveOffline:()=>this.go('home'),
+      toast:!!s.toast, toastIcon:s.toast?s.toast.icon:'', toastMsg:s.toast?s.toast.msg:'', toastBg:s.toast?s.toast.bg:'#22C55E', toastFg:s.toast?s.toast.fg:'#0F0F13',
+      // abort
+      isAbort:s.screen==='abort', simHostLeft:()=>{ this.setState({abortReason:'host'}); this.go('abort'); }, simFewPlayers:()=>{ this.setState({abortReason:'few'}); this.go('abort'); },
+      abortTitle:abortHost?'O host saiu da sala':'Faltou gente',
+      abortSub:abortHost?'André encerrou a partida. Vocês podem continuar juntos em uma sala nova — o placar desta noite fica salvo.':'O Impostor precisa de pelo menos 3 jogadores. Chame mais alguém ou escolha um jogo para 2.',
+      abortPlayers:this.P.slice(1,abortHost?5:3), abortCount:abortHost?'4 ainda aqui':'2 na sala',
+      abortPrimaryLabel:abortHost?'Criar nova sala com eles':'Convidar mais amigos', abortPrimary:()=>this.go(abortHost?'create':'friends'),
+      // esqueci a senha
+      isForgot:s.screen==='forgot', goForgot:()=>this.go('forgot'), goAuth:()=>this.go('auth'),
+      forgotNotSent:!s.forgotSent, forgotSent:s.forgotSent, forgotEmail:s.forgotEmail, forgotError:s.forgotErr,
+      setForgotEmail:(e)=>this.setState({forgotEmail:e.target.value,forgotErr:false}), focusForgot:()=>this.setState({focus:'forgot'}),
+      forgotBorder:s.forgotErr?'#EF4444':s.focus==='forgot'?'#A78BFA':'#27272F',
+      forgotBtnBg:s.forgotEmail?'#7C3AED':'#27272F', forgotBtnFg:s.forgotEmail?'#FAFAFA':'#A1A1AA',
+      sendForgot:()=>{ if(/^\S+@\S+\.\S+$/.test(s.forgotEmail)) this.setState({forgotSent:true}); else this.setState({forgotErr:true}); },
+      resendForgot:()=>this.showToast('✓','Link reenviado'),
+      // perfil
+      profileName:s.pName, profileUser:s.pUser, profileInitial:me.i, avatarBg:me.bg, avatarFg:me.fg,
+      isEditProfile:s.screen==='editprofile', goEditProfile:()=>this.go('editprofile'),
+      avatarColors:['#FACC15','#7C3AED','#22C55E','#EF4444','#A78BFA','#27272F'].map(v=>({v,ring:s.pColor===v?'#FAFAFA':'transparent',pick:()=>this.setState({pColor:v})})),
+      setProfileName:(e)=>this.setState({pName:e.target.value}), setProfileUser:(e)=>this.setState({pUser:e.target.value.replace(/[^a-z0-9_.]/gi,'').toLowerCase()}),
+      focusPName:()=>this.setState({focus:'pname'}), focusPUser:()=>this.setState({focus:'puser'}),
+      pNameBorder:s.focus==='pname'?'#A78BFA':'#27272F', pUserBorder:s.focus==='puser'?'#A78BFA':'#27272F',
+      userAvail:s.pUser.length<3?'mín. 3':s.pUser==='andre'?'em uso':'disponível', userAvailColor:s.pUser.length<3||s.pUser==='andre'?'#EF4444':'#22C55E',
+      saveProfile:()=>{ this.go('profile'); this.showToast('✓','Perfil atualizado'); },
+      // config
+      isSettings:s.screen==='settings', goSettings:()=>this.go('settings'),
+      toggles:togglesDef.map(([k,e,n,d])=>({e,n,d,bg:s.settings[k]?'#7C3AED':'#27272F',knob:s.settings[k]?'23px':'3px',flip:()=>this.setState({settings:{...s.settings,[k]:!s.settings[k]}})})),
+      // amigos
+      isFriends:s.screen==='friends', goFriends:()=>this.go('friends'),
+      inviteLabel:s.inviteCopied?'Copiado ✓':'Copiar link', copyInvite:()=>{ this.setState({inviteCopied:true}); this.showToast('✓','jogae.app/vinicosta copiado'); setTimeout(()=>this.setState({inviteCopied:false}),2000); },
+      friendsOnline:[{...this.P[0],s:'Impostor · sala 4827'},{...this.P[1],s:'Desafio secreto · sala 9130'}],
+      friendsAll:[{...this.P[2],s:'@lucasm · 12 partidas juntos',w:'3 🏆'},{...this.P[3],s:'@pedrão · 9 partidas juntos',w:'2 🏆'},{...this.P[4],s:'@joaov · 7 partidas juntos',w:'1 🏆'},{n:'Bia',i:'B',bg:'#27272F',fg:'#FAFAFA',s:'@biars · 4 partidas juntos',w:'1 🏆'},{n:'Rafa',i:'R',bg:'#FACC15',fg:'#0F0F13',s:'@rafinha · 2 partidas juntos',w:'—'}],
+      // histórico
+      isHistory:s.screen==='history', goHistory:()=>this.go('history'),
+      histFilters:['Todas','Vitórias','Dedução','Festa','Polêmico','Caótico'].map(n=>({n,bg:s.histFilter===n?'#FAFAFA':'#19191F',fg:s.histFilter===n?'#0F0F13':'#FAFAFA',pick:()=>this.setState({histFilter:n})})),
+      histGroups,
+      phase0:s.phase===0, phase1:s.phase===1, phase2:s.phase===2,
+      resultBg:s.phase===2?(caught?'#166534':'#7F1D1D'):'#0F0F13',
+      outcomeEmoji:caught?'🎉':'💀', outcomeTitle:caught?'Vocês acertaram!':'O impostor escapou', outcomeSub:caught?'Lucas era o impostor. A palavra era PIZZA.':'Lucas era inocente. O impostor era Pedro.',
+      tally, roundPts:caught?'+200 para o grupo':'+300 para Pedro',
+      ranking,
+      jumpList:jump.map(([n,k])=>({n,go:()=>this.go(k),border:s.screen===k?'#FACC15':'#27272F',color:s.screen===k?'#FACC15':'#A1A1AA'})),
+    };
+  }
+}
+</script>
+</body>
+</html>

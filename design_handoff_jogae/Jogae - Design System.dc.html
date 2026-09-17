@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+html{background:#08080B}body{margin:0;min-height:100%;background:#08080B;color:#FAFAFA;font-family:"DM Sans",system-ui,sans-serif}
+a{color:#A78BFA}a:hover{color:#FACC15}
+@keyframes bora-spin{to{transform:rotate(360deg)}}
+@keyframes bora-blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes bora-shimmer{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}
+</style>
+</helmet>
+
+<div style="padding:40px 44px 8px">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:14px"><div style="display:flex;align-items:center;gap:12px"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><span style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.3px">Joga<span style="color:#FACC15">ê</span></span></div><span style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;color:#A1A1AA">Design System</span></div>
+    <div style="font:500 14px 'DM Sans',sans-serif;color:#A1A1AA"><a href="Jogae - Prototipo.dc.html" style="text-decoration:none">← Protótipo</a></div>
+  </div>
+  <div style="font:400 13px/1.55 'DM Sans',sans-serif;color:#A1A1AA;max-width:720px;margin-top:10px">Fundamentos e componentes usados no protótipo. Dark mode como padrão; roxo é marca, amarelo é ação/destaque, cada jogo tem uma cor própria. Raio 24 em cards, 18 em botões, 99 em chips.</div>
+</div>
+
+<div style="padding:24px 44px 60px;display:flex;flex-direction:column;gap:44px;max-width:1500px">
+
+  <!-- LOGO -->
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:14px;color:#A1A1AA">00 · Logo · o olho que sabe de tudo</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;align-items:stretch">
+      <div style="background:#19191F;border-radius:24px;padding:28px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:22px;min-height:220px">
+        <div style="display:flex;align-items:center;gap:16px"><svg viewBox="0 0 40 40" width="64" height="64" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><span style="font:800 64px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px">Joga<span style="color:#FACC15">ê</span></span></div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA;text-align:center">Assinatura horizontal · símbolo + wordmark. O "ê" amarelo é a única cor no texto.</div>
+      </div>
+      <div style="background:#FAFAFA;color:#0F0F13;border-radius:24px;padding:28px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:22px;min-height:220px">
+        <div style="display:flex;align-items:center;gap:16px"><svg viewBox="0 0 40 40" width="64" height="64" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><span style="font:800 64px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px">Joga<span style="color:#7C3AED">ê</span></span></div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#71717A;text-align:center">Sobre fundo claro o "ê" vira roxo — amarelo em branco não tem contraste.</div>
+      </div>
+      <div style="background:#7C3AED;border-radius:24px;padding:28px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:22px;min-height:220px">
+        <div style="display:flex;align-items:center;gap:16px"><svg viewBox="0 0 40 40" width="64" height="64" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><circle cx="23.5" cy="20" r="6.5" fill="#0F0F13"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></svg><span style="font:800 64px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px">Joga<span style="color:#FACC15">ê</span></span></div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:rgba(250,250,250,.75);text-align:center">Sobre roxo o símbolo perde a caixa — só o olho.</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px">
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><svg viewBox="0 0 40 40" width="120" height="120" aria-hidden="true"><rect width="40" height="40" rx="9" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Ícone do app · 1024</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><svg viewBox="0 0 40 40" width="120" height="120" aria-hidden="true"><rect width="40" height="40" rx="9" fill="#0F0F13"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#7C3AED"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Ícone · dark alt</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><svg viewBox="0 0 40 40" width="120" height="120" aria-hidden="true"><rect width="40" height="40" rx="9" fill="#FACC15"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#0F0F13"></ellipse><circle cx="23" cy="20" r="5.5" fill="#FAFAFA"></circle><circle cx="25" cy="18" r="1.8" fill="#7C3AED"></circle></svg><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Ícone · amarelo alt</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:120px;height:120px;border-radius:26px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 78px 'Barlow Condensed',sans-serif;letter-spacing:-2px">J<span style="color:#FACC15">ê</span></div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Monograma · avatar / favicon</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="display:flex;gap:10px;align-items:center;height:120px"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><svg viewBox="0 0 40 40" width="28" height="28" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><svg viewBox="0 0 40 40" width="20" height="20" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg></div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Símbolo · 40 / 28 / 20</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:120px;height:120px;border-radius:26px;background:#0F0F13;border:1px solid #27272F;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px"><svg viewBox="0 0 40 40" width="44" height="44" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><span style="font:800 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Joga<span style="color:#FACC15">ê</span></span></div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Splash · empilhado</div></div>
+    </div>
+  </div>
+
+  <!-- CORES -->
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:14px;color:#A1A1AA">01 · Cores</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px">
+      <sc-for list="{{ colors }}" as="c" hint-placeholder-count="10">
+        <div style="background:{{ c.v }};color:{{ c.fg }};border-radius:18px;height:110px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid rgba(255,255,255,.06)">
+          <div style="font:700 14px 'DM Sans',sans-serif">{{ c.n }}</div>
+          <div style="font:600 12px ui-monospace,Menlo,monospace;opacity:.8">{{ c.v }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+      <sc-for list="{{ gameColors }}" as="g" hint-placeholder-count="5">
+        <div style="display:flex;align-items:center;gap:10px;background:#19191F;border-radius:99px;padding:8px 14px 8px 8px"><div style="width:26px;height:26px;border-radius:50%;background:{{ g.v }}"></div><div style="font:600 13px 'DM Sans',sans-serif">{{ g.n }}</div></div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- TIPOGRAFIA -->
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:14px;color:#A1A1AA">02 · Tipografia</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
+      <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Display · Barlow Condensed 800 · caixa alta</div>
+        <div style="font:800 72px/.9 'Barlow Condensed',sans-serif;text-transform:uppercase">Bora jogar?</div>
+        <div style="font:800 44px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Título de tela 44</div>
+        <div style="font:800 28px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Título de card 28</div>
+        <div style="font:700 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Botão 22</div>
+        <div style="font:800 72px/1 'Barlow Condensed',sans-serif;color:#FACC15;letter-spacing:6px">4827</div>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Texto · DM Sans</div>
+        <div style="font:500 17px/1.45 'DM Sans',sans-serif">Corpo 17/1.45 — Todos recebem uma palavra secreta, menos o impostor. Dê pistas sem entregar demais.</div>
+        <div style="font:600 16px 'DM Sans',sans-serif">Rótulo 16 semibold — Jogadores</div>
+        <div style="font:400 13px/1.5 'DM Sans',sans-serif;color:#A1A1AA">Apoio 13 muted — Só o host pode iniciar</div>
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Overline 11 · espaçado · caixa alta</div>
+        <div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#FACC15;color:#0F0F13;padding:6px 9px;border-radius:99px;align-self:flex-start">Badge 10</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ILUSTRAÇÕES -->
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:14px;color:#A1A1AA">03 · Ilustrações · formas chapadas, 2–3 cores, olhar expressivo</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px">
+      <div style="background:#7C3AED;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px"><svg viewBox="0 0 200 120" style="width:80%" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><g style="animation:bora-blink 4s infinite;transform-origin:105px 60px"><circle cx="76" cy="62" r="17" fill="#0F0F13"></circle><circle cx="166" cy="62" r="17" fill="#0F0F13"></circle><circle cx="82" cy="56" r="5" fill="#FAFAFA"></circle><circle cx="172" cy="56" r="5" fill="#FAFAFA"></circle></g></svg><div style="font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Olhos · Impostor</div></div>
+      <div style="background:#0F0F13;border:1px solid #27272F;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px"><svg viewBox="0 0 200 120" style="width:80%" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="60" cy="62" r="17" fill="#EF4444"></circle><circle cx="150" cy="62" r="17" fill="#EF4444"></circle><circle cx="60" cy="62" r="8" fill="#0F0F13"></circle><circle cx="150" cy="62" r="8" fill="#0F0F13"></circle></svg><div style="font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;color:#EF4444">Olhos · Perigo</div></div>
+      <div style="background:#22C55E;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px;color:#0F0F13"><svg viewBox="0 0 90 50" style="width:80%" aria-hidden="true"><path d="M2 14 Q45 -6 88 14 L82 40 Q45 52 8 40 Z" fill="#0F0F13"></path><ellipse cx="30" cy="26" rx="12" ry="7" fill="#22C55E"></ellipse><ellipse cx="60" cy="26" rx="12" ry="7" fill="#22C55E"></ellipse></svg><div style="font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Máscara · Secreto</div></div>
+      <div style="background:#FACC15;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px;color:#0F0F13"><svg viewBox="0 0 80 60" style="width:70%" aria-hidden="true"><rect x="4" y="24" width="52" height="20" rx="10" fill="#0F0F13"></rect><path d="M50 20 L78 34 L50 48 Z" fill="#0F0F13"></path><circle cx="14" cy="34" r="4" fill="#FACC15"></circle></svg><div style="font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Seta · Apontar</div></div>
+      <div style="background:#19191F;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px"><svg viewBox="0 0 60 60" style="width:55%" aria-hidden="true"><rect x="4" y="4" width="52" height="52" rx="14" fill="#FACC15"></rect><circle cx="18" cy="18" r="5" fill="#0F0F13"></circle><circle cx="42" cy="18" r="5" fill="#0F0F13"></circle><circle cx="30" cy="30" r="5" fill="#0F0F13"></circle><circle cx="18" cy="42" r="5" fill="#0F0F13"></circle><circle cx="42" cy="42" r="5" fill="#0F0F13"></circle></svg><div style="font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Dado · Sorteio</div></div>
+      <div style="background:#19191F;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px"><svg viewBox="0 0 60 60" style="width:55%" aria-hidden="true"><path d="M16 6h28v14a14 14 0 0 1-28 0z" fill="#FACC15"></path><path d="M10 10h6v8a6 6 0 0 1-6-6zM44 10h6v2a6 6 0 0 1-6 6z" fill="#FACC15"></path><rect x="26" y="32" width="8" height="10" fill="#FACC15"></rect><rect x="16" y="42" width="28" height="8" rx="3" fill="#FACC15"></rect></svg><div style="font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Troféu · Placar</div></div>
+      <div style="background:#EF4444;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px"><svg viewBox="0 0 60 60" style="width:55%" aria-hidden="true"><circle cx="28" cy="34" r="22" fill="#0F0F13"></circle><rect x="24" y="4" width="8" height="12" rx="2" fill="#0F0F13"></rect><path d="M28 4 Q40 -2 46 8" stroke="#FACC15" stroke-width="3" fill="none"></path><circle cx="20" cy="28" r="4" fill="#EF4444" opacity=".6"></circle></svg><div style="font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Bomba · Caos</div></div>
+      <div style="background:#7C3AED;border-radius:24px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:14px"><svg viewBox="0 0 40 40" style="width:60%" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><circle cx="23.5" cy="20" r="6.5" fill="#0F0F13"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></svg><div style="font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Olho · Símbolo Jogaê</div></div>
+    </div>
+  </div>
+
+  <!-- BOTÕES -->
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:14px;color:#A1A1AA">04 · Botões · 58px, raio 18</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;cursor:pointer" style-active="transform:scale(.97)">Criar partida</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Primário · default</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#6D28D9;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;transform:scale(.97)">Criar partida</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Primário · pressed (scale .97)</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#27272F;color:#A1A1AA;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Mínimo 3 jogadores</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Disabled · diz o porquê</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;gap:10px;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px"><div style="width:20px;height:20px;border-radius:50%;border:3px solid rgba(250,250,250,.3);border-top-color:#FAFAFA;animation:bora-spin .8s linear infinite"></div>Criando sala</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Loading</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Confirmar voto</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Ação · amarelo (votar, revelar)</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Jogar novamente</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Sobre fundo colorido</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#19191F;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Como jogar</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Secundário</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">✓ Voto confirmado</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Success</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#EF4444;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Sair da sala</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Destrutivo</div></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="height:58px;border-radius:18px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:62%;background:#FACC15"></div><span style="position:relative">Continue segurando…</span></div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Hold-to-reveal · progresso 62%</div></div>
+    </div>
+  </div>
+
+  <!-- INPUTS / CHIPS / STEPPER / TABS -->
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:14px;color:#A1A1AA">05 · Inputs, chips, stepper, tabs</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+      <div style="background:#19191F;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Input</div>
+        <div style="background:#0F0F13;border:1px solid #27272F;border-radius:16px;padding:16px;font:400 16px 'DM Sans',sans-serif;color:#A1A1AA">Seu nome</div>
+        <div style="background:#0F0F13;border:2px solid #7C3AED;border-radius:16px;padding:15px;font:400 16px 'DM Sans',sans-serif">Vini<span style="display:inline-block;width:2px;height:16px;background:#A78BFA;vertical-align:-2px;margin-left:1px"></span></div>
+        <div style="background:#0F0F13;border:2px solid #EF4444;border-radius:16px;padding:15px;font:400 16px 'DM Sans',sans-serif">482</div>
+        <div style="font:500 12px 'DM Sans',sans-serif;color:#EF4444;margin-top:-6px">Código precisa ter 4 dígitos</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px"><div style="height:64px;border-radius:16px;background:#0F0F13;border:2px solid #7C3AED;display:flex;align-items:center;justify-content:center;font:800 32px 'Barlow Condensed',sans-serif">4</div><div style="height:64px;border-radius:16px;background:#0F0F13;border:2px solid #7C3AED;display:flex;align-items:center;justify-content:center;font:800 32px 'Barlow Condensed',sans-serif">8</div><div style="height:64px;border-radius:16px;background:#0F0F13;border:2px solid #A78BFA;display:flex;align-items:center;justify-content:center"><div style="width:2px;height:24px;background:#A78BFA"></div></div><div style="height:64px;border-radius:16px;background:#0F0F13;border:1px solid #27272F"></div></div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Entrada por código · 4 dígitos</div>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Chips</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="background:#0F0F13;border:1px solid #27272F;border-radius:99px;padding:11px 15px;font:600 15px 'DM Sans',sans-serif">🍔 Comidas</div>
+          <div style="background:#7C3AED;border:1px solid #7C3AED;border-radius:99px;padding:11px 15px;font:600 15px 'DM Sans',sans-serif">🎬 Filmes</div>
+          <div style="background:#0F0F13;border:1px solid #27272F;border-radius:99px;padding:11px 15px;font:600 15px 'DM Sans',sans-serif;color:#52525B">🔒 Exclusiva</div>
+          <div style="background:#FAFAFA;color:#0F0F13;border-radius:99px;padding:11px 15px;font:600 15px 'DM Sans',sans-serif">🔥 Em alta</div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">default · selecionado · bloqueado (premium) · filtro ativo</div>
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-top:8px">Stepper</div>
+        <div style="display:flex;align-items:center;gap:14px"><div style="width:48px;height:48px;border-radius:50%;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 26px 'Barlow Condensed',sans-serif">−</div><div style="font:800 40px/1 'Barlow Condensed',sans-serif;min-width:44px;text-align:center">6</div><div style="width:48px;height:48px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 26px 'Barlow Condensed',sans-serif">+</div><div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">← pressed à direita</div></div>
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-top:8px">Tabs / segmented</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:#0F0F13;padding:6px;border-radius:18px"><div style="height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font:800 24px 'Barlow Condensed',sans-serif">3</div><div style="height:48px;border-radius:13px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 24px 'Barlow Condensed',sans-serif">5</div><div style="height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;font:800 24px 'Barlow Condensed',sans-serif">10</div></div>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Avatar · Badges</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:64px;height:64px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 28px 'Barlow Condensed',sans-serif">A</div>
+          <div style="width:44px;height:44px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">C</div>
+          <div style="width:34px;height:34px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 15px 'Barlow Condensed',sans-serif">L</div>
+          <div style="width:44px;height:44px;border-radius:50%;background:#A78BFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif;position:relative">P<div style="position:absolute;right:-2px;bottom:-2px;width:16px;height:16px;border-radius:50%;background:#22C55E;border:2px solid #19191F"></div></div>
+          <div style="width:44px;height:44px;border-radius:50%;border:1px dashed #A1A1AA"></div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">64 · 44 · 34 · online · vazio. Cor por jogador, inicial em Barlow.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <span style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#7C3AED;padding:6px 9px;border-radius:99px">Host</span>
+          <span style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#FACC15;color:#0F0F13;padding:6px 9px;border-radius:99px">Em alta</span>
+          <span style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#27272F;padding:6px 9px;border-radius:99px">Dedução</span>
+          <span style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#22C55E;color:#0F0F13;padding:6px 9px;border-radius:99px">Novo</span>
+          <span style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#0F0F13;border:1px solid #A78BFA;color:#A78BFA;padding:5px 9px;border-radius:99px">✨ Premium</span>
+        </div>
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-top:8px">Navegação</div>
+        <div style="display:flex;justify-content:space-around;align-items:center;padding:10px 0 6px;background:#0F0F13;border-radius:18px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#FACC15"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l7-7 7 7v8H5z"></path></svg><span style="font:700 12px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.6px">Jogar</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A1A1AA"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="8" height="8" rx="2"></rect><rect x="13" y="3" width="8" height="8" rx="2"></rect><rect x="3" y="13" width="8" height="8" rx="2"></rect><rect x="13" y="13" width="8" height="8" rx="2"></rect></svg><span style="font:700 12px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.6px">Explorar</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A1A1AA"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg><span style="font:700 12px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.6px">Perfil</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARDS -->
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:14px;color:#A1A1AA">06 · Cards de jogo, jogador, votação, ranking, secret card</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:#7C3AED;border-radius:28px;padding:22px;min-height:220px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden">
+          <svg viewBox="0 0 200 120" style="position:absolute;right:-10px;top:14px;width:180px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="76" cy="62" r="17" fill="#0F0F13"></circle><circle cx="166" cy="62" r="17" fill="#0F0F13"></circle></svg>
+          <div style="font:800 48px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Impostor</div>
+          <div style="font:500 15px 'DM Sans',sans-serif;opacity:.85;margin-top:6px">Todo mundo sabe a palavra. Menos um.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span style="font:600 13px 'DM Sans',sans-serif;opacity:.8">3–12 · 10–20 min</span><span style="background:#FAFAFA;color:#0F0F13;border-radius:99px;padding:12px 18px;font:700 17px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Jogar agora</span></div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Game card · destaque</div>
+        <div style="background:#19191F;border-radius:24px;padding:22px;min-height:180px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;text-align:center">
+          <div style="width:56px;height:56px;border-radius:18px;background:#27272F;display:flex;align-items:center;justify-content:center;font-size:24px">🎲</div>
+          <div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">Nenhuma partida ainda</div>
+          <div style="font:400 13px 'DM Sans',sans-serif;color:#A1A1AA">Sua primeira rodada aparece aqui.</div>
+          <div style="background:#7C3AED;border-radius:99px;padding:10px 16px;font:700 16px 'Barlow Condensed',sans-serif;text-transform:uppercase">Bora jogar</div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Empty state</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px;border:1px solid #7C3AED"><div style="width:40px;height:40px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">V</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">Você</div><span style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#7C3AED;padding:5px 8px;border-radius:99px">Host</span></div>
+          <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px"><div style="width:40px;height:40px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">A</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">André</div><div style="width:24px;height:24px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div></div>
+          <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px;opacity:.6"><div style="width:40px;height:40px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">L</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">Lucas</div><div style="font:500 12px 'DM Sans',sans-serif;color:#EF4444">Desconectou</div></div>
+          <div style="display:flex;align-items:center;gap:12px;border:1px dashed #27272F;border-radius:16px;padding:12px 14px;color:#A1A1AA"><div style="width:40px;height:40px;border-radius:50%;border:1px dashed #A1A1AA"></div><div style="flex:1;font:500 15px 'DM Sans',sans-serif">Aguardando…</div></div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Player card · host · conectado · erro · vazio</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:#19191F;border:2px solid transparent;border-radius:24px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px"><div style="width:64px;height:64px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 28px 'Barlow Condensed',sans-serif">C</div><div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">Carol</div></div>
+          <div style="background:#27272F;border:2px solid #FACC15;border-radius:24px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;transform:scale(1.03)"><div style="width:64px;height:64px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 28px 'Barlow Condensed',sans-serif">L</div><div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">Lucas</div><div style="position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div></div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Voting · default · selecionado</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:12px;background:#27272F;border-radius:20px;padding:14px 16px"><div style="width:30px;font:800 22px 'Barlow Condensed',sans-serif;text-align:center">🥇</div><div style="width:44px;height:44px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">A</div><div style="flex:1"><div style="font:700 18px 'DM Sans',sans-serif">André</div><div style="font:500 12px 'DM Sans',sans-serif;color:#22C55E">+250 nesta rodada</div></div><div style="font:800 26px 'Barlow Condensed',sans-serif">1.250<span style="font-size:14px;color:#A1A1AA;margin-left:3px">pts</span></div></div>
+          <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:20px;padding:14px 16px"><div style="width:30px;font:800 22px 'Barlow Condensed',sans-serif;text-align:center;color:#A1A1AA">4º</div><div style="width:44px;height:44px;border-radius:50%;background:#A78BFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">P</div><div style="flex:1"><div style="font:700 18px 'DM Sans',sans-serif">Pedro</div><div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA">+0 nesta rodada</div></div><div style="font:800 26px 'Barlow Condensed',sans-serif">720<span style="font-size:14px;color:#A1A1AA;margin-left:3px">pts</span></div></div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Ranking · líder · demais</div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:140px;height:190px;border-radius:20px;background:#7C3AED;position:relative;overflow:hidden;flex:none"><div style="position:absolute;inset:10px;border-radius:12px;border:2px solid rgba(250,250,250,.25)"></div><svg viewBox="0 0 100 100" style="position:absolute;left:50%;top:50%;width:70px;height:70px;transform:translate(-50%,-50%)" aria-hidden="true"><ellipse cx="50" cy="50" rx="42" ry="26" fill="#FAFAFA"></ellipse><circle cx="50" cy="52" r="14" fill="#0F0F13"></circle><circle cx="55" cy="47" r="4" fill="#FAFAFA"></circle></svg><div style="position:absolute;top:14px;left:0;right:0;text-align:center;font:800 11px 'Barlow Condensed',sans-serif;letter-spacing:2px;text-transform:uppercase;opacity:.8">Jogaê</div><div style="position:absolute;left:0;right:0;bottom:0;height:6px;background:rgba(15,15,19,.35)"><div style="height:100%;background:#FACC15;width:40%"></div></div></div>
+          <div style="flex:1;border-radius:20px;background:#FAFAFA;color:#0F0F13;padding:20px 14px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;min-height:150px;justify-content:center"><div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#71717A">Sua palavra</div><div style="font-size:32px;line-height:1">🍕</div><div style="font:800 36px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Pizza</div></div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Secret card · fechado (40% segurado) · aberto</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:14px;color:#A1A1AA">07 · Timer, progresso, toast, modal, bottom sheet, loading, erro</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;align-items:start">
+      <div style="background:#19191F;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Timer · 3 estados</div>
+        <div style="display:flex;gap:14px">
+          <div style="width:84px;height:84px;border-radius:50%;background:conic-gradient(#7C3AED 300deg, #27272F 0);display:flex;align-items:center;justify-content:center"><div style="width:68px;height:68px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;font:800 26px 'Barlow Condensed',sans-serif">0:50</div></div>
+          <div style="width:84px;height:84px;border-radius:50%;background:conic-gradient(#FACC15 110deg, #27272F 0);display:flex;align-items:center;justify-content:center"><div style="width:68px;height:68px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;font:800 26px 'Barlow Condensed',sans-serif">0:18</div></div>
+          <div style="width:84px;height:84px;border-radius:50%;background:conic-gradient(#EF4444 40deg, #27272F 0);display:flex;align-items:center;justify-content:center"><div style="width:68px;height:68px;border-radius:50%;background:#19191F;display:flex;align-items:center;justify-content:center;font:800 26px 'Barlow Condensed',sans-serif;color:#EF4444">0:07</div></div>
+        </div>
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-top:6px">Progresso · rodadas</div>
+        <div style="display:flex;gap:6px"><div style="flex:1;height:6px;border-radius:99px;background:#7C3AED"></div><div style="flex:1;height:6px;border-radius:99px;background:#7C3AED"></div><div style="flex:1;height:6px;border-radius:99px;background:#FACC15"></div><div style="flex:1;height:6px;border-radius:99px;background:#27272F"></div><div style="flex:1;height:6px;border-radius:99px;background:#27272F"></div></div>
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-top:6px">Barra de votos</div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:64px;font:600 15px 'DM Sans',sans-serif">Lucas</div><div style="flex:1;height:12px;border-radius:99px;background:#27272F;overflow:hidden"><div style="height:100%;border-radius:99px;background:#FACC15;width:100%"></div></div><div style="font:800 18px 'Barlow Condensed',sans-serif;width:56px;text-align:right">4 votos</div></div>
+        <div style="display:flex;align-items:center;gap:12px"><div style="width:64px;font:600 15px 'DM Sans',sans-serif">André</div><div style="flex:1;height:12px;border-radius:99px;background:#27272F;overflow:hidden"><div style="height:100%;border-radius:99px;background:rgba(250,250,250,.6);width:25%"></div></div><div style="font:800 18px 'Barlow Condensed',sans-serif;width:56px;text-align:right">1 voto</div></div>
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA;margin-top:6px">Loading · skeleton</div>
+        <div style="display:flex;gap:10px;align-items:center;animation:bora-shimmer 1.4s infinite"><div style="width:44px;height:44px;border-radius:50%;background:#27272F"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px"><div style="height:12px;border-radius:6px;background:#27272F;width:60%"></div><div style="height:10px;border-radius:5px;background:#27272F;width:35%"></div></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px;background:#FAFAFA;color:#0F0F13;border-radius:16px;padding:12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.5)"><div style="width:28px;height:28px;border-radius:50%;background:#22C55E;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div><div style="flex:1;font:600 15px 'DM Sans',sans-serif">Carol entrou na sala</div></div>
+        <div style="display:flex;align-items:center;gap:12px;background:#FAFAFA;color:#0F0F13;border-radius:16px;padding:12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.5)"><div style="width:28px;height:28px;border-radius:50%;background:#EF4444;color:#FAFAFA;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">!</div><div style="flex:1;font:600 15px 'DM Sans',sans-serif">Sem conexão. Tentando de novo…</div></div>
+        <div style="display:flex;align-items:center;gap:12px;background:#7C3AED;border-radius:16px;padding:12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.5)"><div style="font-size:18px">🏆</div><div style="flex:1;font:600 15px 'DM Sans',sans-serif">Conquista: Mestre do disfarce</div></div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Toast · sucesso · erro · conquista</div>
+        <div style="background:#19191F;border-radius:28px;padding:24px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center;border:1px solid #27272F">
+          <div style="font-size:36px">👋</div>
+          <div style="font:800 28px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Sair da partida?</div>
+          <div style="font:400 14px/1.4 'DM Sans',sans-serif;color:#A1A1AA">Os outros jogadores continuam. Você perde os pontos desta rodada.</div>
+          <div style="display:flex;gap:8px;width:100%;margin-top:6px"><div style="flex:1;height:52px;border-radius:16px;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase">Ficar</div><div style="flex:1;height:52px;border-radius:16px;background:#EF4444;display:flex;align-items:center;justify-content:center;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase">Sair</div></div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Modal · confirmação destrutiva</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="background:#0F0F13;border-radius:28px;overflow:hidden;border:1px solid #27272F">
+          <div style="height:70px;background:rgba(15,15,19,.6);display:flex;align-items:flex-end;padding:0 20px 10px;font:500 12px 'DM Sans',sans-serif;color:#52525B">conteúdo atrás · scrim 60%</div>
+          <div style="background:#19191F;border-radius:28px 28px 0 0;padding:12px 20px 24px;display:flex;flex-direction:column;gap:12px"><div style="width:40px;height:4px;border-radius:99px;background:#27272F;align-self:center"></div><div style="font:800 26px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Como jogar</div><div style="display:flex;gap:12px"><div style="width:32px;height:32px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 16px 'Barlow Condensed',sans-serif;flex:none">1</div><div style="font:400 14px/1.4 'DM Sans',sans-serif">Todos recebem a mesma palavra. Um recebe apenas "impostor".</div></div><div style="height:48px;border-radius:16px;background:#27272F;display:flex;align-items:center;justify-content:center;font:700 18px 'Barlow Condensed',sans-serif;text-transform:uppercase">Entendi</div></div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Bottom sheet</div>
+        <div style="background:#19191F;border-radius:24px;padding:22px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;text-align:center;border:1px solid #EF4444">
+          <svg viewBox="0 0 200 120" style="width:110px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="60" cy="72" r="17" fill="#0F0F13"></circle><circle cx="150" cy="72" r="17" fill="#0F0F13"></circle></svg>
+          <div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">Sala não encontrada</div>
+          <div style="font:400 13px 'DM Sans',sans-serif;color:#A1A1AA">Confira o código 4827 com o host ou peça um novo.</div>
+          <div style="background:#27272F;border-radius:99px;padding:10px 16px;font:700 16px 'Barlow Condensed',sans-serif;text-transform:uppercase">Tentar de novo</div>
+        </div>
+        <div style="font:500 11px 'DM Sans',sans-serif;color:#A1A1AA">Error state · os olhos olham para baixo</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    return {
+      colors:[['Primary','#7C3AED','#FAFAFA'],['Primary Light','#A78BFA','#0F0F13'],['Accent','#FACC15','#0F0F13'],['Background','#0F0F13','#FAFAFA'],['Surface','#19191F','#FAFAFA'],['Surface Light','#27272F','#FAFAFA'],['Text','#FAFAFA','#0F0F13'],['Muted','#A1A1AA','#0F0F13'],['Success','#22C55E','#0F0F13'],['Danger','#EF4444','#FAFAFA']].map(([n,v,fg])=>({n,v,fg})),
+      gameColors:[['Impostor · roxo','#7C3AED'],['Mais provável · amarelo','#FACC15'],['Desafio secreto · verde','#22C55E'],['Bomba-relógio · vermelho','#EF4444'],['Rápidos · lilás','#A78BFA']].map(([n,v])=>({n,v})),
+    };
+  }
+}
+</script>
+</body>
+</html>
