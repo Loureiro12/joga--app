@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Jogaê",
+    "NSCameraUsageDescription": "O Jogaê usa a câmera para ler o QR Code da sala."
+  }
+}
