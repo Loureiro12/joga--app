@@ -2,7 +2,7 @@
 
 App mobile de jogos sociais: o host cria uma sala, o grupo entra pelo próprio celular e o app conduz papéis secretos, rodadas, votação e placar. Expo SDK 57 · React Native · TypeScript · expo-router · Zustand · Reanimated.
 
-**Alvo: iPhone apenas** (sem iPad, sem Android). Interface em português do Brasil — `pt-BR` é a única localização declarada, então o app fica em português mesmo num aparelho configurado em outro idioma.
+**Alvos: iPhone (sem iPad) e Android.** Interface em português do Brasil — `pt-BR` é a única localização declarada, então o app fica em português mesmo num aparelho configurado em outro idioma.
 
 **Estado atual: fase 1** — as 28 telas do handoff (`design_handoff_jogae/`) com dados simulados. Nenhum backend é necessário para rodar.
 
@@ -10,9 +10,10 @@ App mobile de jogos sociais: o host cria uma sala, o grupo entra pelo próprio c
 
 ```bash
 npm install
-npm run ios        # único alvo do app; `npm run web` existe só como harness de teste
+npm run ios        # ou: npm run android · `npm run web` existe só como harness de teste
 npm run typecheck  # tsc
 npm run smoke:room # joga uma partida inteira contra o mock (host + convidado)
+npm run icons      # regenera assets/*.png a partir de assets/source/*.svg (precisa do Chrome)
 ```
 
 Para testar como **convidado**, entre na sala `4827` (qualquer outro código dá "Sala não encontrada"). Dentro de uma partida, o botão **DEV** no canto superior esquerdo (só em `__DEV__`) simula queda de conexão, host saindo, jogadores insuficientes e o avanço do host.
@@ -71,6 +72,6 @@ As regras do Impostor (sorteio, apuração, pontos) são funções puras em `fea
 
 - **Cronômetro**: o snapshot hoje traz `remainingSec` contado pelo mock. No backend real, envie `endsAt` e derive os segundos no cliente para não depender de um tick por segundo na rede.
 - **`ackRole`**: o mock avança para as pistas assim que o jogador local confirma; o servidor real deve esperar todos (ou um timeout).
-- **Deep link**: `src/app/j/[code].tsx` já abre Entrar na sala com o código. Falta configurar universal links (`associatedDomains`) para `jogae.app`.
+- **Deep link**: `src/app/j/[code].tsx` já abre Entrar na sala com o código. Falta configurar universal links (`associatedDomains` no iOS, `intentFilters` no Android) para `jogae.app`.
 - **Sons**: a configuração existe, mas não há assets de áudio no handoff — nada toca ainda.
 - **Username disponível, amigos, histórico, conquistas**: dados mockados nos respectivos serviços.

@@ -40,9 +40,11 @@
   "scripts": {
     "start": "expo start",
     "ios": "expo start --ios",
+    "android": "expo start --android",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "smoke:room": "tsx --tsconfig tsconfig.json scripts/smoke-room.ts"
+    "smoke:room": "tsx --tsconfig tsconfig.json scripts/smoke-room.ts",
+    "icons": "./scripts/generate-icons.sh"
   },
   "private": true
 }

@@ -10,6 +10,7 @@
     "backgroundColor": "#0F0F13",
     "platforms": [
       "ios",
+      "android",
       "web"
     ],
     "locales": {
@@ -21,12 +22,20 @@
       "infoPlist": {
         "CFBundleDevelopmentRegion": "pt-BR",
         "CFBundleLocalizations": [
-          "pt-BR",
           "pt-BR"
         ],
         "CFBundleAllowMixedLocalizations": true,
         "ITSAppUsesNonExemptEncryption": false
       }
+    },
+    "android": {
+      "package": "app.jogae",
+      "adaptiveIcon": {
+        "backgroundColor": "#7C3AED",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png",
