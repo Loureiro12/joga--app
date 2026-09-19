@@ -43,9 +43,12 @@ export function EditProfileScreen() {
   };
 
   return (
-    <Screen gap={20}>
-      <StackHeader title="Editar perfil" onBack={() => router.back()} />
-
+    <Screen
+      gap={20}
+      header={
+        <StackHeader title="Editar perfil" onBack={() => router.back()} />
+      }
+    >
       <View style={{ alignItems: 'center', gap: 14 }}>
         <Avatar name={name || '?'} color={color} size={110} />
         <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', gap: 10 }}>

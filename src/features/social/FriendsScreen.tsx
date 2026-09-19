@@ -74,19 +74,21 @@ export function FriendsScreen() {
   const everyone = list.filter((f) => !f.playing);
 
   return (
-    <Screen>
-      <StackHeader
-        onBack={() => router.back()}
-        title={
-          <>
-            Amigos{' '}
-            <Display size={20} color={colors.muted}>
-              {friends.data?.length ?? ''}
-            </Display>
-          </>
-        }
-      />
-
+    <Screen
+      header={
+        <StackHeader
+          onBack={() => router.back()}
+          title={
+            <>
+              Amigos{' '}
+              <Display size={20} color={colors.muted}>
+                {friends.data?.length ?? ''}
+              </Display>
+            </>
+          }
+        />
+      }
+    >
       <View style={{ backgroundColor: colors.primary, borderRadius: radii.card, paddingVertical: 18, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
         <View style={{ flex: 1 }}>
           <Display size={24}>Convide a galera</Display>

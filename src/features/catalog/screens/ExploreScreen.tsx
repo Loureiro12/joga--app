@@ -24,9 +24,12 @@ export function ExploreScreen() {
   for (let i = 0; i < games.length; i += 2) rows.push(games.slice(i, i + 2));
 
   return (
-    <Screen insideTabs>
-      <Display size={40}>Explorar</Display>
-
+    <Screen
+      insideTabs
+      header={
+        <Display size={40}>Explorar</Display>
+      }
+    >
       {/* A linha de chips sangra os 20 px de padding da tela. */}
       <ScrollView
         horizontal

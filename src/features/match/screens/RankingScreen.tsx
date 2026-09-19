@@ -16,17 +16,19 @@ export function RankingScreen() {
   const last = room.roundIndex >= room.totalRounds;
 
   return (
-    <Screen>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        <Trophy size={52} />
-        <View>
-          <Display size={40}>Placar</Display>
-          <Txt size={13} color={colors.muted}>
-            Depois da rodada {room.roundIndex} de {room.totalRounds}
-          </Txt>
+    <Screen
+      header={
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <Trophy size={52} />
+          <View>
+            <Display size={40}>Placar</Display>
+            <Txt size={13} color={colors.muted}>
+              Depois da rodada {room.roundIndex} de {room.totalRounds}
+            </Txt>
+          </View>
         </View>
-      </View>
-
+      }
+    >
       <View style={{ gap: 8 }}>
         {scores.map((s, i) => {
           const p = player(s.playerId);

@@ -47,12 +47,15 @@ export function PaywallScreen() {
   };
 
   return (
-    <Screen gap={20}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <BackButton glyph="✕" onPress={close} />
-        <Badge label="✨ Premium" kind="premium" />
-      </View>
-
+    <Screen
+      gap={20}
+      header={
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <BackButton glyph="✕" onPress={close} />
+          <Badge label="✨ Premium" kind="premium" />
+        </View>
+      }
+    >
       <View style={{ backgroundColor: colors.primary, borderRadius: radii.cardLg, padding: 24, minHeight: 250, justifyContent: 'flex-end', overflow: 'hidden' }}>
         <View style={{ position: 'absolute', right: 20, top: 18, opacity: 0.95 }}>
           <Trophy size={96} />

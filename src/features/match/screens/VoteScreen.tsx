@@ -21,14 +21,16 @@ export function VoteScreen() {
   for (let i = 0; i < others.length; i += 2) rows.push(others.slice(i, i + 2));
 
   return (
-    <Screen>
-      <View>
-        <Display size={40}>Hora de votar 👀</Display>
-        <Txt size={16} lh={1.4} color={colors.muted} style={{ marginTop: 6 }}>
-          Quem você acha que é o impostor?
-        </Txt>
-      </View>
-
+    <Screen
+      header={
+        <View>
+          <Display size={40}>Hora de votar 👀</Display>
+          <Txt size={16} lh={1.4} color={colors.muted} style={{ marginTop: 6 }}>
+            Quem você acha que é o impostor?
+          </Txt>
+        </View>
+      }
+    >
       <View accessibilityRole="radiogroup" style={{ gap: 12 }}>
         {rows.map((row) => (
           <View key={row[0].id} style={{ flexDirection: 'row', gap: 12 }}>

@@ -44,8 +44,11 @@ export function AiCreateScreen() {
   if (!isPremium) return <Redirect href={{ pathname: routes.premium, params: { from: 'ai' } }} />;
 
   return (
-    <Screen>
-      <BackButton onPress={() => router.back()} />
+    <Screen
+      header={
+        <BackButton onPress={() => router.back()} />
+      }
+    >
       <View>
         <Overline color={colors.primaryLight}>✨ Premium</Overline>
         <Display size={40} style={{ marginTop: 6 }}>

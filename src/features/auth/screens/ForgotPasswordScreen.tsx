@@ -29,8 +29,12 @@ export function ForgotPasswordScreen() {
   };
 
   return (
-    <Screen gap={20}>
-      <BackButton onPress={() => router.back()} />
+    <Screen
+      gap={20}
+      header={
+        <BackButton onPress={() => router.back()} />
+      }
+    >
       {!sent ? (
         <>
           <View>

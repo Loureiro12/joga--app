@@ -24,21 +24,24 @@ export function HomeScreen() {
   const open = (id: string) => router.push(routes.game(id));
 
   return (
-    <Screen gap={22} insideTabs>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View>
-          <Txt size={16} lh={1.3} color={colors.muted}>
-            {greeting()} 👋
-          </Txt>
-          <Display size={44} ls={-0.5} style={{ marginTop: 2 }}>
-            Bora jogar?
-          </Display>
+    <Screen
+      gap={22} insideTabs
+      header={
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View>
+            <Txt size={16} lh={1.3} color={colors.muted}>
+              {greeting()} 👋
+            </Txt>
+            <Display size={44} ls={-0.5} style={{ marginTop: 2 }}>
+              Bora jogar?
+            </Display>
+          </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" onPress={() => router.navigate(routes.profile)}>
+            <Avatar name={name} color={color} size={44} />
+          </Pressable>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel="Abrir perfil" onPress={() => router.navigate(routes.profile)}>
-          <Avatar name={name} color={color} size={44} />
-        </Pressable>
-      </View>
-
+      }
+    >
       <GameCardHero game={hero} onPress={() => open(hero.id)} />
 
       <View style={{ flexDirection: 'row', gap: 12 }}>

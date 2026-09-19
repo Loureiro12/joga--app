@@ -57,8 +57,12 @@ export function JoinRoomScreen() {
   const complete = code.length === CODE_LENGTH;
 
   return (
-    <Screen gap={20}>
-      <StackHeader title="Entrar na sala" onBack={() => router.back()} />
+    <Screen
+      gap={20}
+      header={
+        <StackHeader title="Entrar na sala" onBack={() => router.back()} />
+      }
+    >
       <Segmented
         value={tab}
         onChange={setTab}

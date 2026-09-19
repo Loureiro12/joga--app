@@ -28,41 +28,47 @@ export function GameDetailScreen() {
   }
 
   const fg = onColor(game.color);
+  const topPad = Math.max(insets.top + 6, 30);
   const wide = game.illustration === 'eyes' || game.illustration === 'mask' || game.illustration === 'pillArrow';
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
-      <View style={{ backgroundColor: game.color, paddingTop: Math.max(insets.top + 6, 30), paddingHorizontal: 20, paddingBottom: 26, minHeight: 330, justifyContent: 'space-between' }}>
-        <BackButton onPress={() => router.back()} bg={colors.overlayDark} />
-        <View style={{ alignSelf: 'center', marginVertical: 6 }}>
-          <GameArt game={game} width={wide ? 260 : 150} blink={4000} />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
+        <View style={{ backgroundColor: game.color, paddingTop: topPad, paddingHorizontal: 20, paddingBottom: 26, minHeight: 330, justifyContent: 'space-between' }}>
+          {/* espaço do botão voltar, que fica fixo por cima do scroll */}
+          <View style={{ height: 44 }} />
+          <View style={{ alignSelf: 'center', marginVertical: 6 }}>
+            <GameArt game={game} width={wide ? 260 : 150} blink={4000} />
+          </View>
+          <Display size={60} color={fg}>
+            {game.name}
+          </Display>
         </View>
-        <Display size={60} color={fg}>
-          {game.name}
-        </Display>
-      </View>
 
-      <View style={{ flex: 1, paddingTop: 22, paddingHorizontal: 20, paddingBottom: Math.max(insets.bottom + 8, 24), gap: 18 }}>
-        <Txt font="body400" size={17} lh={1.45}>
-          {game.description}
-        </Txt>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {(game.infoChips.length ? game.infoChips : [{ emoji: '👥', label: game.playersLabel }, { emoji: '⏱', label: game.durationLabel }]).map((c) => (
-            <Chip key={c.label} emoji={c.emoji} label={c.label} state="info" />
-          ))}
+        <View style={{ flex: 1, paddingTop: 22, paddingHorizontal: 20, paddingBottom: Math.max(insets.bottom + 8, 24), gap: 18 }}>
+          <Txt font="body400" size={17} lh={1.45}>
+            {game.description}
+          </Txt>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {(game.infoChips.length ? game.infoChips : [{ emoji: '👥', label: game.playersLabel }, { emoji: '⏱', label: game.durationLabel }]).map((c) => (
+              <Chip key={c.label} emoji={c.emoji} label={c.label} state="info" />
+            ))}
+          </View>
+          <Spacer />
+          {game.playable ? (
+            <>
+              <Button label="Criar partida" onPress={() => router.push(routes.createMatch(game.id))} />
+              <Button label="Como jogar" variant="secondary" onPress={() => setSheet(true)} />
+            </>
+          ) : (
+            <Button label="Em breve" disabled />
+          )}
         </View>
-        <Spacer />
-        {game.playable ? (
-          <>
-            <Button label="Criar partida" onPress={() => router.push(routes.createMatch(game.id))} />
-            <Button label="Como jogar" variant="secondary" onPress={() => setSheet(true)} />
-          </>
-        ) : (
-          <Button label="Em breve" disabled />
-        )}
+      </ScrollView>
+      <View style={{ position: 'absolute', top: topPad, left: 20 }}>
+        <BackButton onPress={() => router.back()} bg={colors.scrimLight} />
       </View>
-
       <HowToPlaySheet game={game} visible={sheet} onClose={() => setSheet(false)} />
-    </ScrollView>
+    </View>
   );
 }

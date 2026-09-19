@@ -33,16 +33,18 @@ export function LobbyScreen() {
     Share.share({ message: `Entra na minha sala do Jogaê! Código ${room.code} · ${roomLink(room.code)}` }).catch(() => {});
 
   return (
-    <Screen>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Display size={32}>{isHost ? 'Sala criada 🎉' : 'Você entrou 🎉'}</Display>
-        <Pressable accessibilityRole="button" hitSlop={10} onPress={() => leaveMatch()}>
-          <Txt font="body600" size={14} color={colors.muted}>
-            {isHost ? 'Fechar' : 'Sair da sala'}
-          </Txt>
-        </Pressable>
-      </View>
-
+    <Screen
+      header={
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Display size={32}>{isHost ? 'Sala criada 🎉' : 'Você entrou 🎉'}</Display>
+          <Pressable accessibilityRole="button" hitSlop={10} onPress={() => leaveMatch()}>
+            <Txt font="body600" size={14} color={colors.muted}>
+              {isHost ? 'Fechar' : 'Sair da sala'}
+            </Txt>
+          </Pressable>
+        </View>
+      }
+    >
       {isHost ? (
         <View style={{ backgroundColor: colors.surface, borderRadius: radii.cardLg, padding: 22, flexDirection: 'row', alignItems: 'center', gap: 18 }}>
           <View style={{ flex: 1 }}>

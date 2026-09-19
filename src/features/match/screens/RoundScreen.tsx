@@ -30,29 +30,32 @@ export function RoundScreen() {
   const { timer } = round;
 
   return (
-    <Screen>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Display size={40}>
-          Rodada {round.index}
-          <Display size={22} color={colors.muted}>
-            /{room.totalRounds}
-          </Display>
-        </Display>
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 10 }}>
-            <Overline>{round.category}</Overline>
-          </View>
-          <IconButton label="Pausar partida" size={40} onPress={() => services.room.setPaused(true)}>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
-              <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: colors.text }} />
-              <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: colors.text }} />
+    <Screen
+      header={
+        <View style={{ gap: 14 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Display size={40}>
+              Rodada {round.index}
+              <Display size={22} color={colors.muted}>
+                /{room.totalRounds}
+              </Display>
+            </Display>
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <View style={{ backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 10 }}>
+                <Overline>{round.category}</Overline>
+              </View>
+              <IconButton label="Pausar partida" size={40} onPress={() => services.room.setPaused(true)}>
+                <View style={{ flexDirection: 'row', gap: 4 }}>
+                  <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: colors.text }} />
+                  <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: colors.text }} />
+                </View>
+              </IconButton>
             </View>
-          </IconButton>
+          </View>
+          <RoundProgress total={room.totalRounds} current={round.index} />
         </View>
-      </View>
-
-      <RoundProgress total={room.totalRounds} current={round.index} />
-
+      }
+    >
       <View style={{ backgroundColor: colors.surface, borderRadius: radii.card, paddingVertical: 18, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
         <Dice size={56} />
         <View style={{ flex: 1 }}>

@@ -42,27 +42,30 @@ export function ProfileScreen() {
   const recent = useAsync(() => services.history.list());
 
   return (
-    <Screen gap={20} insideTabs>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-        <Avatar name={name} color={color} size={72} />
-        <View style={{ flex: 1 }}>
-          <Display size={30} numberOfLines={1}>
-            {name}
-          </Display>
-          <Txt size={14} color={colors.muted} style={{ marginTop: 4 }}>
-            @{username}
-          </Txt>
+    <Screen
+      gap={20} insideTabs
+      header={
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          <Avatar name={name} color={color} size={72} />
+          <View style={{ flex: 1 }}>
+            <Display size={30} numberOfLines={1}>
+              {name}
+            </Display>
+            <Txt size={14} color={colors.muted} style={{ marginTop: 4 }}>
+              @{username}
+            </Txt>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <IconButton label="Editar perfil" size={40} onPress={() => router.push(routes.editProfile)}>
+              <PencilIcon />
+            </IconButton>
+            <IconButton label="Configurações" size={40} onPress={() => router.push(routes.settings)}>
+              <GearIcon />
+            </IconButton>
+          </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: 6 }}>
-          <IconButton label="Editar perfil" size={40} onPress={() => router.push(routes.editProfile)}>
-            <PencilIcon />
-          </IconButton>
-          <IconButton label="Configurações" size={40} onPress={() => router.push(routes.settings)}>
-            <GearIcon />
-          </IconButton>
-        </View>
-      </View>
-
+      }
+    >
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <StatCard value={String(stats.data?.matches ?? '–')} label="🎮 partidas" onPress={() => router.push(routes.history)} />
         <StatCard value={String(stats.data?.wins ?? '–')} label="🏆 vitórias" color={colors.accent} />

@@ -64,9 +64,12 @@ export function SettingsScreen() {
   const soon = () => toast('Em breve', 'neutral', '🚧');
 
   return (
-    <Screen gap={20}>
-      <StackHeader title="Configurações" onBack={() => router.back()} />
-
+    <Screen
+      gap={20}
+      header={
+        <StackHeader title="Configurações" onBack={() => router.back()} />
+      }
+    >
       <Group title="Partida">
         {TOGGLES.map((t, i) => (
           <Row

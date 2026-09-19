@@ -28,9 +28,11 @@ export function HistoryScreen() {
   const winRate = stats.data ? `${Math.round((stats.data.wins / stats.data.matches) * 100)}%` : '–';
 
   return (
-    <Screen>
-      <StackHeader title="Histórico" onBack={() => router.back()} />
-
+    <Screen
+      header={
+        <StackHeader title="Histórico" onBack={() => router.back()} />
+      }
+    >
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <StatCard value={String(stats.data?.matches ?? '–')} label="partidas" />
         <StatCard value={winRate} label="vitórias" color={colors.accent} />

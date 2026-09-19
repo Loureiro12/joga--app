@@ -34,9 +34,12 @@ export function CreateMatchScreen() {
   };
 
   return (
-    <Screen gap={22}>
-      <StackHeader title="Criar partida" onBack={() => router.back()} />
-
+    <Screen
+      gap={22}
+      header={
+        <StackHeader title="Criar partida" onBack={() => router.back()} />
+      }
+    >
       <View style={{ backgroundColor: colors.surface, borderRadius: radii.card, paddingVertical: 18, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Txt font="body600" size={16}>
           Jogadores
