@@ -31,11 +31,12 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
 *.tsbuildinfo
 
-# generated native folders
-/ios
-/android
+# generated native folders (expo prebuild)
+apps/mobile/ios/
+apps/mobile/android/

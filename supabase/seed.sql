@@ -1,0 +1,2 @@
+-- Dados de desenvolvimento aplicados por `supabase db reset`.
+-- Vazio de propósito: ainda não há tabelas de domínio (ver migrations/).
