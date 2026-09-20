@@ -87,12 +87,13 @@ function SplashEye() {
 
 /** Tela 1. Avança em 2,6 s ou ao tocar: Onboarding (1º uso) → Login (sem sessão) → Home. */
 export function SplashScreen() {
-  const hydrated = useSessionStore((s) => s.hydrated);
+  const ready = useSessionStore((s) => s.hydrated && s.authReady);
   const left = useRef(false);
   const minTimeDone = useRef(false);
 
   const advance = useCallback(() => {
-    if (left.current || !useSessionStore.getState().hydrated) return;
+    const { hydrated, authReady } = useSessionStore.getState();
+    if (left.current || !hydrated || !authReady) return;
     left.current = true;
     const { hasOnboarded, user } = useSessionStore.getState();
     router.replace(!hasOnboarded ? routes.onboarding : user ? routes.home : routes.login);
@@ -106,10 +107,10 @@ export function SplashScreen() {
     return () => clearTimeout(t);
   }, [advance]);
 
-  // Se o storage demorar mais que a animação, avança assim que hidratar.
+  // Se o storage ou a checagem de sessão demorarem mais que a animação, avança assim que ficarem prontos.
   useEffect(() => {
-    if (hydrated && minTimeDone.current) advance();
-  }, [hydrated, advance]);
+    if (ready && minTimeDone.current) advance();
+  }, [ready, advance]);
 
   return (
     <Pressable

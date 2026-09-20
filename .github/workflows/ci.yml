@@ -31,17 +31,24 @@ jobs:
         run: npx expo-doctor@latest
         working-directory: apps/mobile
 
-  migrations:
-    name: Migrations aplicam do zero
+  database:
+    name: Migrations + integração (Supabase local)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: actions/setup-node@v4
         with:
-          version: latest
-      # Sobe só o Postgres local e aplica todas as migrations + seed num banco vazio.
-      - run: supabase db start
-      - run: supabase db reset
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Banco, Auth, API e caixa de e-mail de teste; aplica todas as migrations num banco vazio.
+      - run: npx supabase start -x studio,imgproxy,logflare,vector,supavisor,realtime,storage-api,edge-runtime,postgres-meta
       - name: Lint do schema
-        run: supabase db lint --level warning --fail-on error
+        run: npx supabase db lint --level warning --fail-on error
+      - name: Tipos do banco estão em dia
+        run: |
+          npm run db:types
+          git diff --exit-code packages/db/src/database.types.ts || echo "::warning::packages/db está defasado — rode npm run db:types e commite"
+      - name: Testes de integração (conta e perfil)
+        run: npm run test:db

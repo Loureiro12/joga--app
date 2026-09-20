@@ -26,7 +26,8 @@
         ],
         "CFBundleAllowMixedLocalizations": true,
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "app.jogae",
@@ -58,7 +59,9 @@
         {
           "cameraPermission": "O Jogaê usa a câmera para ler o QR Code da sala."
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
     ],
     "extra": {
       "router": {},

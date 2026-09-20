@@ -4,9 +4,10 @@ import { Pressable, View } from 'react-native';
 
 import { colors, playerColors } from '@/core/theme';
 import { Avatar, Button, Input, Overline, Screen, Spacer, StackHeader, Txt, toast } from '@/core/ui';
+import { useSessionStore } from '@/features/auth/sessionStore';
 import { services } from '@/services';
 
-import type { UsernameStatus } from '../ProfileService';
+import { ProfileError, type UsernameStatus } from '../ProfileService';
 import { sanitizeUsername, useProfileStore } from '../profileStore';
 
 const STATUS: Record<UsernameStatus | 'checking', { label: string; color: string }> = {
@@ -23,23 +24,39 @@ export function EditProfileScreen() {
   const [username, setUsername] = useState(saved.username);
   const [color, setColor] = useState(saved.color);
   const [status, setStatus] = useState<UsernameStatus | 'checking'>('available');
+  const [saving, setSaving] = useState(false);
+  const userId = useSessionStore((s) => s.user?.id);
 
   useEffect(() => {
     if (username === saved.username) return setStatus('available');
     let alive = true;
     setStatus(username.length < 3 ? 'too_short' : 'checking');
-    services.profile.checkUsername(username).then((s) => alive && setStatus(s));
+    services.profile
+      .checkUsername(username, userId)
+      .then((s) => alive && setStatus(s))
+      .catch(() => alive && setStatus('available')); // sem rede: o servidor ainda valida ao salvar
     return () => {
       alive = false;
     };
-  }, [username, saved.username]);
+  }, [username, saved.username, userId]);
 
   const canSave = name.trim().length >= 2 && status === 'available';
 
-  const save = () => {
-    saved.update({ name: name.trim(), username, color });
-    router.back();
-    toast('Perfil atualizado');
+  const save = async () => {
+    const patch = { name: name.trim(), username, color };
+    setSaving(true);
+    try {
+      // O servidor é a autoridade; o store local é só o espelho que as telas leem.
+      const remote = userId ? await services.profile.updateMyProfile(userId, patch) : null;
+      saved.update(remote ?? patch);
+      router.back();
+      toast('Perfil atualizado');
+    } catch (e) {
+      if (e instanceof ProfileError && e.code === 'username_taken') setStatus('taken');
+      else toast('Não deu para salvar. Tente de novo.', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -87,7 +104,7 @@ export function EditProfileScreen() {
       </View>
 
       <Spacer />
-      <Button label={canSave ? 'Salvar' : name.trim().length < 2 ? 'Digite seu nome' : 'Escolha outro username'} disabled={!canSave} onPress={save} />
+      <Button label={canSave ? 'Salvar' : name.trim().length < 2 ? 'Digite seu nome' : 'Escolha outro username'} disabled={!canSave} loading={saving} onPress={save} />
     </Screen>
   );
 }

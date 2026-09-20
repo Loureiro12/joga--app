@@ -8,6 +8,7 @@ apps/
   room-server/   Servidor de salas em tempo real (Node + WebSocket). Esqueleto.
 packages/
   engine/        Tipos do domínio + regras puras dos jogos. Compartilhado por app e servidor.
+  db/            Tipos do banco gerados pelo Supabase CLI.
 supabase/        Config local, migrations e seed (Auth, Postgres, Edge Functions).
 docs/            backend-plan.md — arquitetura do backend e o passo a passo.
 design_handoff_jogae/   Referência de design (protótipo + design system).
@@ -22,7 +23,11 @@ npm run room-server          # servidor de salas em modo watch (:8787/healthz)
 npm run check                # typecheck + testes + smoke — o mesmo que o CI roda
 npm run db:start             # Supabase local (precisa do Docker rodando)
 npm run db:reset             # recria o banco aplicando migrations + seed
+npm run db:types             # regenera packages/db a partir do banco local
+npm run test:db              # testes de integração de conta e perfil contra o Supabase local
 ```
+
+Para o app usar o Supabase em vez dos serviços simulados, copie `apps/mobile/.env.example` para `apps/mobile/.env.local` e preencha com os valores que o `npm run db:start` imprime.
 
 Builds do EAS rodam de dentro de `apps/mobile` (`cd apps/mobile && eas build …`).
 

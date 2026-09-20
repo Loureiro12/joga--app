@@ -1,11 +1,12 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
-import { Badge, Button, Overline, Screen, Spacer, StackHeader, Toggle, Txt, toast } from '@/core/ui';
+import { Badge, Button, Display, ModalCard, Overline, Screen, Spacer, StackHeader, Toggle, Txt, toast } from '@/core/ui';
+import { useSessionStore } from '@/features/auth/sessionStore';
 import { authActions } from '@/features/auth/useAuthActions';
 import { usePremiumStore } from '@/features/premium/premiumStore';
 import { useProfileStore } from '@/features/profile/profileStore';
@@ -61,7 +62,21 @@ export function SettingsScreen() {
   const settings = useSettingsStore();
   const username = useProfileStore((s) => s.username);
   const isPremium = usePremiumStore((s) => s.isPremium);
+  const isGuest = useSessionStore((s) => s.user?.isGuest ?? false);
+  const [askDelete, setAskDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const soon = () => toast('Em breve', 'neutral', '🚧');
+
+  const deleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await authActions.deleteAccount();
+      toast('Conta excluída', 'neutral');
+    } catch {
+      toast('Não deu para excluir a conta. Tente de novo.', 'error');
+      setDeleting(false);
+    }
+  };
 
   return (
     <Screen
@@ -93,10 +108,32 @@ export function SettingsScreen() {
       </Group>
 
       <Spacer />
+      {/* Convidado vai ao login SEM sair: o cadastro converte o convidado em conta e mantém o histórico. */}
+      {isGuest && <Button label="Criar conta e salvar progresso" height={56} fontSize={20} onPress={() => router.push(routes.login)} />}
       <Button label="Sair da conta" variant="destructiveText" height={56} fontSize={20} onPress={authActions.signOut} />
+      <Pressable accessibilityRole="button" onPress={() => setAskDelete(true)} style={{ alignSelf: 'center', padding: 6 }}>
+        <Txt font="body600" size={13} color={colors.muted}>
+          Excluir conta
+        </Txt>
+      </Pressable>
       <Txt font="body400" size={12} color={colors.mutedDark} center>
         Jogaê v{Constants.expoConfig?.version ?? '1.0'} · @{username}
       </Txt>
+
+      <ModalCard visible={askDelete} onRequestClose={() => !deleting && setAskDelete(false)}>
+        <Txt size={40}>🗑️</Txt>
+        <Display size={34} center>
+          Excluir conta?
+        </Display>
+        <Txt font="body400" size={14} lh={1.4} color={colors.muted} center>
+          Isso apaga seu perfil, histórico e amigos para sempre. Não dá para desfazer.
+          {isPremium ? ' A assinatura continua ativa na loja até você cancelar por lá.' : ''}
+        </Txt>
+        <View style={{ flexDirection: 'row', gap: 8, alignSelf: 'stretch', marginTop: 6 }}>
+          <Button label="Cancelar" variant="tertiary" height={56} fontSize={20} disabled={deleting} onPress={() => setAskDelete(false)} style={{ flex: 1 }} />
+          <Button label={deleting ? 'Excluindo' : 'Excluir'} variant="destructive" height={56} fontSize={20} loading={deleting} onPress={deleteAccount} style={{ flex: 1 }} />
+        </View>
+      </ModalCard>
     </Screen>
   );
 }

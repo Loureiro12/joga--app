@@ -18,14 +18,23 @@ export function ForgotPasswordScreen() {
   const send = async () => {
     if (!EMAIL_RE.test(email)) return setError(true);
     setLoading(true);
-    await services.auth.sendPasswordReset(email);
-    setLoading(false);
-    setSent(true);
+    try {
+      await services.auth.sendPasswordReset(email);
+      setSent(true);
+    } catch {
+      toast('Não deu para enviar o link. Tente de novo em instantes.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resend = async () => {
-    await services.auth.sendPasswordReset(email);
-    toast('Link reenviado');
+    try {
+      await services.auth.sendPasswordReset(email);
+      toast('Link reenviado');
+    } catch {
+      toast('Espere um pouco antes de reenviar.', 'error');
+    }
   };
 
   return (

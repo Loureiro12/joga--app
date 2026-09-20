@@ -6,12 +6,24 @@ import Svg, { Path } from 'react-native-svg';
 import { LogoLockup } from '@/core/illustrations';
 import { routes } from '@/core/navigation/routes';
 import { colors } from '@/core/theme';
-import { Avatar, Button, Display, FieldError, Input, PressableScale, Screen, Segmented, Spacer, Txt } from '@/core/ui';
+import { Avatar, Button, Display, FieldError, Input, PressableScale, Screen, Segmented, Spacer, Txt, toast } from '@/core/ui';
 import { EMAIL_RE } from '@/core/utils/format';
 
+import { AuthError, type AuthErrorCode } from '../AuthService';
 import { authActions } from '../useAuthActions';
 
 type Tab = 'login' | 'signup';
+
+const MESSAGES: Partial<Record<AuthErrorCode, string>> = {
+  invalid_credentials: 'E-mail ou senha incorretos.',
+  email_in_use: 'Esse e-mail já tem conta. Tente entrar.',
+  weak_password: 'Senha fraca demais. Use pelo menos 6 caracteres.',
+  rate_limited: 'Muitas tentativas. Espere um pouco e tente de novo.',
+  network: 'Sem conexão. Confira a internet e tente de novo.',
+  provider_unavailable: 'Esse login não está disponível agora. Tente com e-mail.',
+};
+
+const messageFor = (e: unknown, fallback: string) => (e instanceof AuthError && MESSAGES[e.code]) || fallback;
 
 function ProviderButton({ label, light, icon, onPress }: { label: string; light?: boolean; icon: React.ReactNode; onPress: () => void }) {
   return (
@@ -71,6 +83,17 @@ export function LoginScreen() {
     setError(null);
   };
 
+  // Google / Apple / convidado: cancelar a janela do provedor não é erro.
+  const run = async (action: () => Promise<void>) => {
+    if (loading) return;
+    try {
+      await action();
+    } catch (e) {
+      if (e instanceof AuthError && e.code === 'cancelled') return;
+      toast(messageFor(e, 'Não deu para entrar. Tente de novo.'), 'error');
+    }
+  };
+
   const submit = async () => {
     if (signup && name.trim().length < 2) return setError('Digite seu nome (pelo menos 2 letras).');
     if (!EMAIL_RE.test(email)) return setError('E-mail inválido. Confira e tente de novo.');
@@ -78,8 +101,15 @@ export function LoginScreen() {
     setLoading(true);
     try {
       await (signup ? authActions.signUp(name, email, pass) : authActions.signIn(email, pass));
-    } catch {
-      setError(signup ? 'Não deu para criar a conta. Tente de novo.' : 'E-mail ou senha incorretos.');
+    } catch (e) {
+      if (e instanceof AuthError && e.code === 'confirm_email') {
+        // Conta criada, falta confirmar: não é erro. Deixa pronto para entrar depois do clique no e-mail.
+        toast(`Enviamos um link de confirmação para ${email.trim()}`);
+        setTab('login');
+        setPass('');
+      } else {
+        setError(messageFor(e, signup ? 'Não deu para criar a conta. Tente de novo.' : 'Não deu para entrar. Tente de novo.'));
+      }
     } finally {
       setLoading(false);
     }
@@ -91,7 +121,7 @@ export function LoginScreen() {
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <LogoLockup />
-          <Pressable accessibilityRole="button" onPress={authActions.guest} hitSlop={8} style={{ padding: 8 }}>
+          <Pressable accessibilityRole="button" onPress={() => run(authActions.guest)} hitSlop={8} style={{ padding: 8 }}>
             <Txt font="body600" size={14} color={colors.muted}>
               Entrar como convidado
             </Txt>
@@ -114,8 +144,8 @@ export function LoginScreen() {
       <Display size={44}>{signup ? 'Crie sua conta em segundos.' : 'Bom te ver de novo.'}</Display>
 
       <View style={{ gap: 10 }}>
-        <ProviderButton light label="Continuar com Google" icon={<GoogleIcon />} onPress={() => authActions.provider('google')} />
-        <ProviderButton label="Continuar com Apple" icon={<AppleIcon />} onPress={() => authActions.provider('apple')} />
+        <ProviderButton light label="Continuar com Google" icon={<GoogleIcon />} onPress={() => run(() => authActions.provider('google'))} />
+        <ProviderButton label="Continuar com Apple" icon={<AppleIcon />} onPress={() => run(() => authActions.provider('apple'))} />
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passo 1 (fundação) concluído. Passos 2–7 não iniciados.
+**Estado:** passos 1 (fundação) e 2 (conta e perfil) concluídos. Passos 3–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -78,20 +78,40 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 - Monorepo com npm workspaces: `apps/mobile`, `apps/room-server`, `packages/engine`, `supabase/`.
 - Tipos do domínio e regras do Impostor extraídos do app para `@jogae/engine`, com testes das regras.
 - `apps/room-server`: esqueleto com `/healthz` e encerramento limpo em `SIGTERM`.
-- `supabase/`: config local (login anônimo ligado, redirects `jogae://`), migration de base (`citext`, `set_updated_at`).
+- `supabase/`: config local (login anônimo ligado, redirects `jogae://`), migration de base (`set_updated_at`).
 - CI (`.github/workflows/ci.yml`): typecheck, testes, smoke do `RoomService`, `expo-doctor` e migrations aplicadas do zero.
 
 **Ainda depende de você** (precisa das suas contas): criar os projetos Supabase `jogae-dev` e `jogae-prod` em São Paulo, rodar `supabase link`, e guardar `SUPABASE_ACCESS_TOKEN` + senha do banco nos secrets do GitHub para o deploy de migrations.
 
-### Passo 2 — Conta e perfil
+### Passo 2 — Conta e perfil ✅
 
-- Tabela `profiles (id → auth.users, name, username citext unique, color, settings jsonb)` com RLS: cada um edita o seu; nome, username e cor são públicos.
-- `SupabaseAuthService`: `signInWithIdToken` para Google e Apple, e-mail + senha, `signInAnonymously` para convidado, e conversão do convidado em conta sem perder o histórico.
-- `SupabaseProfileService.checkUsername` (atenção ao `search_path` do `citext` — ver comentário na migration de base).
-- **Excluir conta** (tela + Edge Function). A Apple exige em apps que criam conta.
-- Login com Google precisa de build próprio pelo EAS; não roda no Expo Go.
+- `profiles (id → auth.users, name, username, color)` com RLS: logados leem todos os perfis; cada um edita só o seu, e só `name`, `username` e `color`. Ninguém insere nem apaga pela API.
+- O perfil nasce por **trigger** quando o usuário é criado no Auth (inclusive convidado), com username derivado do nome e sufixo numérico em caso de colisão.
+- Username é `text` minúsculo (`^[a-z0-9_.]{3,20}$`) com índice único e lista de reservados. O `citext` cogitado no passo 1 foi descartado: com minúsculas obrigatórias ele não agrega nada e tinha uma pegadinha de `search_path`.
+- `SupabaseAuthService`: e-mail + senha, convidado (login anônimo), **convidado → conta mantendo o mesmo id**, redefinição de senha por deep link com PKCE (`jogae://reset-password?code=`), Apple nativo no iOS (`signInWithIdToken` com nonce) e Google pelo navegador do sistema.
+- **Excluir conta**: função `delete_my_account()` (security definer) que apaga o usuário do Auth; o resto cai em cascata pelos FKs. Botão em Configurações com confirmação.
+- O app escolhe a implementação por ambiente: com `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` usa o Supabase; sem elas, continua 100% simulado.
+- Testes de integração (`npm run test:db`) rodam as classes reais do app contra o Supabase local.
 
-**Pronto quando:** criar conta, sair, entrar de novo e ver o mesmo perfil em dois aparelhos.
+**Desvios do plano original, e por quê:**
+
+- *Google por navegador, não SDK nativo.* O SDK nativo exige client IDs de iOS/Android e um config plugin que quebra o build sem eles. O fluxo web só precisa do client ID + secret configurados no painel do Supabase. Dá para trocar depois sem mexer em tela (é só o `PlatformAuth`).
+- *Excluir conta por função SQL, não Edge Function.* Uma função a menos para publicar e operar, e é testável junto com as migrations. Se um dia a exclusão precisar chamar serviços externos (RevenueCat, storage), vira Edge Function.
+- *`settings` não entrou em `profiles`.* Só `notif` interessa ao servidor, e só no passo 5 (push). Entra lá.
+
+**Ainda depende de você:** criar os projetos no Supabase e, no painel de cada um: ligar *Anonymous sign-ins* e *Manual linking*; cadastrar `jogae://**` em *Redirect URLs*; configurar os provedores Google (client ID + secret do Google Cloud) e Apple (Services ID + chave). Decidir se o cadastro exige confirmação de e-mail — o app trata os dois casos.
+
+**Como foi verificado (2026-09-19):**
+
+- *SQL:* migrations aplicadas num Postgres local com um stub do schema `auth` (roles `anon`/`authenticated`, `auth.users`, `auth.uid()` lendo o `sub` do JWT). Conferidos: perfil criado pelo trigger, colisão e reservados de username, leitura pública para logados, edição só do próprio perfil, insert/delete/colunas de sistema negados, restrições de formato, e exclusão apagando só a própria conta.
+- *Cliente:* 12 testes unitários do `SupabaseAuthService` com um Supabase falso (`npm test`).
+- *App:* em modo simulado, fluxo de convidado → Configurações → excluir conta → login, tela de nova senha e a partida completa, no build web.
+
+**Não verificado:**
+
+- **Os testes de integração (`npm run test:db`) nunca rodaram.** O Docker desta máquina não conseguiu baixar as imagens do Supabase. A primeira execução real será no CI (job `database`) ou quando `npm run db:start` funcionar localmente. Eles cobrem o que o stub não cobre: o Auth de verdade (cadastro, senha errada, convidado → conta, e-mail de redefinição com PKCE).
+- `packages/db/src/database.types.ts` foi escrito à mão no formato do gerador; rode `npm run db:types` assim que o stack local subir.
+- Login com Google e Apple (precisam das credenciais e de um build nativo) e a tela de nova senha aberta por deep link num aparelho.
 
 ### Passo 3 — Servidor de salas
 
@@ -131,9 +151,9 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 
 Decisões que o backend força e que ainda não foram tomadas:
 
-1. **Excluir conta** não existe no design. É requisito da App Store.
+1. ~~Excluir conta~~ — resolvido no passo 2 (a tela de confirmação não veio do design; segue o padrão do modal de sair da partida).
 2. **Jogos criados por IA não têm tela para serem jogados.** O handoff gera "12 perguntas · 8 desafios · 3 especiais", mas "Começar" abre o Impostor. Sem esse fluxo desenhado, o passo 7 não tem o que alimentar.
 3. **Limite do plano grátis.** "Partidas ilimitadas" é benefício premium, mas nada define o limite de quem não paga.
-4. **Regras do Impostor que foram inventadas na implementação:** +200 para cada inocente quando o grupo acerta, +300 para o impostor que escapa, +50 por voto certo, e empate de votos = impostor escapa. Estão cobertas por teste em `packages/engine/test`; confirme antes de o servidor virar a autoridade.
+4. ~~Regras de pontuação do Impostor~~ — confirmadas em 2026-09-19: +200 por inocente quando o grupo acerta, +300 para o impostor que escapa, +50 por voto certo, empate = impostor escapa. Cobertas por teste em `packages/engine/test`.
 5. **LGPD.** Usuários brasileiros, possivelmente menores (existe a categoria Família): política de privacidade, base legal e fluxo de exclusão de dados.
 6. **Host caiu = sala encerra** (como no design) ou o host migra para outro jogador? O plano assume o design.

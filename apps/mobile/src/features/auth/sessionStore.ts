@@ -10,6 +10,8 @@ type SessionState = {
   hasOnboarded: boolean;
   /** `true` depois que o estado persistido foi lido do disco. */
   hydrated: boolean;
+  /** `true` depois que a sessão foi conferida com o AuthService (ver `useAuthSync`). */
+  authReady: boolean;
   setUser: (user: AuthUser | null) => void;
   completeOnboarding: () => void;
 };
@@ -20,6 +22,7 @@ export const useSessionStore = create<SessionState>()(
       user: null,
       hasOnboarded: false,
       hydrated: false,
+      authReady: false,
       setUser: (user) => set({ user }),
       completeOnboarding: () => set({ hasOnboarded: true }),
     }),

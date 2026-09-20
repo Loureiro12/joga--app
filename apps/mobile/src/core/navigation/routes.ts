@@ -7,6 +7,7 @@ export const routes = {
   onboarding: '/onboarding',
   login: '/login',
   forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   home: '/(tabs)',
   explore: '/(tabs)/explore',
   profile: '/(tabs)/profile',

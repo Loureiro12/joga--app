@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { colors, fontAssets } from '@/core/theme';
 import { ToastHost } from '@/core/ui';
+import { useAuthSync } from '@/features/auth/useAuthSync';
 // Registra o listener do RoomService e o gate de vibração antes de qualquer tela.
 import '@/features/match/store/matchStore';
 import '@/features/settings/settingsStore';
@@ -16,6 +17,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontAssets);
+  useAuthSync();
 
   useEffect(() => {
     if (loaded || error) SplashScreen.hideAsync().catch(() => {});
