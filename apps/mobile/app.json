@@ -1,0 +1,73 @@
+{
+  "expo": {
+    "name": "Jogaê",
+    "slug": "jogae",
+    "scheme": "jogae",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0F0F13",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "locales": {
+      "pt-BR": "./locales/pt-BR.json"
+    },
+    "ios": {
+      "bundleIdentifier": "app.jogae",
+      "supportsTablet": false,
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "pt-BR",
+        "CFBundleLocalizations": [
+          "pt-BR"
+        ],
+        "CFBundleAllowMixedLocalizations": true,
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "usesAppleSignIn": true
+    },
+    "android": {
+      "package": "app.jogae",
+      "adaptiveIcon": {
+        "backgroundColor": "#7C3AED",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#7C3AED",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O Jogaê usa a câmera para ler o QR Code da sala."
+        }
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "74b95e30-1336-40d6-ad6e-93bf9f4e6705"
+      }
+    }
+  }
+}

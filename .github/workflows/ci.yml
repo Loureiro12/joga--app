@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck · testes · smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Typecheck (todos os workspaces)
+        run: npm run typecheck
+      - name: Testes (engine + room-server)
+        run: npm test
+      - name: Smoke do contrato RoomService
+        run: npm run smoke:room
+      - name: expo-doctor
+        run: npx expo-doctor@latest
+        working-directory: apps/mobile
+
+  database:
+    name: Migrations + integração (Supabase local)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Banco, Auth, API e caixa de e-mail de teste; aplica todas as migrations num banco vazio.
+      - run: npx supabase start -x studio,imgproxy,logflare,vector,supavisor,realtime,storage-api,edge-runtime,postgres-meta
+      - name: Lint do schema
+        run: npx supabase db lint --level warning --fail-on error
+      - name: Tipos do banco estão em dia
+        run: |
+          npm run db:types
+          git diff --exit-code packages/db/src/database.types.ts || echo "::warning::packages/db está defasado — rode npm run db:types e commite"
+      - name: Testes de integração (conta e perfil)
+        run: npm run test:db
