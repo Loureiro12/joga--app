@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useEffect } from 'react';
 
 import { routes } from '@/core/navigation/routes';
@@ -6,7 +5,7 @@ import { useProfileStore } from '@/features/profile/profileStore';
 import { services } from '@/services';
 
 import { useSessionStore } from './sessionStore';
-import { syncProfile } from './useAuthActions';
+import { resetTo, syncProfile } from './useAuthActions';
 
 /**
  * Mantém o `sessionStore` fiel ao AuthService. Montado uma vez no layout raiz.
@@ -37,8 +36,7 @@ export function useAuthSync() {
       useSessionStore.setState({ user });
       if (had && !user) {
         useProfileStore.getState().reset();
-        router.dismissAll();
-        router.replace(routes.login);
+        resetTo(routes.login);
       }
     });
     return () => {

@@ -14,12 +14,17 @@ export async function syncProfile(user: AuthUser) {
   else if (!services.auth.managesSession && !user.isGuest) useProfileStore.getState().seedFromName(user.name);
 }
 
+/** Esvazia o stack antes de trocar a raiz. `dismissAll` sem nada para fechar gera o aviso POP_TO_TOP. */
+export function resetTo(route: string) {
+  if (router.canDismiss()) router.dismissAll();
+  router.replace(route);
+}
+
 /** Efeitos comuns a qualquer forma de entrar: guarda a sessão, carrega o perfil e vai para a Home. */
 async function enter(user: AuthUser) {
   useSessionStore.getState().setUser(user);
   await syncProfile(user);
-  router.dismissAll();
-  router.replace(routes.home);
+  resetTo(routes.home);
 }
 
 /** Idempotente: o `useAuthSync` pode já ter reagido ao SIGNED_OUT e levado ao login. */
@@ -28,8 +33,7 @@ function leave() {
   useSessionStore.getState().setUser(null);
   useProfileStore.getState().reset();
   if (!wasSignedIn) return;
-  router.dismissAll();
-  router.replace(routes.login);
+  resetTo(routes.login);
 }
 
 export const authActions = {
