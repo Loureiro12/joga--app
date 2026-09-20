@@ -107,6 +107,8 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 - *Cliente:* 12 testes unitários do `SupabaseAuthService` com um Supabase falso (`npm test`).
 - *App:* em modo simulado, fluxo de convidado → Configurações → excluir conta → login, tela de nova senha e a partida completa, no build web.
 
+- *Projeto de dev real (2026-09-20, `jogae-dev`):* com as classes do app e a chave pública — convidado entra, perfil nasce pelo trigger, convidado → conta mantém o id e o perfil, username reservado é recusado, senha errada vira `invalid_credentials`, excluir conta apaga o usuário e o login para de funcionar.
+
 **Não verificado:**
 
 - **Os testes de integração (`npm run test:db`) nunca rodaram.** O Docker desta máquina não conseguiu baixar as imagens do Supabase. A primeira execução real será no CI (job `database`) ou quando `npm run db:start` funcionar localmente. Eles cobrem o que o stub não cobre: o Auth de verdade (cadastro, senha errada, convidado → conta, e-mail de redefinição com PKCE).

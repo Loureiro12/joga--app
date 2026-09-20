@@ -10,6 +10,7 @@ import { execSync } from 'node:child_process';
 import { before, test } from 'node:test';
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import WebSocket from 'ws';
 
 import { AuthError } from '../src/features/auth/AuthService';
 import { SupabaseAuthService, type PlatformAuth } from '../src/features/auth/SupabaseAuthService';
@@ -21,6 +22,9 @@ type Stack = { API_URL: string; ANON_KEY: string; SERVICE_ROLE_KEY: string; INBU
 const stack: Stack = JSON.parse(execSync('npx supabase status -o json', { cwd: new URL('../../..', import.meta.url), stdio: ['ignore', 'pipe', 'ignore'] }).toString());
 const mailUrl = stack.MAILPIT_URL ?? stack.INBUCKET_URL ?? 'http://127.0.0.1:54324';
 
+// Node 20 não tem WebSocket nativo, e o supabase-js exige um para montar o cliente (realtime).
+const realtime = { transport: WebSocket as never };
+
 const platform: PlatformAuth = {
   redirectTo: (path) => `jogae://${path}`,
   openAuthSession: async () => null,
@@ -29,11 +33,11 @@ const platform: PlatformAuth = {
 
 /** Um "aparelho": cliente próprio, com sessão própria em memória. */
 function device() {
-  const supabase = createClient(stack.API_URL, stack.ANON_KEY, { auth: { flowType: 'pkce', autoRefreshToken: false, detectSessionInUrl: false } });
+  const supabase = createClient(stack.API_URL, stack.ANON_KEY, { realtime, auth: { flowType: 'pkce', autoRefreshToken: false, detectSessionInUrl: false } });
   return { supabase, auth: new SupabaseAuthService(supabase, platform), profile: new SupabaseProfileService(supabase) };
 }
 
-const admin: SupabaseClient = createClient(stack.API_URL, stack.SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+const admin: SupabaseClient = createClient(stack.API_URL, stack.SERVICE_ROLE_KEY, { realtime, auth: { persistSession: false, autoRefreshToken: false } });
 
 const run = Date.now().toString(36);
 let n = 0;
@@ -121,7 +125,7 @@ test('RLS: leio o perfil dos outros, mas só edito o meu', async () => {
   const mine = await a.profile.updateMyProfile(ua.id, { name: 'Alice Nova', color: '#22C55E' });
   assert.deepEqual({ name: mine?.name, color: mine?.color }, { name: 'Alice Nova', color: '#22C55E' });
 
-  const loggedOut = createClient(stack.API_URL, stack.ANON_KEY, { auth: { persistSession: false } });
+  const loggedOut = createClient(stack.API_URL, stack.ANON_KEY, { realtime, auth: { persistSession: false } });
   const { data } = await loggedOut.from('profiles').select('id');
   assert.deepEqual(data ?? [], [], 'quem não está logado não lê perfil nenhum');
 });

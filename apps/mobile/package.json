@@ -40,10 +40,12 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@types/node": "^20.19.0",
     "@types/react": "~19.2.2",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.23.13",
     "typescript": "~6.0.3",
-    "@types/node": "^20.19.0"
+    "ws": "^8.21.3"
   },
   "scripts": {
     "start": "expo start",
