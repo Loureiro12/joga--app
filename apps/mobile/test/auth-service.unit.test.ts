@@ -97,6 +97,14 @@ test('convidado: reaproveita a sessão anônima existente', async () => {
   assert.deepEqual(names(fresh.calls), ['signInAnonymously']);
 });
 
+test('convidado: o e-mail vazio que o Auth real devolve vira null no contrato do app', async () => {
+  // Pego pelo teste de integração no CI: o GoTrue manda email: '' para usuário anônimo.
+  const f = fake({ results: { signInAnonymously: { data: { user: user({ is_anonymous: true, email: '', user_metadata: {} }) }, error: null } } });
+  const guest = await new SupabaseAuthService(f.client, platform()).signInAsGuest();
+  assert.equal(guest.email, null);
+  assert.equal(guest.name, 'Convidado');
+});
+
 test('Google: abre o navegador com PKCE e troca o code pela sessão', async () => {
   const f = fake();
   let opened: string[] = [];

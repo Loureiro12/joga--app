@@ -18,7 +18,8 @@ export type PlatformAuth = {
 const toUser = (user: User): AuthUser => ({
   id: user.id,
   name: (user.user_metadata?.name as string | undefined) ?? (user.user_metadata?.full_name as string | undefined) ?? (user.is_anonymous ? 'Convidado' : (user.email?.split('@')[0] ?? 'Jogador')),
-  email: user.email ?? null,
+  // O Auth devolve '' (não undefined) no e-mail de usuário anônimo; o contrato do app é `null`.
+  email: user.email || null,
   isGuest: Boolean(user.is_anonymous),
 });
 
