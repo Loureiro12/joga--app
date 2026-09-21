@@ -3,6 +3,7 @@ import { MockAuthService, type AuthService } from '@/features/auth/AuthService';
 import { platformAuth } from '@/features/auth/platformAuth';
 import { SupabaseAuthService } from '@/features/auth/SupabaseAuthService';
 import { MockHistoryService, type HistoryService } from '@/features/history/HistoryService';
+import { SupabaseHistoryService } from '@/features/history/SupabaseHistoryService';
 import { MockRoomService } from '@/features/match/services/MockRoomService';
 import { RemoteRoomService } from '@/features/match/services/RemoteRoomService';
 import type { RoomService } from '@/features/match/services/RoomService';
@@ -55,7 +56,7 @@ export const services: Services = {
   billing: new MockBillingService(),
   ai: new MockAiGameService(),
   social: new MockSocialService(),
-  history: new MockHistoryService(),
+  history: supabase ? new SupabaseHistoryService(supabase) : new MockHistoryService(),
 };
 
 export const backendMode: 'supabase' | 'mock' = supabase ? 'supabase' : 'mock';

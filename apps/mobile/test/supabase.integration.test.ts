@@ -14,6 +14,7 @@ import WebSocket from 'ws';
 
 import { AuthError } from '../src/features/auth/AuthService';
 import { SupabaseAuthService, type PlatformAuth } from '../src/features/auth/SupabaseAuthService';
+import { SupabaseHistoryService } from '../src/features/history/SupabaseHistoryService';
 import { ProfileError } from '../src/features/profile/ProfileService';
 import { SupabaseProfileService } from '../src/features/profile/SupabaseProfileService';
 
@@ -34,7 +35,7 @@ const platform: PlatformAuth = {
 /** Um "aparelho": cliente próprio, com sessão própria em memória. */
 function device() {
   const supabase = createClient(stack.API_URL, stack.ANON_KEY, { realtime, auth: { flowType: 'pkce', autoRefreshToken: false, detectSessionInUrl: false } });
-  return { supabase, auth: new SupabaseAuthService(supabase, platform), profile: new SupabaseProfileService(supabase) };
+  return { supabase, auth: new SupabaseAuthService(supabase, platform), profile: new SupabaseProfileService(supabase), history: new SupabaseHistoryService(supabase) };
 }
 
 const admin: SupabaseClient = createClient(stack.API_URL, stack.SERVICE_ROLE_KEY, { realtime, auth: { persistSession: false, autoRefreshToken: false } });
@@ -239,4 +240,51 @@ test('excluir conta: usuário e perfil somem, o login para de funcionar e só ap
 
 test('excluir conta sem estar logado é recusado', async () => {
   await rejectsWith(device().auth.deleteAccount(), AuthError, 'not_authenticated');
+});
+
+test('histórico: só o servidor grava; cada jogador lê a própria linha; regravar não duplica; conquistas saem do histórico', async () => {
+  const [a, b, outsider] = [device(), device(), device()];
+  const ua = await a.auth.signUpWithEmail('Hist Ana', email('hana'), PASS);
+  const ub = await b.auth.signUpWithEmail('Hist Bia', email('hbia'), PASS);
+  await outsider.auth.signUpWithEmail('De Fora', email('hfora'), PASS);
+
+  const record = (matchId: string, anaWon: boolean) => ({
+    matchId,
+    roomCode: '4827',
+    gameId: 'impostor',
+    category: 'Filmes',
+    totalRounds: 3,
+    impostorsCaught: 2,
+    startedAt: Date.now() - 600_000,
+    endedAt: Date.now(),
+    players: [
+      { playerId: ua.id, name: 'Hist Ana', color: '#7C3AED', position: anaWon ? 1 : 2, points: anaWon ? 900 : 300, won: anaWon, timesImpostor: 1, timesEscaped: 1 },
+      { playerId: ub.id, name: 'Hist Bia', color: '#FACC15', position: anaWon ? 2 : 1, points: anaWon ? 300 : 900, won: !anaWon, timesImpostor: 0, timesEscaped: 0 },
+      { playerId: 'dev-bot-1', name: 'Bot', color: '#22C55E', position: 3, points: 0, won: false, timesImpostor: 0, timesEscaped: 0 },
+    ],
+  });
+
+  const forged = await a.supabase.rpc('record_match', { record: record(crypto.randomUUID(), true) });
+  assert.equal(forged.error?.code, '42501', 'usuário comum não pode gravar partida');
+
+  const first = crypto.randomUUID();
+  assert.equal((await admin.rpc('record_match', { record: record(first, true) })).data, true);
+  assert.equal((await admin.rpc('record_match', { record: record(first, true) })).data, false, 'mesma partida de novo: não duplica');
+
+  const mine = await a.history.list();
+  assert.equal(mine.length, 1);
+  assert.deepEqual([mine[0].gameId, mine[0].wordCategory, mine[0].players, mine[0].position, mine[0].points, mine[0].won], ['impostor', 'Filmes', 3, 1, 900, true]);
+  assert.deepEqual([(await b.history.list())[0].position, (await b.history.list())[0].won], [2, false]);
+  assert.deepEqual(await outsider.history.list(), [], 'quem não jogou não vê a partida');
+  const { data: rows } = await a.supabase.from('match_players').select('name');
+  assert.deepEqual(rows?.map((r) => r.name), ['Hist Ana'], 'do boletim, só a minha linha');
+
+  for (let i = 0; i < 4; i++) await admin.rpc('record_match', { record: record(crypto.randomUUID(), true) });
+  assert.deepEqual(await a.history.stats(), { matches: 5, wins: 5, favoriteGameId: 'impostor' });
+  assert.deepEqual((await a.history.achievements()).sort(), ['king_of_the_group', 'master_of_disguise']);
+  assert.deepEqual(await b.history.achievements(), []);
+  assert.deepEqual(await outsider.history.stats(), { matches: 0, wins: 0, favoriteGameId: null });
+
+  await a.auth.deleteAccount();
+  assert.equal((await b.history.list()).length, 5, 'a Bia continua com o histórico depois que a Ana excluiu a conta');
 });

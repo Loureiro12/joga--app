@@ -104,6 +104,35 @@ export type ConnectionState =
   | { status: 'reconnecting'; secondsLeft: number; timeoutSec: number }
   | { status: 'failed' };
 
+/** Boletim de uma partida que chegou ao fim — o que vai para o histórico. */
+export type MatchRecord = {
+  /** Gerado no início da partida; torna a gravação idempotente (regravar não duplica). */
+  matchId: string;
+  roomCode: string;
+  gameId: string;
+  category: string;
+  totalRounds: number;
+  impostorsCaught: number;
+  startedAt: number;
+  endedAt: number;
+  /** Só quem estava na sala no fim. Quem saiu no meio não ganha registro. */
+  players: MatchRecordPlayer[];
+};
+
+export type MatchRecordPlayer = {
+  playerId: PlayerId;
+  name: string;
+  color: string;
+  /** Colocação com empate: 1, 1, 3… */
+  position: number;
+  points: number;
+  /** 1º lugar; em empate no topo, todos os empatados vencem. */
+  won: boolean;
+  timesImpostor: number;
+  /** Vezes em que foi impostor e o grupo não o pegou. */
+  timesEscaped: number;
+};
+
 export type PlayerIdentity = { id: PlayerId; name: string; color: string };
 
 export type CreateRoomInput = { gameId: string; category: string; totalRounds: number; maxPlayers: number };

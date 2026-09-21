@@ -24,8 +24,9 @@ npm run bots -- --code 1234  # bots entram numa sala real (teste com um celular 
 npm run check                # typecheck + testes + smoke — o mesmo que o CI roda
 npm run db:start             # Supabase local (precisa do Docker rodando)
 npm run db:reset             # recria o banco aplicando migrations + seed
-npm run db:types             # regenera packages/db a partir do banco local
-npm run test:db              # testes de integração de conta e perfil contra o Supabase local
+npm run db:types             # regenera packages/db a partir do projeto Supabase linkado
+npm run test:db              # testes de integração (conta, perfil, histórico) contra o Supabase local
+npm run verify:history       # joga uma partida real e confere o histórico no Supabase de dev
 ```
 
 Para o app usar o Supabase em vez dos serviços simulados, copie `apps/mobile/.env.example` para `apps/mobile/.env.local` e preencha com os valores que o `npm run db:start` imprime.

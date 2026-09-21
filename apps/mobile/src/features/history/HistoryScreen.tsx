@@ -10,12 +10,13 @@ import { getGame } from '@/features/catalog/data/games';
 import { services } from '@/services';
 
 import { HistoryRow } from './components';
+import { periodLabel } from './historyDates';
 import type { HistoryEntry } from './HistoryService';
 
 const FILTERS = ['Todas', 'Vitórias', 'Dedução', 'Festa', 'Polêmico', 'Caótico'];
 
 const matches = (filter: string) => (h: HistoryEntry) =>
-  filter === 'Todas' || (filter === 'Vitórias' ? h.position === 1 : getGame(h.gameId)?.category === filter);
+  filter === 'Todas' || (filter === 'Vitórias' ? h.won : getGame(h.gameId)?.category === filter);
 
 /** Tela 27: Histórico. */
 export function HistoryScreen() {
@@ -24,8 +25,9 @@ export function HistoryScreen() {
   const stats = useAsync(() => services.history.stats());
 
   const entries = history.data?.filter(matches(filter)) ?? [];
-  const periods = [...new Set(entries.map((h) => h.period))];
-  const winRate = stats.data ? `${Math.round((stats.data.wins / stats.data.matches) * 100)}%` : '–';
+  // A lista já vem da mais recente para a mais antiga, então os grupos saem na ordem certa.
+  const periods = [...new Set(entries.map((h) => periodLabel(h.endedAt)))];
+  const winRate = stats.data?.matches ? `${Math.round((stats.data.wins / stats.data.matches) * 100)}%` : '–';
 
   return (
     <Screen
@@ -36,7 +38,7 @@ export function HistoryScreen() {
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <StatCard value={String(stats.data?.matches ?? '–')} label="partidas" />
         <StatCard value={winRate} label="vitórias" color={colors.accent} />
-        <StatCard value={getGame(stats.data?.favoriteGameId)?.emoji ?? '–'} label="favorito" />
+        <StatCard value={getGame(stats.data?.favoriteGameId ?? undefined)?.emoji ?? '–'} label="favorito" />
       </View>
 
       <ScrollView
@@ -73,7 +75,7 @@ export function HistoryScreen() {
           <Overline style={{ marginBottom: 8 }}>{period}</Overline>
           <View style={{ gap: 8 }}>
             {entries
-              .filter((h) => h.period === period)
+              .filter((h) => periodLabel(h.endedAt) === period)
               .map((h) => (
                 <HistoryRow key={h.id} entry={h} />
               ))}

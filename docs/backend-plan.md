@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 (fundação), 2 (conta e perfil) e 3 (servidor de salas) concluídos. Passos 4–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Passos 5–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -134,11 +134,19 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 
 **Fica para depois:** trocar o arquivo em disco por tabela quando o servidor ganhar a service role (passo 4); `AbortedScreen` ainda tem a variante "O host saiu da sala", hoje inalcançável.
 
-### Passo 4 — Histórico e estatísticas
+### Passo 4 — Histórico e estatísticas ✅
 
-- `matches`, `match_players` (colocação, pontos, vezes impostor, vezes descoberto), `achievements`.
-- O servidor de salas grava tudo no fim da partida com a service role.
-- `HistoryService` real; conquistas calculadas no servidor.
+- **Boletim no engine** (`RoomEngine.matchRecord()`): só existe quando a partida chega ao fim. Traz colocação "de competição" (1, 1, 3), vitória para todos os empatados no topo, e por jogador quantas vezes foi impostor e quantas escapou. Cada partida tem um id próprio, gerado no início — "jogar novamente" é outra partida.
+- **Banco**: `matches`, `match_players` (com o nome e a cor do dia; `user_id` nulo para bot de dev e para conta apagada) e `achievements`. RLS: cada jogador lê só a própria linha do boletim e só as partidas em que jogou; ninguém escreve pela API.
+- **Gravação**: só o servidor de salas, com a service role, pela função `record_match(jsonb)` — transacional e **idempotente** (a chave é o id da partida), então o servidor repete em falha transitória sem risco de duplicar. Acontece fora do caminho dos jogadores: nunca atrasa nem derruba a sala.
+- **Conquistas** recalculadas do histórico a cada partida gravada (`refresh_achievements`): 🔥 10 partidas até o fim · 🕵️ escapar 3 vezes como impostor (somando partidas) · 👑 vencer 5 partidas.
+- **Decisões (2026-09-20)**: só entra partida que chegou ao fim; quem saiu no meio não ganha registro; sala fechada por falta de gente não é gravada; vitória = 1º lugar, e empate no topo dá vitória a todos os empatados.
+- **No app**: `SupabaseHistoryService` (lista, estatísticas via `get_my_stats()`, conquistas). "Ontem / Sábado / 28 ago" e os grupos "Esta semana / Semana passada / Agosto" passaram a ser calculados a partir da data real. Conquistas bloqueadas aparecem com cadeado. O contador de amigos do Perfil agora vem do `SocialService` (ainda simulado até o passo 5).
+- **Configuração**: `SUPABASE_SERVICE_ROLE_KEY` no `.env` do servidor local e nos secrets do Fly. Sem ela o servidor funciona, mas avisa no boot que o histórico está desligado.
+
+**Como foi verificado (2026-09-21):** SQL num Postgres local com stub do `auth` (só a service role grava; idempotência; RLS de leitura; conquistas nos limiares certos; exclusão de conta preserva o histórico dos outros). 28 testes do engine, 17 do servidor (um boletim por partida, nenhum para partida abandonada, repetição/desistência do gravador) e 21 do app (incluindo os rótulos de data, com virada de semana e de ano). Migration aplicada no `jogae-dev`; **leitura** conferida lá com as classes reais do app, e confirmado que um usuário comum não consegue chamar `record_match` nem inserir em `matches`.
+
+**Não verificado:** a **escrita real** no Supabase (servidor → `record_match` pela REST com a service role) — depende da chave secreta, que eu não leio. `npm run verify:history` faz essa verificação de ponta a ponta assim que a chave estiver em `apps/room-server/.env`. O teste de integração novo (`npm run test:db`) só roda no CI.
 
 ### Passo 5 — Social
 

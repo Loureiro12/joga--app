@@ -1,5 +1,6 @@
 import { RoomEngine, RoomError, type CreateRoomInput, type EngineConfig, type PlayerAppearance, type PlayerId, type RoomCommand, type RoomSnapshot, type Scheduler } from '@jogae/engine';
 
+import { NullMatchRecorder, type MatchRecorder } from './MatchRecorder';
 import type { RoomStore } from './RoomStore';
 
 /** Um celular conectado. O gerenciador só precisa saber mandar o snapshot e fechar. */
@@ -11,6 +12,8 @@ export type Connection = {
 
 export type RoomManagerOptions = {
   store: RoomStore;
+  /** Recebe o boletim quando uma partida chega ao fim. */
+  recorder?: MatchRecorder;
   scheduler?: Scheduler;
   engineConfig?: Partial<EngineConfig>;
   rng?: () => number;
@@ -34,11 +37,15 @@ export class RoomManager {
   private readonly roomOfUser = new Map<PlayerId, string>();
   private readonly connections = new Map<PlayerId, Connection>();
   private readonly failedJoins = new Map<string, number[]>();
+  /** Partidas já enviadas ao histórico neste processo (a gravação em si também é idempotente). */
+  private readonly recorded = new Set<string>();
+  private readonly recorder: MatchRecorder;
   private readonly now: () => number;
   private readonly opts: Required<Pick<RoomManagerOptions, 'maxFailedJoinsPerMinute' | 'idleRoomMs'>> & RoomManagerOptions;
 
   constructor(options: RoomManagerOptions) {
     this.opts = { maxFailedJoinsPerMinute: 10, idleRoomMs: 10 * 60_000, ...options };
+    this.recorder = options.recorder ?? new NullMatchRecorder();
     this.now = options.scheduler ? () => options.scheduler!.now() : () => Date.now();
   }
 
@@ -170,6 +177,7 @@ export class RoomManager {
     if (engine.isEmpty) return this.destroy(code);
 
     this.opts.store.save(code, engine.serialize());
+    this.recordIfFinished(engine);
     const present = new Set(engine.playerIds);
     for (const id of present) this.connections.get(id)?.sendSnapshot(engine.snapshotFor(id));
 
@@ -179,6 +187,15 @@ export class RoomManager {
       this.roomOfUser.delete(userId);
       this.connections.get(userId)?.sendSnapshot(null);
     }
+  }
+
+  /** Partida terminou → boletim para o histórico. Fora do caminho dos jogadores: nunca atrasa nem derruba a sala. */
+  private recordIfFinished(engine: RoomEngine) {
+    const record = engine.matchRecord();
+    if (!record || this.recorded.has(record.matchId)) return;
+    this.recorded.add(record.matchId);
+    if (this.recorded.size > 5000) this.recorded.delete(this.recorded.values().next().value!);
+    this.recorder.record(record).catch((e) => this.opts.log?.('match_record_failed', { matchId: record.matchId, error: String(e) }));
   }
 
   private pushTo(userId: PlayerId) {

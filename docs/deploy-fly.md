@@ -29,6 +29,14 @@ As duas variáveis do Supabase (as mesmas de `apps/mobile/.env.local`; a chave �
 fly secrets set SUPABASE_URL=https://SEU_ID.supabase.co SUPABASE_ANON_KEY=sb_publishable_xxx
 ```
 
+Para as partidas entrarem no histórico, o servidor precisa também da chave **secreta** (service role). Este comando a busca pelo CLI do Supabase e manda direto para o Fly, sem mostrá-la na tela:
+
+```bash
+fly secrets set SUPABASE_SERVICE_ROLE_KEY="$(npx supabase projects api-keys --project-ref SEU_ID -o json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).find(k=>k.name==="service_role").api_key))')"
+```
+
+Sem ela o servidor funciona, mas a primeira linha do log avisa `histórico DESLIGADO`.
+
 Publicar e garantir **uma** máquina:
 
 ```bash

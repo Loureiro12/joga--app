@@ -6,6 +6,7 @@ import { useAsync } from '@/core/hooks/useAsync';
 import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
 import { Avatar, Chip, Display, IconButton, PillButton, PressableScale, Screen, Skeleton, StatCard, Txt } from '@/core/ui';
+import { ACHIEVEMENTS } from '@/features/history/achievements';
 import { HistoryRow } from '@/features/history/components';
 import { usePremiumStore } from '@/features/premium/premiumStore';
 import { services } from '@/services';
@@ -28,18 +29,14 @@ const GearIcon = () => (
   </Svg>
 );
 
-const ACHIEVEMENTS = [
-  { label: '🕵️ Mestre do disfarce', featured: false },
-  { label: '🔥 10 partidas', featured: false },
-  { label: '👑 Rei do grupo', featured: true },
-];
-
 /** Tela 23: Perfil (tab). */
 export function ProfileScreen() {
   const { name, username, color } = useProfileStore();
   const isPremium = usePremiumStore((s) => s.isPremium);
   const stats = useAsync(() => services.history.stats());
   const recent = useAsync(() => services.history.list());
+  const unlocked = useAsync(() => services.history.achievements());
+  const friends = useAsync(() => services.social.listFriends());
 
   return (
     <Screen
@@ -69,7 +66,7 @@ export function ProfileScreen() {
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <StatCard value={String(stats.data?.matches ?? '–')} label="🎮 partidas" onPress={() => router.push(routes.history)} />
         <StatCard value={String(stats.data?.wins ?? '–')} label="🏆 vitórias" color={colors.accent} />
-        <StatCard value={String(stats.data?.friends ?? '–')} label="👥 amigos" onPress={() => router.push(routes.friends)} />
+        <StatCard value={String(friends.data?.length ?? '–')} label="👥 amigos" onPress={() => router.push(routes.friends)} />
       </View>
 
       <View>
@@ -77,9 +74,14 @@ export function ProfileScreen() {
           Conquistas
         </Display>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {ACHIEVEMENTS.map((a) => (
-            <Chip key={a.label} label={a.label} size="sm" state={a.featured ? 'selected' : 'default'} />
-          ))}
+          {ACHIEVEMENTS.map((a) => {
+            const has = unlocked.data?.includes(a.key) ?? false;
+            return (
+              <View key={a.key} accessibilityLabel={has ? `${a.label}: conquistada` : `${a.label}: bloqueada. ${a.hint}`}>
+                <Chip label={`${a.emoji} ${a.label}`} size="sm" state={!has ? 'locked' : a.featured ? 'selected' : 'default'} />
+              </View>
+            );
+          })}
         </View>
       </View>
 
@@ -96,6 +98,11 @@ export function ProfileScreen() {
           {recent.loading
             ? [0, 1, 2].map((i) => <Skeleton key={i} height={62} radius={radii.input} />)
             : recent.data?.slice(0, 3).map((h) => <HistoryRow key={h.id} entry={h} compact />)}
+          {!recent.loading && !recent.data?.length && (
+            <Txt font="body400" size={13} color={colors.muted}>
+              Suas partidas aparecem aqui depois do primeiro jogo.
+            </Txt>
+          )}
         </View>
       </View>
 
