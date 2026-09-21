@@ -33,6 +33,11 @@ export type RemoteRoomOptions = {
   /** Igual à tolerância do servidor: depois disso a vaga já foi liberada, não adianta insistir. */
   reconnectTimeoutSec?: number;
   requestTimeoutMs?: number;
+  /**
+   * Prazo para ABRIR a conexão. Bem maior que o de uma requisição: com o servidor hospedado
+   * desligando quando ocioso, a primeira conexão espera a máquina acordar (medido: ~12 s no Fly).
+   */
+  connectTimeoutMs?: number;
   pingEveryMs?: number;
 };
 
@@ -68,11 +73,13 @@ export class RemoteRoomService implements RoomService {
 
   private readonly timeoutSec: number;
   private readonly requestTimeoutMs: number;
+  private readonly connectTimeoutMs: number;
   private readonly pingEveryMs: number;
 
   constructor(private readonly options: RemoteRoomOptions) {
     this.timeoutSec = options.reconnectTimeoutSec ?? 30;
     this.requestTimeoutMs = options.requestTimeoutMs ?? 8000;
+    this.connectTimeoutMs = options.connectTimeoutMs ?? 25_000;
     this.pingEveryMs = options.pingEveryMs ?? 10_000;
   }
 
@@ -164,7 +171,7 @@ export class RemoteRoomService implements RoomService {
       this.socket = socket;
 
       await new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => fail(new RoomError('timeout')), this.requestTimeoutMs);
+        const timer = setTimeout(() => fail(new RoomError('timeout')), this.connectTimeoutMs);
         const fail = (e: Error) => {
           clearTimeout(timer);
           socket.onopen = socket.onmessage = socket.onclose = socket.onerror = null;
