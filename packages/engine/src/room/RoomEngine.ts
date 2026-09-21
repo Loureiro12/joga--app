@@ -8,6 +8,7 @@ import {
   type PlayerId,
   type PlayerIdentity,
   type Room,
+  type RoomPublicInfo,
   type RoomSnapshot,
   type RoundResult,
   type Score,
@@ -221,6 +222,22 @@ export class RoomEngine {
       result: s.room.phase === 'revealing' && s.result ? this.maskedResult(s.result, s.stage) : null,
       scores,
       summary: s.room.phase === 'finished' && scores[0] ? { winnerId: scores[0].playerId, impostorsCaught: s.impostorsCaught } : null,
+    };
+  }
+
+  /** Visão pública para a página de convite. `null` quando a sala já foi fechada ou esvaziou. */
+  publicInfo(): RoomPublicInfo | null {
+    const s = this.state;
+    const host = s.players.find((p) => p.id === s.room.hostId);
+    if (!host || s.room.phase === 'closed') return null;
+    const initial = (name: string) => (name.trim()[0] ?? '?').toUpperCase();
+    return {
+      code: s.room.code,
+      gameId: s.room.gameId,
+      status: s.room.phase === 'lobby' ? 'open' : s.room.phase === 'finished' ? 'finished' : 'playing',
+      host: { name: host.name, initial: initial(host.name), color: host.color },
+      count: s.players.length,
+      players: s.players.map((p) => ({ initial: initial(p.name), color: p.color })),
     };
   }
 

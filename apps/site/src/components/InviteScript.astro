@@ -1,0 +1,31 @@
+---
+/**
+ * "Deferred deep link" sem SDK de terceiros: antes de mandar a pessoa para a loja, guarda o convite
+ * no aparelho. O combinado com o app: a área de transferência recebe SÓ o valor que a pessoa digitaria
+ * (os 4 dígitos da sala), e a tela "Entrar na sala" do app tem o botão "Colar código".
+ * Para convite de amizade nada é copiado — o link é tocado de novo depois de instalar.
+ */
+interface Props {
+  kind: 'room' | 'friend';
+  value: string;
+}
+const { kind, value } = Astro.props;
+---
+
+<script is:inline define:vars={{ kind, value }}>
+  (function () {
+    try {
+      localStorage.setItem('jogae:invite', JSON.stringify({ kind: kind, value: value, at: Date.now() }));
+    } catch (e) {}
+    if (window.plausible) window.plausible('invite_view', { props: { kind: kind } });
+
+    var note = document.getElementById('copy-note');
+    document.addEventListener('click', function (event) {
+      var link = event.target instanceof Element ? event.target.closest('[data-store-link],[data-copy-code]') : null;
+      if (!link || kind !== 'room' || !navigator.clipboard) return;
+      navigator.clipboard.writeText(value).then(function () {
+        if (note) note.hidden = false;
+      }, function () {});
+    });
+  })();
+</script>

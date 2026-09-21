@@ -5,6 +5,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Chip, Display, Overline, Screen, Spacer, Txt, WaitingButton, toast } from '@/core/ui';
 import { plural } from '@/core/utils/format';
+import { siteLinks } from '@/core/utils/site';
 import { getGame } from '@/features/catalog/data/games';
 
 import { PlayerCard, WaitingSlot } from '../components/cards';
@@ -13,7 +14,7 @@ import { leaveMatch } from '../hooks/leaveMatch';
 import { roomActions } from '../hooks/roomActions';
 import { useMatch } from '../store/matchStore';
 
-export const roomLink = (code: string) => `https://jogae.app/j/${code}`;
+export const roomLink = siteLinks.room;
 
 /** Telas 9 e 11: Lobby do host e do convidado. */
 export function LobbyScreen() {

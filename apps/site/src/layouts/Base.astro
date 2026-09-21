@@ -1,0 +1,180 @@
+---
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import { footerLinks, navLinks } from '../data/content';
+import { plausibleDomain } from '../lib/config';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Caminho canônico ("/privacidade"). Omitido em páginas efêmeras. */
+  path?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  /** Caminho da imagem 1200×630 em /public. */
+  ogImage?: string;
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, description, path, ogTitle = title, ogDescription = description, ogImage = '/og/default.png', noindex = false, jsonLd } = Astro.props;
+
+// Página estática: `Astro.url` já usa o `site` do build. Rota SSR: usa a origem da requisição —
+// assim as URLs absolutas (og:image, canonical) funcionam em qualquer domínio, inclusive o provisório da Vercel.
+const absolute = (p: string) => new URL(p, Astro.url.origin).href;
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#0F0F13" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {path && <link rel="canonical" href={absolute(path)} />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Jogaê" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta property="og:image" content={absolute(ogImage)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    {path && <meta property="og:url" content={absolute(path)} />}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+      rel="stylesheet"
+    />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {plausibleDomain && <script is:inline defer data-domain={plausibleDomain} src="https://plausible.io/js/script.tagged-events.js" />}
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+    <div class="container">
+      <header class="site-header">
+        <a href="/" aria-label="Jogaê — página inicial"><Logo /></a>
+        <nav aria-label="Principal">
+          {navLinks.map((link) => <a class="nav-link" href={link.href}>{link.label}</a>)}
+          <a class="download" href="/#baixar">Baixar</a>
+        </nav>
+      </header>
+
+      <main id="conteudo">
+        <slot />
+      </main>
+
+      <footer class="site-footer">
+        <span class="footer-brand">
+          <Logo size={26} wordmark={false} />
+          <span>© {year} Jogaê · Feito no Brasil</span>
+        </span>
+        <nav aria-label="Rodapé">
+          {footerLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+        </nav>
+      </footer>
+    </div>
+
+    <script is:inline>
+      // Analytics sem cookies (só se o Plausible estiver configurado): cliques nas lojas, FAQ e CTA do Premium.
+      (function () {
+        var track = function (name, props) {
+          if (window.plausible) window.plausible(name, { props: props });
+        };
+        document.addEventListener('click', function (event) {
+          var target = event.target instanceof Element ? event.target.closest('[data-store-link],[data-premium-cta]') : null;
+          if (!target) return;
+          if (target.hasAttribute('data-store-link')) track('download_click', { store: target.getAttribute('data-store-link'), page: target.getAttribute('data-page') });
+          else track('premium_cta', {});
+        });
+        document.addEventListener(
+          'toggle',
+          function (event) {
+            if (event.target instanceof HTMLDetailsElement && event.target.open) track('faq_open', { q: event.target.getAttribute('data-q') });
+          },
+          true,
+        );
+      })();
+    </script>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 22px 0;
+    flex-wrap: wrap;
+  }
+  .site-header nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .nav-link {
+    padding: 9px 13px;
+    border-radius: 99px;
+    color: var(--muted);
+    font: 600 14px var(--body);
+    transition: background 0.15s;
+  }
+  .nav-link:hover {
+    background: var(--surface-light);
+    color: var(--text);
+  }
+  .download,
+  .download:hover {
+    padding: 10px 16px;
+    border-radius: 99px;
+    background: var(--primary);
+    color: var(--text);
+    font: 700 17px var(--display);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .site-footer {
+    border-top: 1px solid var(--surface);
+    padding: 32px 0 48px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font: 400 13px var(--body);
+    color: var(--muted-dark);
+  }
+  .site-footer nav {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .site-footer nav a {
+    font: 500 13px var(--body);
+    color: var(--muted);
+  }
+  .site-footer nav a:hover {
+    color: var(--accent);
+  }
+  @media (max-width: 640px) {
+    .nav-link {
+      display: none;
+    }
+  }
+</style>

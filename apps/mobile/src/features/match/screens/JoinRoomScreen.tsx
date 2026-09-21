@@ -1,6 +1,7 @@
+import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { routes } from '@/core/navigation/routes';
 import { colors } from '@/core/theme';
@@ -55,6 +56,15 @@ export function JoinRoomScreen() {
     setCode((c) => (k === '⌫' ? c.slice(0, -1) : c.length < CODE_LENGTH ? c + k : c));
   };
 
+  // Par do site: a página de convite copia os 4 dígitos antes de mandar a pessoa para a loja.
+  // Só lemos a área de transferência quando a pessoa pede — no iOS isso mostra o aviso de "colar" do sistema.
+  const paste = async () => {
+    const pasted = (await Clipboard.getStringAsync().catch(() => '')).match(/\b\d{4}\b/)?.[0];
+    if (!pasted) return toast('Não achei um código de 4 dígitos para colar.', 'neutral', '📋');
+    setError(false);
+    setCode(pasted);
+  };
+
   const complete = code.length === CODE_LENGTH;
 
   return (
@@ -79,6 +89,13 @@ export function JoinRoomScreen() {
             Peça o código de 4 dígitos ao host.
           </Txt>
           <CodeBoxes code={code} error={error} />
+          {code.length === 0 && !error && (
+            <Pressable accessibilityRole="button" onPress={paste} hitSlop={8} style={{ alignSelf: 'center', padding: 4 }}>
+              <Txt font="body600" size={14} color={colors.primaryLight}>
+                Colar código
+              </Txt>
+            </Pressable>
+          )}
           {error && <FieldError size={14} message="Sala não encontrada. Confira o código com o host." />}
           <Spacer />
           <Keypad onKey={onKey} disabled={loading} />

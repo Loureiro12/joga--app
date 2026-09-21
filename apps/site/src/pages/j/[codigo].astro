@@ -1,0 +1,210 @@
+---
+import InviteScript from '../../components/InviteScript.astro';
+import PhoneLobby from '../../components/PhoneLobby.astro';
+import StoreButtons from '../../components/StoreButtons.astro';
+import { app } from '../../lib/config';
+import { gameName, lookupRoom, onColor, safeColor } from '../../lib/room';
+import Base from '../../layouts/Base.astro';
+
+// Renderizado a cada acesso: o WhatsApp não executa JavaScript, então o código e o nome do host
+// precisam estar no HTML (og:title / og:description) para o convite não virar um link cinza.
+export const prerender = false;
+
+const { codigo = '' } = Astro.params;
+if (!/^\d{4}$/.test(codigo)) return Astro.rewrite('/404');
+
+const lookup = await lookupRoom(codigo);
+const room = lookup.kind === 'found' ? lookup.room : null;
+const gone = lookup.kind === 'gone';
+const game = room ? gameName(room.gameId) : 'Jogaê';
+const hostColor = room ? safeColor(room.host.color) : '#7C3AED';
+const others = room ? room.count - 1 : 0;
+
+const ogTitle = `Você foi convidado para a sala ${codigo}`;
+const ogDescription = room ? `${room.host.name} te chamou para jogar ${game} no Jogaê` : 'Entre na sala pelo Jogaê: jogos sociais para jogar com os amigos no mesmo lugar.';
+const status = !room
+  ? null
+  : room.status === 'playing'
+    ? `${game} · a partida já começou`
+    : `${game} · ${others === 0 ? 'esperando a galera' : others === 1 ? '1 jogador já entrou' : `${others} jogadores já entraram`}`;
+
+// A página é efêmera e pessoal: nada de cache compartilhado nem de indexação.
+Astro.response.headers.set('cache-control', 'private, no-store');
+---
+
+<Base title={`${ogTitle} — Jogaê`} description={ogDescription} ogTitle={ogTitle} ogDescription={ogDescription} ogImage="/og/convite.png" noindex>
+  <div class="invite">
+    <div class="columns">
+      <div class="copy enter">
+        {
+          room && (
+            <div class="from">
+              <div class="avatar" style={`width:48px;height:48px;font-size:22px;background:${hostColor};color:${onColor(hostColor)}`} aria-hidden="true">
+                {room.host.initial}
+              </div>
+              <div>
+                <p class="from-name">{room.host.name} te convidou</p>
+                <p class="from-meta">{status}</p>
+              </div>
+            </div>
+          )
+        }
+        <h1 class="title">{gone ? <>Essa sala<br />já terminou</> : <>Você foi convidado<br />para a sala</>}</h1>
+
+        <div class="card code-card">
+          <div class="code-block">
+            <p class="overline muted">Código da sala</p>
+            <p class:list={['code', { faded: gone }]} aria-label={`Código ${codigo.split('').join(' ')}`}>{codigo}</p>
+          </div>
+          {
+            room && (
+              <div class="faces" aria-label={`${room.count} ${room.count === 1 ? 'pessoa na sala' : 'pessoas na sala'}`}>
+                {room.players.slice(0, 6).map((p) => {
+                  const bg = safeColor(p.color);
+                  return (
+                    <span class="avatar face" style={`background:${bg};color:${onColor(bg)}`} aria-hidden="true">
+                      {p.initial}
+                    </span>
+                  );
+                })}
+              </div>
+            )
+          }
+        </div>
+
+        <p class="lead how">
+          {gone ? 'A partida acabou, mas a próxima é sua: instale o Jogaê e crie uma sala em menos de 30 segundos.' : 'Instale o Jogaê e entre com o código. Se já tem o app, é só tocar no link de novo.'}
+        </p>
+        <StoreButtons long page="convite-sala" />
+        <p id="copy-note" class="copy-note" role="status" hidden>Código {codigo} copiado — no app, toque em “Entrar em uma sala” e cole.</p>
+        {!gone && <a class="open-app" href={`${app.scheme}://j/${codigo}`} data-copy-code>Já tenho o app — abrir o Jogaê →</a>}
+      </div>
+      {/* Sala encerrada: nada de "Você entrou" nem de instruções para entrar — só o convite para baixar. */}
+      {!gone && <div class="phone-col"><PhoneLobby code={codigo} hostName={room?.host.name} hostInitial={room?.host.initial} hostColor={hostColor} hostFg={onColor(hostColor)} count={room?.count} /></div>}
+    </div>
+
+    {!gone && (
+    <section class="card ways" aria-labelledby="ways-title">
+      <h2 id="ways-title" class="ways-title">Três jeitos de entrar</h2>
+      <div class="grid-auto ways-grid">
+        <div class="way"><p class="way-key">Link</p><p>Com o app instalado, tocar neste link abre direto o lobby da sala.</p></div>
+        <div class="way"><p class="way-key">Código {codigo}</p><p>No app, toque em “Entrar em uma sala” e digite os 4 dígitos.</p></div>
+        <div class="way"><p class="way-key">QR do lobby</p><p>Aponte a câmera para o QR Code na tela de quem criou a sala.</p></div>
+      </div>
+    </section>
+    )}
+  </div>
+  <InviteScript kind="room" value={codigo} />
+</Base>
+
+<style>
+  .invite {
+    padding: 20px 0 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: 36px;
+    align-items: center;
+  }
+  .copy {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+  }
+  .from {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .from-name {
+    font: 600 15px var(--body);
+  }
+  .from-meta {
+    font: 400 13px var(--body);
+    color: var(--muted);
+  }
+  .title {
+    font: 800 clamp(44px, 6vw, 80px) / 0.9 var(--display);
+    text-transform: uppercase;
+  }
+  .code-card {
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .code-block {
+    flex: 1;
+    min-width: 140px;
+  }
+  .code {
+    font: 800 clamp(56px, 8vw, 84px) / 1 var(--display);
+    letter-spacing: 8px;
+    color: var(--accent);
+  }
+  .code.faded {
+    color: var(--surface-light);
+  }
+  .faces {
+    display: flex;
+    margin-left: auto;
+    padding-left: 10px;
+  }
+  .face {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    border: 3px solid var(--surface);
+    margin-left: -10px;
+  }
+  .how {
+    font-size: 17px;
+    max-width: 520px;
+  }
+  .copy-note {
+    font: 600 14px var(--body);
+    color: var(--success);
+  }
+  .open-app {
+    font: 600 14px var(--body);
+  }
+  .phone-col {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+  .ways {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .ways-title {
+    font: 800 24px/1 var(--display);
+    text-transform: uppercase;
+  }
+  .ways-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+    gap: 12px;
+  }
+  .way {
+    background: var(--bg);
+    border-radius: 18px;
+    padding: 18px;
+    min-width: 0;
+  }
+  .way-key {
+    font: 600 12px var(--mono);
+    color: var(--accent);
+  }
+  .way p + p {
+    font: 400 14px/1.5 var(--body);
+    color: var(--muted);
+    margin-top: 6px;
+  }
+</style>

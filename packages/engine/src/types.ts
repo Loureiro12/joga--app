@@ -104,6 +104,20 @@ export type ConnectionState =
   | { status: 'reconnecting'; secondsLeft: number; timeoutSec: number }
   | { status: 'failed' };
 
+/**
+ * O que QUALQUER pessoa com o código pode saber da sala (página de convite do site).
+ * Nada secreto: sem ids, sem papel, sem votos, sem pontos — só o suficiente para o convite.
+ */
+export type RoomPublicInfo = {
+  code: string;
+  gameId: string;
+  /** `open`: ainda dá para entrar · `playing`: partida em andamento · `finished`: acabou. */
+  status: 'open' | 'playing' | 'finished';
+  host: { name: string; initial: string; color: string };
+  count: number;
+  players: { initial: string; color: string }[];
+};
+
 /** Boletim de uma partida que chegou ao fim — o que vai para o histórico. */
 export type MatchRecord = {
   /** Gerado no início da partida; torna a gravação idempotente (regravar não duplica). */

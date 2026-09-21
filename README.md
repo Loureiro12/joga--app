@@ -6,11 +6,12 @@
 apps/
   mobile/        App Expo (iOS + Android). Sem variáveis de ambiente roda 100% simulado.
   room-server/   Servidor de salas em tempo real (Node + WebSocket).
+  site/          jogae.app — landing, convites, páginas legais, .well-known (Astro). Fora dos workspaces, com lockfile próprio.
 packages/
   engine/        Tipos, regras dos jogos, protocolo e o RoomEngine (a sala como máquina de estados).
   db/            Tipos do banco gerados pelo Supabase CLI.
 supabase/        Config local, migrations e seed (Auth, Postgres, Edge Functions).
-docs/            backend-plan.md — arquitetura do backend e o passo a passo.
+docs/            backend-plan.md (arquitetura e passos) · deploy-fly.md (servidor) · site.md (site)
 design_handoff_jogae/   Referência de design (protótipo + design system).
 ```
 
@@ -27,6 +28,8 @@ npm run db:reset             # recria o banco aplicando migrations + seed
 npm run db:types             # regenera packages/db a partir do projeto Supabase linkado
 npm run test:db              # testes de integração (conta, perfil, histórico) contra o Supabase local
 npm run verify:history       # joga uma partida real e confere o histórico no Supabase de dev
+npm run site                 # site em http://localhost:4321  (antes: npm --prefix apps/site install)
+npm run site:check           # tipos + build + teste de fumaça do site
 ```
 
 Para o app usar o Supabase em vez dos serviços simulados, copie `apps/mobile/.env.example` para `apps/mobile/.env.local` e preencha com os valores que o `npm run db:start` imprime.
