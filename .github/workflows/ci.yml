@@ -25,6 +25,8 @@ jobs:
         run: npm run typecheck
       - name: Testes (engine + room-server)
         run: npm test
+      - name: Bundle de produção do room-server
+        run: npm run build -w @jogae/room-server
       - name: Smoke do contrato RoomService
         run: npm run smoke:room
       - name: expo-doctor

@@ -1,0 +1,53 @@
+# Publicação do servidor de salas (apps/room-server) no Fly.io.
+# Troque `app` pelo nome que você escolher em `fly launch` — ele é único no Fly inteiro
+# e vira o endereço: wss://<app>.fly.dev/ws
+
+app = "jogae"
+primary_region = "gru" # São Paulo
+
+# O servidor grava as salas e avisa os clientes ao receber SIGTERM; 10 s sobram para isso.
+kill_signal = "SIGTERM"
+kill_timeout = 10
+
+[build]
+  dockerfile = "apps/room-server/Dockerfile"
+
+[env]
+  PORT = "8080"
+  NODE_ENV = "production"
+  AUTH_MODE = "supabase"        # produção recusa qualquer outro valor
+  ROOM_STORE_DIR = "/data/rooms"
+  # SUPABASE_URL e SUPABASE_ANON_KEY entram por `fly secrets set` (ver docs/deploy-fly.md)
+
+# Disco persistente: é o que faz as salas sobreviverem a um deploy.
+[mounts]
+  source = "rooms"
+  destination = "/data"
+  initial_size = "1gb"
+
+[http_service]
+  internal_port = 8080
+  force_https = true            # o app fala wss://
+  # Sem ninguém conectado a máquina desliga (custo ~zero) e religa na próxima conexão.
+  # As salas estão no disco, então nada se perde. Para latência mínima na 1ª conexão
+  # em produção de verdade, troque para "off" e min_machines_running = 1.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 800
+    hard_limit = 1000
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    grace_period = "5s"
+    interval = "15s"
+    timeout = "3s"
+
+# As salas vivem na memória de UM processo: nunca escale para 2 máquinas (ver docs/deploy-fly.md).
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
