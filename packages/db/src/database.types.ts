@@ -1,4 +1,3 @@
-/** GERADO por `npm run db:types` a partir do projeto Supabase linkado. Não edite à mão. */
 export type Json =
   | string
   | number
