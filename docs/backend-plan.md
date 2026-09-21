@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Passo 5: site feito, backend social a fazer. Passos 6–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -160,10 +160,20 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 
 **Não verificado:** o link abrindo o app de verdade — depende do domínio, do Team ID da Apple, do fingerprint do Play e de um build assinado. O site está publicado na Vercel (https://joga-app-zeta.vercel.app, conferido em 2026-09-21: páginas, 404, `.well-known`, convite consultando o servidor no Fly); o domínio próprio aguardava a publicação da zona no Registro.br.
 
-**5b · Backend social — a fazer.**
+**5b · Amigos — feito (2026-09-21), falta aplicar a migration e publicar o servidor.**
 
-- `friendships`, convite por link (o app já cai em Amigos com `invitedBy`; falta gravar), `active_rooms` para o "jogando agora", `push_tokens`.
-- Push "Fulano criou uma sala" respeitando a configuração de notificações (é aqui que `settings.notif` vai para o servidor).
+- **Sem pedido nem aceite**, como o design promete ("quem entrar pelo seu link vira amigo na hora"): abrir `jogaeapp.com.br/u/{username}` chama `add_friend_by_username` e a amizade nasce mútua. Tabela `friendships` com um par por linha (`user_a < user_b`); ninguém escreve nela direto.
+- **Convite sobrevive ao login.** A rota `/u/:username` só guarda o convite (`friendInviteStore`, persistido); quem grava é o `useFriendInviteSync`, no layout raiz, assim que há alguém logado. Quem abre o link sem conta vira amigo depois de se cadastrar. *Limite:* quem ainda não tem o app instalado perde o convite (a loja não repassa o link) — precisa tocar no link de novo depois de instalar.
+- **"Jogando agora".** O servidor de salas espelha as salas vivas em `active_rooms` (`RoomPresence`, mesma service role do histórico): publica a cada mudança de jogadores/fase, renova a cada minuto, limpa tudo ao subir. Quem lê ignora linha com mais de 3 minutos, então servidor que cai não deixa amigo "jogando" para sempre. Sala no placar final não conta. Falha de escrita nunca afeta a sala.
+- **O código da sala só aparece para amigos.** `active_rooms` não é legível por cliente nenhum; o único caminho é `get_my_friends` (`security definer`), que também devolve partidas em comum e vitórias do amigo. "Entrar" só aparece com a sala no lobby; em partida mostra "partida em andamento".
+- *Risco aceito:* o @username é público, então dá para montar o link de qualquer pessoa e virar "amigo" dela sem ela ter mandado o link — e aí ver em que sala ela está. Mitigações: limite de 30 adições por hora, e qualquer um dos dois desfaz a amizade (segurar o dedo no amigo → Remover). Se isso virar problema, o caminho é trocar o @username do link por um código de convite secreto.
+- A tela Amigos recarrega ao voltar para ela e a cada 20 s.
+
+**Verificado:** as regras do banco num Postgres local (amizade mútua, erros, RLS, presença velha ignorada, exclusão de conta em cascata); presença do servidor com testes (fim a fim com espião + escritor do Supabase com `fetch` falso); serviço do app com cliente falso. **Não verificado:** o teste de integração novo (`npm run test:db`) só roda no CI; e o caminho real servidor → `active_rooms` → tela depende de aplicar a migration e publicar o servidor.
+
+**5c · Push — a fazer.** `push_tokens` e "Fulano criou uma sala" respeitando a configuração de notificações (é aqui que `settings.notif` vai para o servidor). Precisa de build nativo e das credenciais de push (APNs / FCM).
+
+**Premium escondido (2026-09-21).** `apps/mobile/src/core/config/features.ts` (`premium: false`) tira da navegação a assinatura e o que depende dela (criar jogo com IA, categorias exclusivas); o site faz o mesmo com `premiumEnabled` em `src/data/content.ts`. Motivo: a compra ainda é simulada, e a App Store rejeita isso. Religar no passo 6.
 
 ### Passo 6 — Assinatura
 

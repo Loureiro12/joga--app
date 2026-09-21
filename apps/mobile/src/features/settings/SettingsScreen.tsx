@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
+import { features } from '@/core/config/features';
 import { routes } from '@/core/navigation/routes';
 import { openSite, siteLinks } from '@/core/utils/site';
 import { colors, radii } from '@/core/theme';
@@ -103,7 +104,7 @@ export function SettingsScreen() {
 
       <Group title="Conta">
         <Row emoji="🌎" title="Idioma" onPress={soon} right={<Txt size={14} color={colors.muted}>Português (BR) ›</Txt>} />
-        <Row emoji="✨" title="Assinatura" onPress={() => router.push(routes.premium)} right={<Badge label={isPremium ? 'Premium' : 'Grátis'} kind={isPremium ? 'premium' : 'category'} />} />
+        {features.premium && <Row emoji="✨" title="Assinatura" onPress={() => router.push(routes.premium)} right={<Badge label={isPremium ? 'Premium' : 'Grátis'} kind={isPremium ? 'premium' : 'category'} />} />}
         <Row emoji="🔒" title="Privacidade" onPress={() => openSite(siteLinks.privacy)} right={<Chevron />} />
         <Row emoji="📄" title="Termos de uso" onPress={() => openSite(siteLinks.terms)} right={<Chevron />} />
         <Row emoji="💬" title="Ajuda e feedback" onPress={soon} right={<Chevron />} last />
@@ -129,7 +130,7 @@ export function SettingsScreen() {
         </Display>
         <Txt font="body400" size={14} lh={1.4} color={colors.muted} center>
           Isso apaga seu perfil, histórico e amigos para sempre. Não dá para desfazer.
-          {isPremium ? ' A assinatura continua ativa na loja até você cancelar por lá.' : ''}
+          {features.premium && isPremium ? ' A assinatura continua ativa na loja até você cancelar por lá.' : ''}
         </Txt>
         <View style={{ flexDirection: 'row', gap: 8, alignSelf: 'stretch', marginTop: 6 }}>
           <Button label="Cancelar" variant="tertiary" height={56} fontSize={20} disabled={deleting} onPress={() => setAskDelete(false)} style={{ flex: 1 }} />

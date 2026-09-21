@@ -10,7 +10,9 @@ import type { RoomService } from '@/features/match/services/RoomService';
 import { MockBillingService, type BillingService } from '@/features/premium/BillingService';
 import { MockProfileService, type ProfileService } from '@/features/profile/ProfileService';
 import { SupabaseProfileService } from '@/features/profile/SupabaseProfileService';
-import { MockSocialService, type SocialService } from '@/features/social/SocialService';
+import { friendInviteLink, MockSocialService } from '@/features/social/MockSocialService';
+import type { SocialService } from '@/features/social/SocialService';
+import { SupabaseSocialService } from '@/features/social/SupabaseSocialService';
 
 import { AppState } from 'react-native';
 
@@ -20,7 +22,7 @@ import { createSupabaseClient, isSupabaseConfigured } from './supabase/client';
  * Composition root: ÚNICO lugar que sabe quais implementações estão em uso.
  * Telas e stores importam `services` e dependem só das interfaces.
  *
- * Com EXPO_PUBLIC_SUPABASE_URL/ANON_KEY definidas, conta e perfil são reais;
+ * Com EXPO_PUBLIC_SUPABASE_URL/ANON_KEY definidas, conta, perfil, histórico e amigos são reais;
  * sem elas, tudo roda simulado (útil para design, testes de UI e o harness web).
  */
 export type Services = {
@@ -55,7 +57,7 @@ export const services: Services = {
   profile: supabase ? new SupabaseProfileService(supabase) : new MockProfileService(),
   billing: new MockBillingService(),
   ai: new MockAiGameService(),
-  social: new MockSocialService(),
+  social: supabase ? new SupabaseSocialService(supabase, friendInviteLink) : new MockSocialService(),
   history: supabase ? new SupabaseHistoryService(supabase) : new MockHistoryService(),
 };
 

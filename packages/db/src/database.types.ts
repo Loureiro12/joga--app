@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_rooms: {
+        Row: {
+          code: string
+          game_id: string
+          player_ids: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          game_id: string
+          player_ids?: string[]
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          game_id?: string
+          player_ids?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       achievements: {
         Row: {
           key: string
@@ -29,6 +53,27 @@ export type Database = {
           key?: string
           unlocked_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          user_a?: string
+          user_b?: string
         }
         Relationships: []
       }
@@ -150,7 +195,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_friend_by_username: {
+        Args: { target_username: string }
+        Returns: {
+          already_friends: boolean
+          color: string
+          id: string
+          name: string
+          username: string
+        }[]
+      }
       delete_my_account: { Args: never; Returns: undefined }
+      get_my_friends: {
+        Args: never
+        Returns: {
+          color: string
+          games_together: number
+          id: string
+          name: string
+          playing_code: string
+          playing_game: string
+          playing_status: string
+          trophies: number
+          username: string
+        }[]
+      }
       get_my_stats: {
         Args: never
         Returns: {
@@ -161,6 +230,7 @@ export type Database = {
       }
       record_match: { Args: { record: Json }; Returns: boolean }
       refresh_achievements: { Args: { target: string }; Returns: undefined }
+      remove_friend: { Args: { friend_id: string }; Returns: undefined }
       username_base: { Args: { source: string }; Returns: string }
     }
     Enums: {

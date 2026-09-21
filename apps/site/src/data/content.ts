@@ -17,18 +17,24 @@ export const games = [
 
 export const perks = ['Jogos criados com IA', 'Todos os jogos', 'Categorias exclusivas', 'Partidas ilimitadas'];
 
+/**
+ * Premium ainda não existe no app (apps/mobile/src/core/config/features.ts): anunciar preço e "7 dias grátis"
+ * de algo que não dá para comprar é propaganda enganosa. Religue junto com o app.
+ */
+export const premiumEnabled = false;
+
 export const faq = [
   { q: 'Preciso que todo mundo instale o app?', a: 'Sim, cada pessoa joga no próprio celular — é assim que os papéis ficam secretos. A entrada é rápida: código de 4 dígitos ou QR, sem cadastro obrigatório.' },
   { q: 'Funciona sem internet?', a: 'Não. Os celulares se falam por uma sala online, então todos precisam de conexão — Wi-Fi da casa ou dados móveis. Se alguém cair, o app guarda a vaga por 30 segundos.' },
   { q: 'Quantas pessoas podem jogar?', a: 'De 3 a 12, dependendo do jogo. O Impostor fica melhor entre 5 e 8.' },
-  { q: 'É pago?', a: 'Não. Os jogos principais são gratuitos e sem anúncio durante a partida. O Premium libera jogos criados com IA, categorias exclusivas e partidas ilimitadas.' },
+  { q: 'É pago?', a: premiumEnabled ? 'Não. Os jogos principais são gratuitos e sem anúncio durante a partida. O Premium libera jogos criados com IA, categorias exclusivas e partidas ilimitadas.' : 'Não. O Jogaê é gratuito e não mostra anúncio durante a partida.' },
   { q: 'Dá para jogar com crianças?', a: 'Dá. O clima 👨‍👩‍👧 Família usa perguntas leves. Outros climas, como 👀 Polêmico, são pensados para adultos.' },
 ];
 
 export const navLinks = [
   { label: 'Como funciona', href: '/#como-funciona' },
   { label: 'Jogos', href: '/#jogos' },
-  { label: 'Premium', href: '/#premium' },
+  ...(premiumEnabled ? [{ label: 'Premium', href: '/#premium' }] : []),
   { label: 'Dúvidas', href: '/#duvidas' },
 ];
 

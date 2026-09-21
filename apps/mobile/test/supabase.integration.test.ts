@@ -17,6 +17,8 @@ import { SupabaseAuthService, type PlatformAuth } from '../src/features/auth/Sup
 import { SupabaseHistoryService } from '../src/features/history/SupabaseHistoryService';
 import { ProfileError } from '../src/features/profile/ProfileService';
 import { SupabaseProfileService } from '../src/features/profile/SupabaseProfileService';
+import { SocialError } from '../src/features/social/SocialService';
+import { SupabaseSocialService } from '../src/features/social/SupabaseSocialService';
 
 type Stack = { API_URL: string; ANON_KEY: string; SERVICE_ROLE_KEY: string; INBUCKET_URL?: string; MAILPIT_URL?: string };
 
@@ -35,7 +37,7 @@ const platform: PlatformAuth = {
 /** Um "aparelho": cliente próprio, com sessão própria em memória. */
 function device() {
   const supabase = createClient(stack.API_URL, stack.ANON_KEY, { realtime, auth: { flowType: 'pkce', autoRefreshToken: false, detectSessionInUrl: false } });
-  return { supabase, auth: new SupabaseAuthService(supabase, platform), profile: new SupabaseProfileService(supabase), history: new SupabaseHistoryService(supabase) };
+  return { supabase, auth: new SupabaseAuthService(supabase, platform), profile: new SupabaseProfileService(supabase), history: new SupabaseHistoryService(supabase), social: new SupabaseSocialService(supabase, (u) => `jogaeapp.com.br/u/${u}`) };
 }
 
 const admin: SupabaseClient = createClient(stack.API_URL, stack.SERVICE_ROLE_KEY, { realtime, auth: { persistSession: false, autoRefreshToken: false } });
@@ -287,4 +289,57 @@ test('histórico: só o servidor grava; cada jogador lê a própria linha; regra
 
   await a.auth.deleteAccount();
   assert.equal((await b.history.list()).length, 5, 'a Bia continua com o histórico depois que a Ana excluiu a conta');
+});
+
+test('amigos: o link cria amizade mútua; a sala do amigo só aparece para amigos; excluir a conta desfaz', async () => {
+  const [a, b, outsider] = [device(), device(), device()];
+  const ua = await a.auth.signUpWithEmail('Ami Ana', email('aana'), PASS);
+  const ub = await b.auth.signUpWithEmail('Ami Bia', email('abia'), PASS);
+  const uo = await outsider.auth.signUpWithEmail('Ami Fora', email('afora'), PASS);
+  const anaUsername = (await a.profile.getMyProfile(ua.id))!.username;
+
+  // Bia abre o link da Ana — com @ e maiúsculas, como alguém digitaria.
+  const added = await b.social.addFriend(`@${anaUsername.toUpperCase()}`);
+  assert.deepEqual([added.id, added.name, added.alreadyFriends], [ua.id, 'Ami Ana', false]);
+  assert.equal((await b.social.addFriend(anaUsername)).alreadyFriends, true, 'abrir o link de novo não duplica');
+  assert.deepEqual((await a.social.listFriends()).map((f) => f.id), [ub.id], 'a amizade vale dos dois lados');
+
+  await assert.rejects(b.social.addFriend('ninguem_com_esse_nome'), (e) => e instanceof SocialError && e.code === 'not_found');
+  await assert.rejects(a.social.addFriend(anaUsername), (e) => e instanceof SocialError && e.code === 'self');
+
+  // Ninguém escreve amizade direto, e ninguém de fora enxerga a dos outros.
+  const forged = await outsider.supabase.from('friendships').insert({ user_a: ua.id, user_b: uo.id });
+  assert.ok(forged.error, 'insert direto tem de ser recusado');
+  assert.deepEqual((await outsider.supabase.from('friendships').select('user_a')).data, []);
+
+  // Uma partida juntos (Ana vence) e a Ana num lobby aberto agora.
+  const player = (id: string, name: string, position: number) => ({ playerId: id, name, color: '#7C3AED', position, points: 1000 - position * 100, won: position === 1, timesImpostor: 0, timesEscaped: 0 });
+  await admin.rpc('record_match', {
+    record: { matchId: crypto.randomUUID(), roomCode: '4827', gameId: 'impostor', category: 'Filmes', totalRounds: 3, impostorsCaught: 1, startedAt: Date.now() - 600_000, endedAt: Date.now(), players: [player(ua.id, 'Ami Ana', 1), player(ub.id, 'Ami Bia', 2), player(uo.id, 'Ami Fora', 3)] },
+  });
+  const code = String(1000 + Math.floor(Math.random() * 9000));
+  assert.equal((await admin.from('active_rooms').upsert({ code, game_id: 'impostor', status: 'open', player_ids: [ua.id] })).error, null);
+
+  const [ana] = await b.social.listFriends();
+  assert.deepEqual([ana.gamesTogether, ana.trophies, ana.playing], [1, 1, { gameId: 'impostor', roomCode: code, joinable: true }]);
+
+  // Quem não é amigo não descobre a sala: nem pela lista, nem lendo a tabela.
+  assert.deepEqual(await outsider.social.listFriends(), []);
+  assert.ok((await outsider.supabase.from('active_rooms').select('code')).error, 'active_rooms não é legível pelos clientes');
+  assert.ok((await b.supabase.from('active_rooms').select('code')).error, 'nem por quem é amigo: só via get_my_friends');
+
+  // Presença velha (servidor caiu sem limpar) é ignorada.
+  await admin.from('active_rooms').update({ updated_at: new Date(Date.now() - 10 * 60_000).toISOString() }).eq('code', code);
+  assert.equal((await b.social.listFriends())[0].playing, undefined);
+  await admin.from('active_rooms').delete().eq('code', code);
+
+  // Desfazer é unilateral e vale para os dois; só quem é da amizade consegue.
+  await outsider.social.removeFriend(ua.id);
+  assert.equal((await b.social.listFriends()).length, 1, 'terceiro não desfaz amizade alheia');
+  await a.social.removeFriend(ub.id);
+  assert.deepEqual(await b.social.listFriends(), []);
+
+  await b.social.addFriend(anaUsername);
+  await a.auth.deleteAccount();
+  assert.deepEqual(await b.social.listFriends(), [], 'conta excluída some da lista de amigos');
 });

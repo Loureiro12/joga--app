@@ -1,7 +1,7 @@
 ---
 import PhoneHome from '../components/PhoneHome.astro';
 import StoreButtons from '../components/StoreButtons.astro';
-import { faq, games, perks, steps } from '../data/content';
+import { faq, games, perks, premiumEnabled, steps } from '../data/content';
 import Base from '../layouts/Base.astro';
 
 const description = 'Jogos sociais para jogar com os amigos no mesmo lugar. O app sorteia papéis secretos, conduz as rodadas, abre a votação e revela quem era o impostor.';
@@ -73,6 +73,7 @@ const jsonLd = {
       </div>
     </section>
 
+    {premiumEnabled && (
     <section id="premium" class="premium" aria-labelledby="premium-title">
       <div class="premium-copy">
         <p class="premium-over">✨ Premium</p>
@@ -99,6 +100,7 @@ const jsonLd = {
         <p class="plan-foot">Cancele quando quiser. Só uma pessoa do grupo precisa assinar.</p>
       </div>
     </section>
+    )}
 
     <section id="duvidas" aria-labelledby="faq-title">
       <h2 id="faq-title" class="h2 section-title">Perguntas rápidas</h2>
