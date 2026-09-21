@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+html{background:#08080B}body{margin:0;min-height:100%;background:#08080B;color:#FAFAFA;font-family:"DM Sans",system-ui,sans-serif}
+a{color:#A78BFA}a:hover{color:#FACC15}
+</style>
+</helmet>
+
+<div style="padding:40px 44px 8px;max-width:1500px">
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:12px"><svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg><span style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.3px">Joga<span style="color:#FACC15">ê</span></span></div>
+    <div style="font:500 14px 'DM Sans',sans-serif;color:#A1A1AA">Store assets · <a href="Jogae - Prototipo.dc.html" style="text-decoration:none">Protótipo</a> · <a href="Jogae - Design System.dc.html" style="text-decoration:none">Design System</a></div>
+  </div>
+  <div style="font:400 13px/1.55 'DM Sans',sans-serif;color:#A1A1AA;max-width:760px;margin-top:10px">8 screenshots em <b style="color:#FAFAFA">1290×2796</b> (iPhone 6.7" — aceito pela App Store e reescalável para o Google Play 1080×1920+), ícone 1024×1024 e o texto da ficha. Cada peça é um artboard exato: exporte com o botão de captura de elemento ou PDF.</div>
+</div>
+
+<div style="padding:24px 44px 60px;display:flex;flex-direction:column;gap:52px;max-width:1500px">
+
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:6px;color:#A1A1AA">01 · Screenshots 1290×2796</div>
+    <div style="font:400 13px 'DM Sans',sans-serif;color:#A1A1AA;margin-bottom:18px">Ordem pensada para a busca: os 3 primeiros contam a proposta sozinhos.</div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap">
+
+      <div id="s1" style="width:1290px;height:2796px;background:#7C3AED;position:relative;overflow:hidden;flex:none;border-radius:8px">
+        <div style="position:absolute;left:96px;right:96px;top:150px">
+          <div style="font:800 168px/.88 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-2px">Todo mundo<br>sabe a palavra.<br><span style="color:#FACC15">Menos um.</span></div>
+          <div style="font:500 52px/1.35 'DM Sans',sans-serif;opacity:.85;margin-top:44px;max-width:900px">O celular é o mestre do jogo. Vocês só precisam estar juntos.</div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:-180px;transform:translateX(-50%) rotate(-5deg);width:840px;height:1826px;border-radius:92px;background:#0F0F13;padding:18px;box-sizing:border-box;box-shadow:0 60px 140px rgba(0,0,0,.55)">
+          <div style="width:100%;height:100%;border-radius:76px;overflow:hidden;background:#0F0F13;position:relative">
+            <div style="transform:scale(2.0);transform-origin:top left;width:402px;height:874px">
+              <div style="height:100%;background:#0F0F13;padding:64px 20px 24px;display:flex;flex-direction:column;gap:22px;box-sizing:border-box;overflow:hidden">
+                <div><div style="font:500 16px/1.3 'DM Sans',sans-serif;color:#A1A1AA">Boa noite 👋</div><div style="font:800 44px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.5px">Bora jogar?</div></div>
+                <div style="background:#7C3AED;border-radius:28px;padding:22px;min-height:250px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden">
+                  <svg viewBox="0 0 200 120" style="position:absolute;right:-10px;top:14px;width:210px;height:126px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="76" cy="62" r="17" fill="#0F0F13"></circle><circle cx="166" cy="62" r="17" fill="#0F0F13"></circle><circle cx="82" cy="56" r="5" fill="#FAFAFA"></circle><circle cx="172" cy="56" r="5" fill="#FAFAFA"></circle></svg>
+                  <div style="display:flex;gap:6px"><span style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:rgba(15,15,19,.35);padding:6px 9px;border-radius:99px">Dedução</span><span style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#FACC15;color:#0F0F13;padding:6px 9px;border-radius:99px">Em alta</span></div>
+                  <div style="font:800 52px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:8px">Impostor</div>
+                  <div style="font:500 15px/1.35 'DM Sans',sans-serif;opacity:.85;margin-top:8px">Todo mundo sabe a palavra. Menos um.</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span style="font:600 13px 'DM Sans',sans-serif;opacity:.8">3–12 · 10–20 min</span><span style="background:#FAFAFA;color:#0F0F13;border-radius:99px;padding:12px 18px;font:700 17px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Jogar agora</span></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <div style="background:#FACC15;color:#0F0F13;border-radius:24px;padding:18px 16px;min-height:180px;display:flex;flex-direction:column;justify-content:flex-end"><div style="font:800 24px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Quem é mais provável?</div><div style="font:600 12px 'DM Sans',sans-serif;opacity:.75;margin-top:8px">3+ jogadores</div></div>
+                  <div style="background:#22C55E;color:#0F0F13;border-radius:24px;padding:18px 16px;min-height:180px;display:flex;flex-direction:column;justify-content:flex-end"><div style="font:800 24px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Desafio secreto</div><div style="font:600 12px 'DM Sans',sans-serif;opacity:.75;margin-top:8px">3+ jogadores</div></div>
+                </div>
+                <div><div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:12px">Escolha o clima</div><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">😂 Engraçado</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">🔥 Caótico</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:10px 14px;font:600 14px 'DM Sans',sans-serif">👀 Polêmico</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s2" style="width:1290px;height:2796px;background:#0F0F13;position:relative;overflow:hidden;flex:none;border-radius:8px">
+        <div style="position:absolute;left:96px;right:96px;top:150px">
+          <div style="font:600 34px/1 'DM Sans',sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#FACC15">Sala em 4 dígitos</div>
+          <div style="font:800 168px/.88 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-2px;margin-top:28px">Todos entram<br>em segundos.</div>
+          <div style="font:500 52px/1.35 'DM Sans',sans-serif;color:#A1A1AA;margin-top:44px;max-width:900px">Código ou QR Code. Cada um no próprio celular, ninguém instala nada complicado.</div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:-180px;transform:translateX(-50%) rotate(4deg);width:840px;height:1826px;border-radius:92px;background:#19191F;padding:18px;box-sizing:border-box;box-shadow:0 60px 140px rgba(0,0,0,.6)">
+          <div style="width:100%;height:100%;border-radius:76px;overflow:hidden;background:#0F0F13">
+            <div style="transform:scale(2.0);transform-origin:top left;width:402px;height:874px">
+              <div style="height:100%;background:#0F0F13;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;overflow:hidden">
+                <div style="font:800 32px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Sala criada 🎉</div>
+                <div style="background:#19191F;border-radius:28px;padding:22px;display:flex;align-items:center;gap:18px">
+                  <div style="flex:1"><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Código da sala</div><div style="font:800 72px/1 'Barlow Condensed',sans-serif;letter-spacing:6px;color:#FACC15;margin-top:6px">4827</div><div style="display:flex;gap:8px;margin-top:12px"><div style="background:#27272F;border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif">Copiar</div><div style="background:#27272F;border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif">Compartilhar</div></div></div>
+                  <svg viewBox="0 0 84 84" style="width:96px;height:96px;background:#FAFAFA;border-radius:14px;padding:8px;box-sizing:border-box;flex:none" aria-hidden="true"><path fill="#0F0F13" d="M0 0h28v28H0zM8 8h12v12H8zM56 0h28v28H56zM64 8h12v12H64zM0 56h28v28H0zM8 64h12v12H8zM36 0h8v8h-8zM36 16h8v12h-8zM32 36h8v8h-8zM48 32h12v8H48zM64 36h8v12h-8zM76 32h8v8h-8zM36 48h12v8H36zM56 56h8v8h-8zM72 56h12v8H72zM56 72h8v12h-8zM72 72h12v12H72zM36 64h8v8h-8zM32 76h12v8H32zM0 36h8v8H0zM16 40h8v8h-8z"></path><path fill="#FAFAFA" d="M10 10h8v8h-8zM66 10h8v8h-8zM10 66h8v8h-8z"></path></svg>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font:800 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">5 jogadores conectados</div><div style="font:500 13px 'DM Sans',sans-serif;color:#A1A1AA">de 6</div></div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px;border:1px solid #7C3AED"><div style="width:40px;height:40px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">V</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">Você</div><div style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.6px;text-transform:uppercase;background:#7C3AED;padding:5px 8px;border-radius:99px">Host</div></div>
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px"><div style="width:40px;height:40px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">A</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">André</div><div style="width:24px;height:24px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div></div>
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px"><div style="width:40px;height:40px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">C</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">Carol</div><div style="width:24px;height:24px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div></div>
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px"><div style="width:40px;height:40px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">L</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">Lucas</div><div style="width:24px;height:24px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div></div>
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:16px;padding:12px 14px"><div style="width:40px;height:40px;border-radius:50%;background:#A78BFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif">P</div><div style="flex:1;font:600 16px 'DM Sans',sans-serif">Pedro</div><div style="width:24px;height:24px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div></div>
+                </div>
+                <div style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;margin-top:6px">Começar partida</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s3" style="width:1290px;height:2796px;background:#19191F;position:relative;overflow:hidden;flex:none;border-radius:8px">
+        <div style="position:absolute;left:96px;right:96px;top:150px">
+          <div style="font:800 168px/.88 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-2px">Segure<br>para ver<br><span style="color:#FACC15">seu papel.</span></div>
+          <div style="font:500 52px/1.35 'DM Sans',sans-serif;color:#A1A1AA;margin-top:44px;max-width:900px">Só você vê a tela. O impostor não recebe a palavra — e precisa fingir muito bem.</div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:-180px;transform:translateX(-50%) rotate(-4deg);width:840px;height:1826px;border-radius:92px;background:#0F0F13;padding:18px;box-sizing:border-box;box-shadow:0 60px 140px rgba(0,0,0,.6)">
+          <div style="width:100%;height:100%;border-radius:76px;overflow:hidden;background:#0F0F13">
+            <div style="transform:scale(2.0);transform-origin:top left;width:402px;height:874px">
+              <div style="height:100%;background:#0F0F13;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;overflow:hidden">
+                <div style="display:flex;justify-content:space-between"><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Rodada 1 · Comidas</div><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Só você vê isso</div></div>
+                <div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Seu papel<br>está pronto.</div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:center">
+                  <div style="width:250px;height:340px;border-radius:28px;background:#7C3AED;position:relative;overflow:hidden;box-shadow:0 30px 60px rgba(124,58,237,.35)">
+                    <div style="position:absolute;inset:14px;border-radius:18px;border:2px solid rgba(250,250,250,.25)"></div>
+                    <svg viewBox="0 0 100 100" style="position:absolute;left:50%;top:50%;width:120px;height:120px;transform:translate(-50%,-50%)" aria-hidden="true"><ellipse cx="50" cy="50" rx="42" ry="26" fill="#FAFAFA"></ellipse><circle cx="50" cy="52" r="14" fill="#0F0F13"></circle><circle cx="55" cy="47" r="4" fill="#FAFAFA"></circle></svg>
+                    <div style="position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(15,15,19,.35)"><div style="height:100%;background:#FACC15;width:62%"></div></div>
+                    <div style="position:absolute;top:22px;left:0;right:0;text-align:center;font:800 14px 'Barlow Condensed',sans-serif;letter-spacing:2px;text-transform:uppercase;opacity:.8">Jogaê</div>
+                  </div>
+                </div>
+                <div style="height:64px;border-radius:20px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:62%;background:#FACC15"></div><span style="position:relative">Continue segurando…</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s4" style="width:1290px;height:2796px;background:#0F0F13;position:relative;overflow:hidden;flex:none;border-radius:8px">
+        <div style="position:absolute;left:96px;right:96px;top:150px">
+          <div style="font:600 34px/1 'DM Sans',sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#EF4444">A pior parte é fingir</div>
+          <div style="font:800 168px/.88 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-2px;margin-top:28px">Você é<br>o impostor.</div>
+          <div style="font:500 52px/1.35 'DM Sans',sans-serif;color:#A1A1AA;margin-top:44px;max-width:900px">Descubra a palavra ouvindo as pistas — sem entregar que você não tem ideia.</div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:-180px;transform:translateX(-50%) rotate(5deg);width:840px;height:1826px;border-radius:92px;background:#19191F;padding:18px;box-sizing:border-box;box-shadow:0 60px 140px rgba(239,68,68,.25)">
+          <div style="width:100%;height:100%;border-radius:76px;overflow:hidden;background:#1A0F14">
+            <div style="transform:scale(2.0);transform-origin:top left;width:402px;height:874px">
+              <div style="height:100%;background:#1A0F14;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;overflow:hidden">
+                <div style="display:flex;justify-content:space-between"><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Rodada 1 · Comidas</div><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Só você vê isso</div></div>
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px">
+                  <div style="border-radius:28px;background:#0F0F13;border:2px solid #EF4444;padding:36px 24px;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center">
+                    <svg viewBox="0 0 200 120" style="width:170px;height:102px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><circle cx="60" cy="62" r="17" fill="#EF4444"></circle><circle cx="150" cy="62" r="17" fill="#EF4444"></circle><circle cx="60" cy="62" r="8" fill="#0F0F13"></circle><circle cx="150" cy="62" r="8" fill="#0F0F13"></circle></svg>
+                    <div style="font:800 48px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;color:#EF4444">Você é o<br>impostor</div>
+                  </div>
+                  <div style="font:800 26px/1.1 'Barlow Condensed',sans-serif;text-transform:uppercase;text-align:center">Descubra a palavra sem ser descoberto.</div>
+                </div>
+                <div style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Entendi, esconder</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s5" style="width:1290px;height:2796px;background:#FACC15;color:#0F0F13;position:relative;overflow:hidden;flex:none;border-radius:8px">
+        <div style="position:absolute;left:96px;right:96px;top:150px">
+          <div style="font:800 168px/.88 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-2px">Hora<br>de votar.</div>
+          <div style="font:500 52px/1.35 'DM Sans',sans-serif;opacity:.75;margin-top:44px;max-width:900px">Ninguém vê os votos até todos confirmarem. Zero espaço para pressão.</div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:-180px;transform:translateX(-50%) rotate(-5deg);width:840px;height:1826px;border-radius:92px;background:#0F0F13;padding:18px;box-sizing:border-box;box-shadow:0 60px 140px rgba(0,0,0,.35)">
+          <div style="width:100%;height:100%;border-radius:76px;overflow:hidden;background:#0F0F13">
+            <div style="transform:scale(2.0);transform-origin:top left;width:402px;height:874px">
+              <div style="height:100%;background:#0F0F13;color:#FAFAFA;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;overflow:hidden">
+                <div><div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Hora de votar 👀</div><div style="font:500 16px/1.4 'DM Sans',sans-serif;color:#A1A1AA;margin-top:6px">Quem você acha que é o impostor?</div></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <div style="background:#19191F;border:2px solid transparent;border-radius:24px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px"><div style="width:64px;height:64px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 28px 'Barlow Condensed',sans-serif">A</div><div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">André</div></div>
+                  <div style="background:#19191F;border:2px solid transparent;border-radius:24px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px"><div style="width:64px;height:64px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 28px 'Barlow Condensed',sans-serif">C</div><div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">Carol</div></div>
+                  <div style="background:#27272F;border:2px solid #FACC15;border-radius:24px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;transform:scale(1.03)"><div style="width:64px;height:64px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 28px 'Barlow Condensed',sans-serif">L</div><div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">Lucas</div><div style="position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 14px 'DM Sans',sans-serif">✓</div></div>
+                  <div style="background:#19191F;border:2px solid transparent;border-radius:24px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:10px"><div style="width:64px;height:64px;border-radius:50%;background:#A78BFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 28px 'Barlow Condensed',sans-serif">P</div><div style="font:800 22px 'Barlow Condensed',sans-serif;text-transform:uppercase">Pedro</div></div>
+                </div>
+                <div style="flex:1"></div>
+                <div style="height:58px;border-radius:18px;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Confirmar voto em Lucas</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s6" style="width:1290px;height:2796px;background:#166534;position:relative;overflow:hidden;flex:none;border-radius:8px">
+        <div style="position:absolute;left:96px;right:96px;top:150px">
+          <div style="font:800 168px/.88 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-2px">A revelação<br>é o melhor<br><span style="color:#FACC15">momento.</span></div>
+          <div style="font:500 52px/1.35 'DM Sans',sans-serif;opacity:.85;margin-top:44px;max-width:900px">Suspense, contagem de votos e pontos — o app conduz tudo em três tempos.</div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:-180px;transform:translateX(-50%) rotate(4deg);width:840px;height:1826px;border-radius:92px;background:#0F0F13;padding:18px;box-sizing:border-box;box-shadow:0 60px 140px rgba(0,0,0,.5)">
+          <div style="width:100%;height:100%;border-radius:76px;overflow:hidden;background:#166534">
+            <div style="transform:scale(2.0);transform-origin:top left;width:402px;height:874px">
+              <div style="height:100%;background:#166534;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;overflow:hidden">
+                <div style="text-align:center;padding-top:10px">
+                  <div style="font-size:60px;line-height:1">🎉</div>
+                  <div style="font:800 52px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:10px">Vocês acertaram!</div>
+                  <div style="font:500 15px/1.4 'DM Sans',sans-serif;color:rgba(250,250,250,.85);margin-top:8px">Lucas era o impostor. A palavra era PIZZA.</div>
+                </div>
+                <div style="background:rgba(15,15,19,.45);border-radius:24px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+                  <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:rgba(250,250,250,.7)">Votação</div>
+                  <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 14px 'Barlow Condensed',sans-serif">L</div><div style="width:64px;font:600 15px 'DM Sans',sans-serif">Lucas</div><div style="flex:1;height:12px;border-radius:99px;background:rgba(250,250,250,.15);overflow:hidden"><div style="height:100%;border-radius:99px;background:#FACC15;width:100%"></div></div><div style="font:800 18px 'Barlow Condensed',sans-serif;width:56px;text-align:right">4 votos</div></div>
+                  <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 14px 'Barlow Condensed',sans-serif">A</div><div style="width:64px;font:600 15px 'DM Sans',sans-serif">André</div><div style="flex:1;height:12px;border-radius:99px;background:rgba(250,250,250,.15);overflow:hidden"><div style="height:100%;border-radius:99px;background:rgba(250,250,250,.6);width:25%"></div></div><div style="font:800 18px 'Barlow Condensed',sans-serif;width:56px;text-align:right">1 voto</div></div>
+                  <div style="display:flex;align-items:center;gap:12px"><div style="width:32px;height:32px;border-radius:50%;background:#A78BFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 14px 'Barlow Condensed',sans-serif">P</div><div style="width:64px;font:600 15px 'DM Sans',sans-serif">Pedro</div><div style="flex:1;height:12px;border-radius:99px;background:rgba(250,250,250,.15);overflow:hidden"><div style="height:100%;border-radius:99px;background:rgba(250,250,250,.6);width:25%"></div></div><div style="font:800 18px 'Barlow Condensed',sans-serif;width:56px;text-align:right">1 voto</div></div>
+                </div>
+                <div style="background:rgba(15,15,19,.45);border-radius:24px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center"><div style="font:600 14px 'DM Sans',sans-serif">Pontos da rodada</div><div style="font:800 28px 'Barlow Condensed',sans-serif;color:#FACC15">+200 para o grupo</div></div>
+                <div style="flex:1"></div>
+                <div style="height:58px;border-radius:18px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Ver placar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s7" style="width:1290px;height:2796px;background:#0F0F13;position:relative;overflow:hidden;flex:none;border-radius:8px">
+        <div style="position:absolute;left:96px;right:96px;top:150px">
+          <div style="font:600 34px/1 'DM Sans',sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#FACC15">Placar ao vivo</div>
+          <div style="font:800 168px/.88 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-2px;margin-top:28px">Alguém sai<br>campeão<br>da noite.</div>
+          <div style="font:500 52px/1.35 'DM Sans',sans-serif;color:#A1A1AA;margin-top:44px;max-width:900px">Pontos por rodada, ranking do grupo e aquela rivalidade que não acaba.</div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:-180px;transform:translateX(-50%) rotate(-4deg);width:840px;height:1826px;border-radius:92px;background:#19191F;padding:18px;box-sizing:border-box;box-shadow:0 60px 140px rgba(0,0,0,.6)">
+          <div style="width:100%;height:100%;border-radius:76px;overflow:hidden;background:#0F0F13">
+            <div style="transform:scale(2.0);transform-origin:top left;width:402px;height:874px">
+              <div style="height:100%;background:#0F0F13;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:14px">
+                  <svg viewBox="0 0 60 60" style="width:52px;height:52px" aria-hidden="true"><path d="M16 6h28v14a14 14 0 0 1-28 0z" fill="#FACC15"></path><path d="M10 10h6v8a6 6 0 0 1-6-6zM44 10h6v2a6 6 0 0 1-6 6z" fill="#FACC15"></path><rect x="26" y="32" width="8" height="10" fill="#FACC15"></rect><rect x="16" y="42" width="28" height="8" rx="3" fill="#FACC15"></rect></svg>
+                  <div><div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Placar</div><div style="font:500 13px 'DM Sans',sans-serif;color:#A1A1AA">Depois da rodada 3 de 5</div></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:12px;background:#27272F;border-radius:20px;padding:14px 16px"><div style="width:30px;font:800 22px 'Barlow Condensed',sans-serif;text-align:center">🥇</div><div style="width:44px;height:44px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">A</div><div style="flex:1"><div style="font:700 18px 'DM Sans',sans-serif">André</div><div style="font:500 12px 'DM Sans',sans-serif;color:#22C55E">+250 nesta rodada</div></div><div style="font:800 26px 'Barlow Condensed',sans-serif">1.250<span style="font-size:14px;color:#A1A1AA;margin-left:3px">pts</span></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:20px;padding:14px 16px"><div style="width:30px;font:800 22px 'Barlow Condensed',sans-serif;text-align:center">🥈</div><div style="width:44px;height:44px;border-radius:50%;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">C</div><div style="flex:1"><div style="font:700 18px 'DM Sans',sans-serif">Carol</div><div style="font:500 12px 'DM Sans',sans-serif;color:#22C55E">+200 nesta rodada</div></div><div style="font:800 26px 'Barlow Condensed',sans-serif">980<span style="font-size:14px;color:#A1A1AA;margin-left:3px">pts</span></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:20px;padding:14px 16px"><div style="width:30px;font:800 22px 'Barlow Condensed',sans-serif;text-align:center">🥉</div><div style="width:44px;height:44px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">L</div><div style="flex:1"><div style="font:700 18px 'DM Sans',sans-serif">Lucas</div><div style="font:500 12px 'DM Sans',sans-serif;color:#22C55E">+300 nesta rodada</div></div><div style="font:800 26px 'Barlow Condensed',sans-serif">850<span style="font-size:14px;color:#A1A1AA;margin-left:3px">pts</span></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:20px;padding:14px 16px"><div style="width:30px;font:800 22px 'Barlow Condensed',sans-serif;text-align:center;color:#A1A1AA">4º</div><div style="width:44px;height:44px;border-radius:50%;background:#A78BFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">P</div><div style="flex:1"><div style="font:700 18px 'DM Sans',sans-serif">Pedro</div><div style="font:500 12px 'DM Sans',sans-serif;color:#22C55E">+150 nesta rodada</div></div><div style="font:800 26px 'Barlow Condensed',sans-serif">720<span style="font-size:14px;color:#A1A1AA;margin-left:3px">pts</span></div></div>
+                  <div style="display:flex;align-items:center;gap:12px;background:#19191F;border-radius:20px;padding:14px 16px"><div style="width:30px;font:800 22px 'Barlow Condensed',sans-serif;text-align:center;color:#A1A1AA">5º</div><div style="width:44px;height:44px;border-radius:50%;background:#EF4444;display:flex;align-items:center;justify-content:center;font:800 20px 'Barlow Condensed',sans-serif">J</div><div style="flex:1"><div style="font:700 18px 'DM Sans',sans-serif">João</div><div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA">+0 nesta rodada</div></div><div style="font:800 26px 'Barlow Condensed',sans-serif">610<span style="font-size:14px;color:#A1A1AA;margin-left:3px">pts</span></div></div>
+                </div>
+                <div style="flex:1"></div>
+                <div style="height:58px;border-radius:18px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Próxima rodada</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="s8" style="width:1290px;height:2796px;background:#7C3AED;position:relative;overflow:hidden;flex:none;border-radius:8px">
+        <div style="position:absolute;left:96px;right:96px;top:150px">
+          <div style="font:600 34px/1 'DM Sans',sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:#FACC15">✨ Premium</div>
+          <div style="font:800 168px/.88 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-2px;margin-top:28px">Um jogo<br>feito para<br>o seu grupo.</div>
+          <div style="font:500 52px/1.35 'DM Sans',sans-serif;opacity:.85;margin-top:44px;max-width:900px">Diga quantos vocês são e o clima da noite. A IA monta perguntas e desafios na hora.</div>
+        </div>
+        <div style="position:absolute;left:50%;bottom:-180px;transform:translateX(-50%) rotate(5deg);width:840px;height:1826px;border-radius:92px;background:#0F0F13;padding:18px;box-sizing:border-box;box-shadow:0 60px 140px rgba(0,0,0,.5)">
+          <div style="width:100%;height:100%;border-radius:76px;overflow:hidden;background:#0F0F13">
+            <div style="transform:scale(2.0);transform-origin:top left;width:402px;height:874px">
+              <div style="height:100%;background:#0F0F13;padding:64px 20px 24px;display:flex;flex-direction:column;gap:18px;box-sizing:border-box;overflow:hidden">
+                <div><div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A78BFA">✨ Premium</div><div style="font:800 40px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:6px">Que tipo de jogo vocês querem?</div></div>
+                <div style="background:#19191F;border:1px solid #27272F;border-radius:20px;padding:16px;font:400 16px/1.45 'DM Sans',sans-serif;min-height:120px">Somos 7 amigos em uma viagem e queremos algo engraçado para jogar durante uns 20 minutos.</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><div style="background:#27272F;border-radius:99px;padding:8px 12px;font:600 13px 'DM Sans',sans-serif">😂 engraçado</div><div style="background:#27272F;border-radius:99px;padding:8px 12px;font:600 13px 'DM Sans',sans-serif">👥 7 pessoas</div><div style="background:#27272F;border-radius:99px;padding:8px 12px;font:600 13px 'DM Sans',sans-serif">⏱ 20 min</div></div>
+                <div style="background:#7C3AED;border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:10px">
+                  <div style="font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;opacity:.8">Sugestão</div>
+                  <div style="font:800 36px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Caos na viagem</div>
+                  <div style="font:500 13px 'DM Sans',sans-serif;opacity:.85">7 jogadores · ~20 minutos</div>
+                  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px"><div style="background:rgba(15,15,19,.3);border-radius:14px;padding:10px;text-align:center"><div style="font:800 24px/1 'Barlow Condensed',sans-serif">12</div><div style="font:500 11px 'DM Sans',sans-serif;opacity:.8">perguntas</div></div><div style="background:rgba(15,15,19,.3);border-radius:14px;padding:10px;text-align:center"><div style="font:800 24px/1 'Barlow Condensed',sans-serif">8</div><div style="font:500 11px 'DM Sans',sans-serif;opacity:.8">desafios</div></div><div style="background:rgba(15,15,19,.3);border-radius:14px;padding:10px;text-align:center"><div style="font:800 24px/1 'Barlow Condensed',sans-serif">3</div><div style="font:500 11px 'DM Sans',sans-serif;opacity:.8">especiais</div></div></div>
+                </div>
+                <div style="flex:1"></div>
+                <div style="height:58px;border-radius:18px;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 22px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px">Começar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:6px;color:#A1A1AA">02 · Ícone 1024×1024</div>
+    <div style="font:400 13px 'DM Sans',sans-serif;color:#A1A1AA;margin-bottom:18px">Exportar sem cantos arredondados e sem transparência (as lojas aplicam a máscara). À direita, a previsão nos dois sistemas.</div>
+    <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div id="icon" style="width:1024px;height:1024px;background:#7C3AED;display:flex;align-items:center;justify-content:center;flex:none">
+          <svg viewBox="0 0 40 40" style="width:720px;height:720px" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><circle cx="23.5" cy="20" r="6.5" fill="#0F0F13"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></svg>
+        </div>
+        <div style="font:500 12px 'DM Sans',sans-serif;color:#A1A1AA">1024×1024 · sem máscara · #7C3AED</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:22px;padding-top:8px">
+        <div style="display:flex;gap:18px;align-items:center">
+          <div style="width:180px;height:180px;border-radius:40px;background:#7C3AED;display:flex;align-items:center;justify-content:center;overflow:hidden"><svg viewBox="0 0 40 40" style="width:126px;height:126px" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><circle cx="23.5" cy="20" r="6.5" fill="#0F0F13"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></svg></div>
+          <div><div style="font:700 17px 'Barlow Condensed',sans-serif;text-transform:uppercase">iOS · squircle</div><div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA">Nome na home: Jogaê</div></div>
+        </div>
+        <div style="display:flex;gap:18px;align-items:center">
+          <div style="width:180px;height:180px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;overflow:hidden"><svg viewBox="0 0 40 40" style="width:126px;height:126px" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><circle cx="23.5" cy="20" r="6.5" fill="#0F0F13"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></svg></div>
+          <div><div style="font:700 17px 'Barlow Condensed',sans-serif;text-transform:uppercase">Android · círculo</div><div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA">Adaptive icon: olho no foreground (66%), roxo no background</div></div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center">
+          <div style="width:60px;height:60px;border-radius:14px;background:#7C3AED;display:flex;align-items:center;justify-content:center;overflow:hidden"><svg viewBox="0 0 40 40" style="width:42px;height:42px" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><circle cx="23.5" cy="20" r="6.5" fill="#0F0F13"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></svg></div>
+          <div style="width:40px;height:40px;border-radius:10px;background:#7C3AED;display:flex;align-items:center;justify-content:center;overflow:hidden"><svg viewBox="0 0 40 40" style="width:28px;height:28px" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><circle cx="23.5" cy="20" r="6.5" fill="#0F0F13"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></svg></div>
+          <div style="width:29px;height:29px;border-radius:7px;background:#7C3AED;display:flex;align-items:center;justify-content:center;overflow:hidden"><svg viewBox="0 0 40 40" style="width:20px;height:20px" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><circle cx="23.5" cy="20" r="6.5" fill="#0F0F13"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></svg></div>
+          <div style="font:400 12px 'DM Sans',sans-serif;color:#A1A1AA">60 · 40 · 29 pt — o olho continua legível</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font:800 22px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:18px;color:#A1A1AA">03 · Texto da ficha</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:12px;align-items:start">
+      <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">App Store</div>
+        <div><div style="font:600 12px 'DM Sans',sans-serif;color:#A1A1AA">Nome (30)</div><div style="font:600 17px 'DM Sans',sans-serif;margin-top:4px">Jogaê: jogos com amigos</div></div>
+        <div><div style="font:600 12px 'DM Sans',sans-serif;color:#A1A1AA">Subtítulo (30)</div><div style="font:600 17px 'DM Sans',sans-serif;margin-top:4px">Impostor, votação e placar</div></div>
+        <div><div style="font:600 12px 'DM Sans',sans-serif;color:#A1A1AA">Palavras-chave (100)</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;margin-top:4px;color:#FAFAFA">impostor,jogos para grupo,festa,amigos,jogo de dedução,verdade,desafio,viagem,família,party game</div></div>
+        <div><div style="font:600 12px 'DM Sans',sans-serif;color:#A1A1AA">Texto promocional (170)</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;margin-top:4px">Chegou o modo IA: descreva seu grupo e a noite e o Jogaê monta um jogo só para vocês, com perguntas e desafios inéditos.</div></div>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Google Play</div>
+        <div><div style="font:600 12px 'DM Sans',sans-serif;color:#A1A1AA">Título (30)</div><div style="font:600 17px 'DM Sans',sans-serif;margin-top:4px">Jogaê — jogos com amigos</div></div>
+        <div><div style="font:600 12px 'DM Sans',sans-serif;color:#A1A1AA">Descrição breve (80)</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;margin-top:4px">Jogos para quem está junto: papéis secretos, votação e placar no celular.</div></div>
+        <div><div style="font:600 12px 'DM Sans',sans-serif;color:#A1A1AA">Categoria</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;margin-top:4px">Jogos › Quebra-cabeça / Casual · Classificação: 12+ (humor, temas leves) · Contém compras no app</div></div>
+        <div><div style="font:600 12px 'DM Sans',sans-serif;color:#A1A1AA">Tags</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;margin-top:4px">party game · dedução social · multiplayer local · festa · família</div></div>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px">
+        <div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Descrição completa (as duas lojas)</div>
+        <div style="font:400 15px/1.6 'DM Sans',sans-serif;white-space:pre-line;text-wrap:pretty">Vocês estão juntos. O celular vira o mestre do jogo.
+
+Escolha uma brincadeira, crie a sala e passe o código. O Jogaê explica as regras, sorteia os papéis secretos, controla as rodadas e o cronômetro, abre a votação e revela o resultado com a tensão toda. Ninguém precisa lembrar regra nenhuma.
+
+COMECE EM MENOS DE 30 SEGUNDOS
+• Crie a sala, compartilhe o código de 4 dígitos ou o QR Code
+• Cada um entra pelo próprio celular
+• Sem cadastro obrigatório: dá para jogar como convidado
+
+IMPOSTOR
+Todos recebem a mesma palavra secreta — menos um. Dê pistas sem entregar demais, vote em quem parece perdido e descubra se o grupo acertou.
+
+TAMBÉM NO APP
+• Quem é mais provável? — descubra o que seus amigos realmente pensam
+• Desafio secreto — complete sua missão sem ninguém perceber
+• E mais jogos de dedução, festa, casais, família e rodadas rápidas
+
+FEITO PARA A VIDA REAL
+Festa, viagem, bar, sala de casa, almoço de família. De 3 a 12 jogadores, partidas de 5 a 20 minutos, placar do grupo do começo ao fim.
+
+PREMIUM
+• Jogos criados com IA a partir do seu grupo e do clima da noite
+• Todos os jogos e categorias exclusivas
+• Partidas ilimitadas
+Assinatura mensal ou anual, com 7 dias grátis. Cancele quando quiser.
+
+Bora jogar?</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

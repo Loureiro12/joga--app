@@ -42,6 +42,7 @@ function phone(name: string, opts: { token?: string | null } = {}) {
     WebSocketImpl: Tracked as never,
     reconnectTimeoutSec: 2,
     requestTimeoutMs: 1500,
+    connectTimeoutMs: 1500,
     pingEveryMs: 200,
   });
   const state = { snapshot: null as RoomSnapshot | null, connection: [] as ConnectionState['status'][] };

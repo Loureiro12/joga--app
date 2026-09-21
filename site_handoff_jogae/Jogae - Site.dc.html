@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+html{background:#0F0F13}body{margin:0;background:#0F0F13;color:#FAFAFA;font-family:"DM Sans",system-ui,sans-serif}
+a{color:#A78BFA;text-decoration:none}a:hover{color:#FACC15}
+@keyframes jg-blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+@keyframes jg-in{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes jg-float{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-14px) rotate(-4deg)}}
+</style>
+</helmet>
+
+<div style="max-width:1180px;margin:0 auto;padding:0 24px">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0;flex-wrap:wrap">
+    <div onClick="{{ goHome }}" style="display:flex;align-items:center;gap:10px;cursor:pointer">
+      <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg>
+      <span style="font:800 28px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.3px">Joga<span style="color:#FACC15">ê</span></span>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <div onClick="{{ n.go }}" style="padding:9px 13px;border-radius:99px;background:{{ n.bg }};color:{{ n.fg }};font:600 14px 'DM Sans',sans-serif;cursor:pointer;transition:background .15s">{{ n.n }}</div>
+      </sc-for>
+      <div onClick="{{ goInvite }}" style="padding:10px 16px;border-radius:99px;background:#7C3AED;color:#FAFAFA;font:700 17px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.4px;cursor:pointer">Baixar</div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;gap:96px;padding-bottom:80px">
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:40px;align-items:center;padding-top:40px">
+        <div style="display:flex;flex-direction:column;gap:24px;min-width:0">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;background:#19191F;border:1px solid #27272F;padding:7px 11px;border-radius:99px">3–12 jogadores</span>
+            <span style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;background:#FACC15;color:#0F0F13;padding:7px 11px;border-radius:99px">Grátis para começar</span>
+          </div>
+          <h1 style="font:800 clamp(56px,7.5vw,104px)/.9 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-1.5px;margin:0;text-wrap:balance">Todo mundo sabe a palavra.<br><span style="color:#FACC15">Menos um.</span></h1>
+          <p style="font:500 clamp(17px,2vw,21px)/1.5 'DM Sans',sans-serif;color:#A1A1AA;margin:0;max-width:520px;text-wrap:pretty">Vocês já estão juntos. O Jogaê vira o mestre do jogo: sorteia papéis secretos, conduz as rodadas, abre a votação e revela quem era o impostor.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:10px;background:#FAFAFA;color:#0F0F13;border-radius:16px;padding:12px 18px;cursor:pointer">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="#0F0F13" aria-hidden="true"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8-.7 0-1.9-.8-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.2 1.8 2.4 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.1.8 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.7-1-2.7-4zM14.2 5.8c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.7-1.3z"></path></svg>
+              <div><div style="font:400 10px 'DM Sans',sans-serif;line-height:1.1">Baixar na</div><div style="font:700 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">App Store</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#FAFAFA;color:#0F0F13;border-radius:16px;padding:12px 18px;cursor:pointer">
+              <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3.6 2.3c-.3.3-.5.8-.5 1.4v16.6c0 .6.2 1.1.5 1.4l.1.1 9.3-9.3v-.2L3.7 2.2z" fill="#22C55E"></path><path d="m16.2 15.6-3.2-3.2v-.2l3.2-3.2.1.1 3.8 2.2c1.1.6 1.1 1.6 0 2.2z" fill="#FACC15"></path><path d="m16.3 15.5-3.3-3.3-9.4 9.4c.4.4 1 .4 1.7 0z" fill="#EF4444"></path><path d="M3.6 2.2c-.4.4-.4 1-.4 1.5l9.4 9.4 3.3-3.3z" fill="#7C3AED"></path></svg>
+              <div><div style="font:400 10px 'DM Sans',sans-serif;line-height:1.1">Disponível no</div><div style="font:700 20px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Google Play</div></div>
+            </div>
+          </div>
+          <div style="font:400 13px 'DM Sans',sans-serif;color:#52525B">Sem cadastro obrigatório — dá para entrar como convidado.</div>
+        </div>
+        <div style="display:flex;justify-content:center;min-width:0">
+          <div style="width:300px;height:640px;border-radius:52px;background:#19191F;padding:10px;box-sizing:border-box;box-shadow:0 50px 100px rgba(0,0,0,.6);animation:jg-float 6s ease-in-out infinite">
+            <div style="width:100%;height:100%;border-radius:44px;overflow:hidden;background:#0F0F13;display:flex;flex-direction:column;padding:34px 16px 16px;box-sizing:border-box;gap:14px">
+              <div><div style="font:500 13px/1.3 'DM Sans',sans-serif;color:#A1A1AA">Boa noite 👋</div><div style="font:800 34px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Bora jogar?</div></div>
+              <div style="background:#7C3AED;border-radius:22px;padding:16px;min-height:190px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden">
+                <svg viewBox="0 0 200 120" style="position:absolute;right:-8px;top:10px;width:160px" aria-hidden="true"><ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse><g style="animation:jg-blink 5s infinite;transform-origin:105px 60px"><circle cx="76" cy="62" r="17" fill="#0F0F13"></circle><circle cx="166" cy="62" r="17" fill="#0F0F13"></circle><circle cx="82" cy="56" r="5" fill="#FAFAFA"></circle><circle cx="172" cy="56" r="5" fill="#FAFAFA"></circle></g></svg>
+                <div style="font:800 40px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Impostor</div>
+                <div style="font:500 12px/1.3 'DM Sans',sans-serif;opacity:.85;margin-top:6px">Todo mundo sabe a palavra. Menos um.</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span style="font:600 11px 'DM Sans',sans-serif;opacity:.8">3–12 · 15 min</span><span style="background:#FAFAFA;color:#0F0F13;border-radius:99px;padding:9px 13px;font:700 14px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Jogar agora</span></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div style="background:#FACC15;color:#0F0F13;border-radius:18px;padding:14px;min-height:130px;display:flex;align-items:flex-end;font:800 19px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Quem é mais provável?</div>
+                <div style="background:#22C55E;color:#0F0F13;border-radius:18px;padding:14px;min-height:130px;display:flex;align-items:flex-end;font:800 19px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Desafio secreto</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:8px 11px;font:600 12px 'DM Sans',sans-serif">😂 Engraçado</span><span style="background:#19191F;border:1px solid #27272F;border-radius:99px;padding:8px 11px;font:600 12px 'DM Sans',sans-serif">🔥 Caótico</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font:800 clamp(34px,4vw,52px)/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:28px">Em menos de 30 segundos</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+            <div style="background:#19191F;border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:12px;min-width:0">
+              <div style="width:44px;height:44px;border-radius:14px;background:{{ s.bg }};color:{{ s.fg }};display:flex;align-items:center;justify-content:center;font:800 22px 'Barlow Condensed',sans-serif">{{ s.k }}</div>
+              <div style="font:800 26px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ s.t }}</div>
+              <div style="font:400 15px/1.5 'DM Sans',sans-serif;color:#A1A1AA;text-wrap:pretty">{{ s.d }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:28px">
+          <div style="font:800 clamp(34px,4vw,52px)/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Os jogos</div>
+          <div style="font:400 15px 'DM Sans',sans-serif;color:#A1A1AA">Novos jogos todo mês</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px">
+          <sc-for list="{{ games }}" as="g" hint-placeholder-count="6">
+            <div style="background:{{ g.bg }};color:{{ g.fg }};border-radius:24px;padding:22px;min-height:210px;display:flex;flex-direction:column;justify-content:space-between;gap:14px;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 10px 'DM Sans',sans-serif;letter-spacing:.7px;text-transform:uppercase;opacity:.75">{{ g.cat }}</span><span style="font-size:24px">{{ g.e }}</span></div>
+              <div><div style="font:800 28px/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">{{ g.n }}</div><div style="font:500 13px/1.4 'DM Sans',sans-serif;opacity:.85;margin-top:8px">{{ g.d }}</div><div style="font:600 12px 'DM Sans',sans-serif;opacity:.75;margin-top:10px">{{ g.meta }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#7C3AED;border-radius:32px;padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;align-items:center">
+        <div style="min-width:0">
+          <div style="font:600 12px 'DM Sans',sans-serif;letter-spacing:.9px;text-transform:uppercase;color:#FACC15">✨ Premium</div>
+          <div style="font:800 clamp(34px,4.5vw,56px)/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:12px;text-wrap:balance">Um jogo feito para o seu grupo</div>
+          <div style="font:500 16px/1.5 'DM Sans',sans-serif;opacity:.85;margin-top:14px;max-width:460px">Diga quantos vocês são e o clima da noite. A IA monta perguntas, desafios e rodadas especiais na hora.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
+            <sc-for list="{{ perks }}" as="p" hint-placeholder-count="4">
+              <span style="background:rgba(15,15,19,.3);border-radius:99px;padding:9px 13px;font:600 13px 'DM Sans',sans-serif">{{ p }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:rgba(15,15,19,.35);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;border-radius:18px;background:rgba(15,15,19,.4);padding:16px"><div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;opacity:.7">Mensal</div><div style="font:800 32px/1 'Barlow Condensed',sans-serif;margin-top:6px">R$ 14,90</div><div style="font:500 12px 'DM Sans',sans-serif;opacity:.7;margin-top:4px">por mês</div></div>
+            <div style="flex:1;border-radius:18px;background:#FACC15;color:#0F0F13;padding:16px;position:relative"><div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;opacity:.7">Anual</div><div style="font:800 32px/1 'Barlow Condensed',sans-serif;margin-top:6px">R$ 99</div><div style="font:500 12px 'DM Sans',sans-serif;opacity:.7;margin-top:4px">R$ 8,25 / mês</div></div>
+          </div>
+          <div style="height:54px;border-radius:16px;background:#FAFAFA;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.4px;cursor:pointer">Começar 7 dias grátis</div>
+          <div style="font:400 12px 'DM Sans',sans-serif;opacity:.75;text-align:center">Cancele quando quiser. Só uma pessoa do grupo precisa assinar.</div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font:800 clamp(34px,4vw,52px)/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:28px">Perguntas rápidas</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ faq }}" as="f" hint-placeholder-count="5">
+            <div onClick="{{ f.toggle }}" style="background:#19191F;border-radius:20px;padding:20px 22px;cursor:pointer;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:center;gap:16px"><div style="flex:1;font:700 19px 'DM Sans',sans-serif;min-width:0">{{ f.q }}</div><div style="font:400 22px 'DM Sans',sans-serif;color:#A1A1AA;transform:rotate({{ f.rot }});transition:transform .2s">+</div></div>
+              <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}"><div style="font:400 15px/1.55 'DM Sans',sans-serif;color:#A1A1AA;max-width:760px;text-wrap:pretty">{{ f.a }}</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#19191F;border-radius:32px;padding:clamp(28px,5vw,56px);text-align:center;display:flex;flex-direction:column;align-items:center;gap:20px">
+        <svg viewBox="0 0 40 40" width="72" height="72" aria-hidden="true"><ellipse cx="20" cy="20" rx="17" ry="11" fill="#FAFAFA"></ellipse><g style="animation:jg-blink 5s infinite;transform-origin:20px 20px"><circle cx="23.5" cy="20" r="6.5" fill="#7C3AED"></circle><circle cx="26" cy="17.5" r="2.2" fill="#FACC15"></circle></g></svg>
+        <div style="font:800 clamp(40px,6vw,72px)/.95 'Barlow Condensed',sans-serif;text-transform:uppercase">Bora jogar?</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+          <div style="background:#FAFAFA;color:#0F0F13;border-radius:16px;padding:14px 22px;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">App Store</div>
+          <div style="background:#7C3AED;border-radius:16px;padding:14px 22px;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">Google Play</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- CONVITE (/j/4827) -->
+  <sc-if value="{{ isInvite }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:20px 0 80px;display:flex;flex-direction:column;gap:40px">
+      <div style="font:400 13px 'DM Sans',sans-serif;color:#52525B">jogae.app/j/4827 — página que abre quando o app <b style="color:#A1A1AA">não</b> está instalado. Com o app, o link abre direto no lobby.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:36px;align-items:center">
+        <div style="display:flex;flex-direction:column;gap:22px;min-width:0;animation:jg-in .5s ease both">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:48px;height:48px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 22px 'Barlow Condensed',sans-serif">A</div>
+            <div><div style="font:600 15px 'DM Sans',sans-serif">André te convidou</div><div style="font:400 13px 'DM Sans',sans-serif;color:#A1A1AA">Impostor · 5 jogadores já entraram</div></div>
+          </div>
+          <div style="font:800 clamp(44px,6vw,80px)/.9 'Barlow Condensed',sans-serif;text-transform:uppercase">Você foi convidado<br>para a sala</div>
+          <div style="background:#19191F;border-radius:24px;padding:22px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div style="flex:1;min-width:140px"><div style="font:600 11px 'DM Sans',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#A1A1AA">Código da sala</div><div style="font:800 clamp(56px,8vw,84px)/1 'Barlow Condensed',sans-serif;letter-spacing:8px;color:#FACC15">4827</div></div>
+            <div style="display:flex;margin-left:auto">
+              <sc-for list="{{ inviteAvatars }}" as="p" hint-placeholder-count="5">
+                <div style="width:40px;height:40px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font:800 18px 'Barlow Condensed',sans-serif;border:3px solid #19191F;margin-left:-10px">{{ p.i }}</div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="font:500 17px/1.5 'DM Sans',sans-serif;color:#A1A1AA;max-width:520px">Instale o Jogaê e o código entra sozinho. Se já tem o app, é só tocar no link de novo.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <div style="background:#FAFAFA;color:#0F0F13;border-radius:16px;padding:14px 22px;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">Baixar na App Store</div>
+            <div style="background:#7C3AED;border-radius:16px;padding:14px 22px;font:700 20px 'Barlow Condensed',sans-serif;text-transform:uppercase;cursor:pointer">Baixar no Google Play</div>
+          </div>
+          <div onClick="{{ goHome }}" style="font:600 14px 'DM Sans',sans-serif;color:#A78BFA;cursor:pointer">Já tenho o app — abrir o Jogaê →</div>
+        </div>
+        <div style="display:flex;justify-content:center;min-width:0">
+          <div style="width:280px;height:600px;border-radius:50px;background:#19191F;padding:10px;box-sizing:border-box;box-shadow:0 40px 90px rgba(0,0,0,.6)">
+            <div style="width:100%;height:100%;border-radius:42px;overflow:hidden;background:#0F0F13;display:flex;flex-direction:column;padding:34px 16px 16px;box-sizing:border-box;gap:12px">
+              <div style="font:800 26px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Você entrou 🎉</div>
+              <div style="background:#19191F;border-radius:18px;padding:12px;display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:50%;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 16px 'Barlow Condensed',sans-serif">A</div><div style="flex:1;min-width:0"><div style="font:600 13px 'DM Sans',sans-serif">Sala do André</div><div style="font:400 11px 'DM Sans',sans-serif;color:#A1A1AA">Impostor · Comidas</div></div><div style="font:800 22px 'Barlow Condensed',sans-serif;color:#FACC15;letter-spacing:2px">4827</div></div>
+              <div style="font:800 17px 'Barlow Condensed',sans-serif;text-transform:uppercase">6 jogadores conectados</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <sc-for list="{{ lobbyRows }}" as="p" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:10px;background:#19191F;border-radius:14px;padding:10px 12px"><div style="width:32px;height:32px;border-radius:50%;background:{{ p.bg }};color:{{ p.fg }};display:flex;align-items:center;justify-content:center;font:800 15px 'Barlow Condensed',sans-serif">{{ p.i }}</div><div style="flex:1;font:600 14px 'DM Sans',sans-serif;min-width:0">{{ p.n }}</div><div style="width:20px;height:20px;border-radius:50%;background:#22C55E;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:700 11px 'DM Sans',sans-serif">✓</div></div>
+                </sc-for>
+              </div>
+              <div style="flex:1"></div>
+              <div style="height:50px;border-radius:16px;background:#19191F;display:flex;align-items:center;justify-content:center;font:700 17px 'Barlow Condensed',sans-serif;text-transform:uppercase;color:#A1A1AA">Aguardando o host</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:12px">
+        <div style="font:800 24px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Mesma página, outros links</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+          <div style="background:#0F0F13;border-radius:18px;padding:18px"><div style="font:600 12px ui-monospace,Menlo,monospace;color:#FACC15">/j/4827</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;color:#A1A1AA;margin-top:6px">Convite de sala. Abre o lobby com o código preenchido.</div></div>
+          <div style="background:#0F0F13;border-radius:18px;padding:18px"><div style="font:600 12px ui-monospace,Menlo,monospace;color:#FACC15">/vinicosta</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;color:#A1A1AA;margin-top:6px">Convite de amizade. Abre o perfil e registra a amizade ao entrar.</div></div>
+          <div style="background:#0F0F13;border-radius:18px;padding:18px"><div style="font:600 12px ui-monospace,Menlo,monospace;color:#FACC15">QR do lobby</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;color:#A1A1AA;margin-top:6px">Aponta para a mesma URL — a câmera nativa passa a abrir o app.</div></div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- PRIVACIDADE -->
+  <sc-if value="{{ isPrivacy }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:20px 0 80px;max-width:760px">
+      <div style="font:400 13px 'DM Sans',sans-serif;color:#52525B">jogae.app/privacidade — URL exigida pela App Store e pelo Google Play</div>
+      <div style="font:800 clamp(44px,6vw,72px)/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:16px">Política de privacidade</div>
+      <div style="font:400 14px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:10px">Última atualização: 20 de setembro de 2026</div>
+      <div style="display:flex;flex-direction:column;gap:26px;margin-top:36px">
+        <sc-for list="{{ privacy }}" as="p" hint-placeholder-count="8">
+          <div>
+            <div style="font:800 26px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:10px">{{ p.t }}</div>
+            <div style="font:400 16px/1.65 'DM Sans',sans-serif;color:#A1A1AA;white-space:pre-line;text-wrap:pretty">{{ p.d }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background:#19191F;border-radius:20px;padding:22px;margin-top:36px;display:flex;flex-direction:column;gap:8px">
+        <div style="font:700 18px 'DM Sans',sans-serif">Contato</div>
+        <div style="font:400 15px/1.6 'DM Sans',sans-serif;color:#A1A1AA">Dúvidas sobre dados: privacidade@jogae.app · Encarregado (LGPD): dpo@jogae.app</div>
+        <div onClick="{{ goDelete }}" style="font:600 15px 'DM Sans',sans-serif;color:#A78BFA;cursor:pointer;margin-top:4px">Como excluir sua conta e seus dados →</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- TERMOS -->
+  <sc-if value="{{ isTerms }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:20px 0 80px;max-width:760px">
+      <div style="font:400 13px 'DM Sans',sans-serif;color:#52525B">jogae.app/termos — linkada na tela de cadastro e em Configurações</div>
+      <div style="font:800 clamp(44px,6vw,72px)/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:16px">Termos de uso</div>
+      <div style="font:400 14px 'DM Sans',sans-serif;color:#A1A1AA;margin-top:10px">Última atualização: 20 de setembro de 2026</div>
+      <div style="display:flex;flex-direction:column;gap:26px;margin-top:36px">
+        <sc-for list="{{ terms }}" as="p" hint-placeholder-count="8">
+          <div>
+            <div style="font:800 26px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:10px">{{ p.t }}</div>
+            <div style="font:400 16px/1.65 'DM Sans',sans-serif;color:#A1A1AA;white-space:pre-line;text-wrap:pretty">{{ p.d }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- EXCLUIR CONTA -->
+  <sc-if value="{{ isDelete }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:20px 0 80px;max-width:820px">
+      <div style="font:400 13px 'DM Sans',sans-serif;color:#52525B">jogae.app/excluir-conta — página pública exigida pelo Google Play (Data deletion)</div>
+      <div style="font:800 clamp(44px,6vw,72px)/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:16px">Excluir sua conta</div>
+      <div style="font:500 18px/1.55 'DM Sans',sans-serif;color:#A1A1AA;margin-top:16px;max-width:640px">Você pode apagar sua conta do Jogaê a qualquer momento, pelo app ou por e-mail. Não é preciso instalar nada para pedir a exclusão.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:32px">
+        <div style="background:#19191F;border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:12px">
+          <div style="width:44px;height:44px;border-radius:14px;background:#7C3AED;display:flex;align-items:center;justify-content:center;font:800 22px 'Barlow Condensed',sans-serif">1</div>
+          <div style="font:800 26px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">No app</div>
+          <div style="font:400 15px/1.6 'DM Sans',sans-serif;color:#A1A1AA">Perfil → Configurações → Conta → Excluir conta. Confirme com sua senha ou com o login social. A conta some na hora.</div>
+        </div>
+        <div style="background:#19191F;border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:12px">
+          <div style="width:44px;height:44px;border-radius:14px;background:#FACC15;color:#0F0F13;display:flex;align-items:center;justify-content:center;font:800 22px 'Barlow Condensed',sans-serif">2</div>
+          <div style="font:800 26px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Por e-mail</div>
+          <div style="font:400 15px/1.6 'DM Sans',sans-serif;color:#A1A1AA">Escreva para <span style="color:#FAFAFA">excluir@jogae.app</span> do e-mail cadastrado, com seu @username. Respondemos em até 7 dias e concluímos em até 30.</div>
+        </div>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:26px;margin-top:14px">
+        <div style="font:800 26px/1 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-bottom:16px">O que acontece com seus dados</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ deleteRows }}" as="r" hint-placeholder-count="5">
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #27272F">
+              <div style="width:22px;height:22px;border-radius:50%;background:{{ r.bg }};color:{{ r.fg }};display:flex;align-items:center;justify-content:center;font:700 12px 'DM Sans',sans-serif;flex:none;margin-top:2px">{{ r.ic }}</div>
+              <div style="flex:1;min-width:0"><div style="font:600 16px 'DM Sans',sans-serif">{{ r.n }}</div><div style="font:400 14px/1.5 'DM Sans',sans-serif;color:#A1A1AA;margin-top:2px">{{ r.d }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:#19191F;border:1px solid #EF4444;border-radius:20px;padding:22px;margin-top:14px;font:400 15px/1.6 'DM Sans',sans-serif;color:#A1A1AA">A exclusão é definitiva: partidas, conquistas e placares não podem ser recuperados. Se você tem assinatura ativa, cancele-a na App Store ou no Google Play — excluir a conta não cancela a cobrança da loja.</div>
+    </div>
+  </sc-if>
+
+  <!-- TÉCNICO -->
+  <sc-if value="{{ isTech }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:20px 0 80px;max-width:900px;display:flex;flex-direction:column;gap:32px">
+      <div>
+        <div style="font:400 13px 'DM Sans',sans-serif;color:#52525B">Nota para quem for implementar o site — não é página pública</div>
+        <div style="font:800 clamp(40px,5.5vw,64px)/.95 'Barlow Condensed',sans-serif;text-transform:uppercase;margin-top:16px">Deep links: o que o site precisa servir</div>
+        <div style="font:500 17px/1.55 'DM Sans',sans-serif;color:#A1A1AA;margin-top:14px">Dois arquivos em endereços fixos provam que o domínio pertence ao app. Sem eles, o link abre só o navegador.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+        <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:12px;min-width:0">
+          <div style="font:800 24px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">iOS · Universal Links</div>
+          <div style="font:600 12px ui-monospace,Menlo,monospace;color:#FACC15;word-break:break-all">/.well-known/apple-app-site-association</div>
+          <div style="font:400 14px/1.6 'DM Sans',sans-serif;color:#A1A1AA">Servido como <b style="color:#FAFAFA">application/json</b>, sem extensão .json, sem redirect, só HTTPS. Lista o App ID (TeamID.bundleId) e os caminhos: <span style="color:#FAFAFA">/j/*</span> e <span style="color:#FAFAFA">/*</span> para os perfis. No app: Associated Domains <span style="color:#FAFAFA">applinks:jogae.app</span>.</div>
+        </div>
+        <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:12px;min-width:0">
+          <div style="font:800 24px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Android · App Links</div>
+          <div style="font:600 12px ui-monospace,Menlo,monospace;color:#FACC15;word-break:break-all">/.well-known/assetlinks.json</div>
+          <div style="font:400 14px/1.6 'DM Sans',sans-serif;color:#A1A1AA">Contém o package name e o <b style="color:#FAFAFA">SHA-256</b> do certificado de assinatura (o do Play App Signing, não o de debug). No manifest: intent-filter com <span style="color:#FAFAFA">autoVerify="true"</span>.</div>
+        </div>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:14px">
+        <div style="font:800 24px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Rotas do site</div>
+        <sc-for list="{{ routes }}" as="r" hint-placeholder-count="7">
+          <div style="display:flex;gap:16px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #27272F;flex-wrap:wrap">
+            <div style="font:600 13px ui-monospace,Menlo,monospace;color:#FACC15;min-width:180px">{{ r.p }}</div>
+            <div style="flex:1;min-width:200px;font:400 14px/1.5 'DM Sans',sans-serif;color:#A1A1AA">{{ r.d }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background:#19191F;border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:10px">
+        <div style="font:800 24px/1 'Barlow Condensed',sans-serif;text-transform:uppercase">Comportamento do link</div>
+        <div style="font:400 15px/1.7 'DM Sans',sans-serif;color:#A1A1AA;white-space:pre-line">App instalado → o sistema abre o Jogaê direto no lobby da sala 4827; o site nem carrega.
+App ausente → carrega /j/4827 (a página de convite), que guarda o código e oferece as lojas.
+Depois de instalar → o app lê o código guardado (deferred deep link, via Branch/AppsFlyer ou clipboard) e entra na sala sozinho.
+WebView do Instagram/Facebook não dispara Universal Link: a página de convite precisa funcionar bem sozinha.
+Teste real de iOS só funciona em build assinada — Simulator não valida o arquivo.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="border-top:1px solid #19191F;padding:32px 0 48px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg viewBox="0 0 40 40" width="26" height="26" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#7C3AED"></rect><ellipse cx="20" cy="20" rx="14" ry="9" fill="#FAFAFA"></ellipse><circle cx="23" cy="20" r="5.5" fill="#0F0F13"></circle><circle cx="25" cy="18" r="1.8" fill="#FACC15"></circle></svg>
+      <span style="font:400 13px 'DM Sans',sans-serif;color:#52525B">© 2026 Jogaê · Feito no Brasil</span>
+    </div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap">
+      <sc-for list="{{ footLinks }}" as="l" hint-placeholder-count="5">
+        <div onClick="{{ l.go }}" style="font:500 13px 'DM Sans',sans-serif;color:#A1A1AA;cursor:pointer">{{ l.n }}</div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180}}">
+class Component extends DCLogic {
+  state = { page:'home', open:0 };
+  go(p){ this.setState({page:p}); if(typeof window!=='undefined') window.scrollTo(0,0); }
+  renderVals(){
+    const s=this.state, P=[['home','Início'],['invite','Convite'],['privacy','Privacidade'],['terms','Termos'],['delete','Excluir conta'],['tech','Deep links']];
+    const faqs=[
+      ['Preciso que todo mundo instale o app?','Sim, cada pessoa joga no próprio celular — é assim que os papéis ficam secretos. A entrada é rápida: código de 4 dígitos ou QR, sem cadastro obrigatório.'],
+      ['Funciona sem internet?','Não. Os celulares se falam por uma sala online, então todos precisam de conexão — Wi-Fi da casa ou dados móveis. Se alguém cair, o app guarda a vaga por 30 segundos.'],
+      ['Quantas pessoas podem jogar?','De 3 a 12, dependendo do jogo. O Impostor fica melhor entre 5 e 8.'],
+      ['É pago?','Não. Os jogos principais são gratuitos e sem anúncio durante a partida. O Premium libera jogos criados com IA, categorias exclusivas e partidas ilimitadas.'],
+      ['Dá para jogar com crianças?','Dá. O clima 👨‍👩‍👧 Família usa perguntas leves. Outros climas, como 👀 Polêmico, são pensados para adultos.'],
+    ];
+    const priv=[
+      ['1. Quem somos','O Jogaê é um aplicativo de jogos sociais operado por Jogaê Tecnologia Ltda. Esta política explica quais dados coletamos, por quê e o que você pode fazer a respeito. Ela vale para o app (iOS e Android) e para este site.'],
+      ['2. Dados que coletamos','Conta: nome, @username, e-mail e cor de avatar. No login social, recebemos da Apple ou do Google apenas nome e e-mail (o Apple permite ocultar o e-mail real).\nPartidas: salas de que você participou, pontos, conquistas e amizades.\nTécnicos: modelo do aparelho, versão do sistema, versão do app, idioma e logs de erro.\nAssinatura: o status é confirmado pela loja; nunca vemos os dados do seu cartão.\nConvidados: quem joga sem conta gera apenas um identificador temporário, apagado ao fim da sala.'],
+      ['3. O que não coletamos','Não usamos a câmera para nada além de ler o QR Code — a imagem não é gravada nem enviada. Não acessamos contatos, localização, microfone, fotos nem histórico de navegação. Não vendemos dados e não exibimos publicidade de terceiros.'],
+      ['4. Para que usamos','Criar e manter salas em tempo real, mostrar o placar do grupo, guardar seu histórico e conquistas, processar sua assinatura, corrigir erros e responder ao suporte. Base legal (LGPD): execução do contrato, obrigação legal e legítimo interesse em manter o serviço seguro.'],
+      ['5. Com quem compartilhamos','Provedores que operam a infraestrutura em nosso nome: nuvem e banco de dados, processamento de assinatura, envio de e-mails e monitoramento de erros. Eles só podem usar os dados para prestar esse serviço. Também podemos divulgar dados mediante ordem judicial.'],
+      ['6. Por quanto tempo guardamos','Enquanto sua conta existir. Salas encerradas são apagadas em 30 dias; o histórico agregado (partidas e pontos) permanece até você excluir a conta. Registros fiscais de assinatura seguem os prazos legais.'],
+      ['7. Seus direitos','Você pode acessar, corrigir, portar ou excluir seus dados, revogar consentimentos e pedir explicação sobre qualquer tratamento. Faça isso no app (Perfil → Configurações) ou escreva para privacidade@jogae.app. Respondemos em até 15 dias.'],
+      ['8. Crianças','O app é destinado a maiores de 12 anos. Não coletamos dados conscientemente de crianças menores. Se identificarmos, apagamos a conta.'],
+      ['9. Mudanças','Se mudarmos algo relevante, avisamos no app antes de a alteração valer. A data no topo indica a última versão.'],
+    ];
+    const terms=[
+      ['1. Aceite','Ao criar uma conta ou usar o Jogaê como convidado, você concorda com estes termos. Se não concordar, não use o app.'],
+      ['2. Sua conta','Você precisa ter 12 anos ou mais. Mantenha seus dados verdadeiros e sua senha em segurança. Você responde pelo que acontece na sua conta.'],
+      ['3. Conduta','O conteúdo das partidas é criado pelas pessoas na sala. Não use o app para assediar, ameaçar, discriminar ou expor terceiros. Podemos suspender contas que violem esta regra.'],
+      ['4. Conteúdo gerado por IA','As sugestões do Premium são geradas automaticamente e podem conter erros ou temas inadequados ao seu grupo. Revise antes de jogar; a responsabilidade pelo uso é de quem cria a sala.'],
+      ['5. Assinatura','A cobrança é feita pela App Store ou pelo Google Play, com renovação automática até o cancelamento. Cancele pela própria loja, até 24 horas antes da renovação. Reembolsos seguem as regras da loja.'],
+      ['6. Propriedade','A marca Jogaê, as ilustrações, os jogos e o código pertencem a nós. Você recebe uma licença pessoal e intransferível de uso do app.'],
+      ['7. Disponibilidade','Fazemos o possível para manter o serviço no ar, mas ele é oferecido "como está". Podemos alterar ou encerrar jogos e funcionalidades, avisando com antecedência razoável.'],
+      ['8. Foro e contato','Estes termos seguem a lei brasileira, com foro na comarca de São Paulo/SP. Contato: contato@jogae.app.'],
+    ];
+    return {
+      isHome:s.page==='home', isInvite:s.page==='invite', isPrivacy:s.page==='privacy', isTerms:s.page==='terms', isDelete:s.page==='delete', isTech:s.page==='tech',
+      nav:P.map(([k,n])=>({n,go:()=>this.go(k),bg:s.page===k?'#27272F':'transparent',fg:s.page===k?'#FAFAFA':'#A1A1AA'})),
+      footLinks:P.slice(1).map(([k,n])=>({n,go:()=>this.go(k)})),
+      goHome:()=>this.go('home'), goInvite:()=>this.go('invite'), goDelete:()=>this.go('delete'),
+      steps:[
+        {k:'1',bg:'#7C3AED',fg:'#FAFAFA',t:'Escolha o jogo',d:'Impostor, Quem é mais provável?, Desafio secreto e mais. Ou diga o clima da noite e deixe o app sugerir.'},
+        {k:'2',bg:'#FACC15',fg:'#0F0F13',t:'Crie a sala',d:'Número de jogadores, categoria e quantas rodadas. Sai um código de 4 dígitos e um QR Code.'},
+        {k:'3',bg:'#22C55E',fg:'#0F0F13',t:'Joguem',d:'O app distribui os papéis secretos, controla o tempo, abre a votação e revela o resultado com suspense.'},
+      ],
+      games:[
+        {n:'Impostor',cat:'Dedução',e:'👀',bg:'#7C3AED',fg:'#FAFAFA',d:'Todo mundo sabe a palavra. Menos um.',meta:'3–12 · 10–20 min'},
+        {n:'Quem é mais provável?',cat:'Polêmico',e:'👉',bg:'#FACC15',fg:'#0F0F13',d:'Descubra o que seus amigos realmente pensam.',meta:'3+ · 10 min'},
+        {n:'Desafio secreto',cat:'Festa',e:'🕵️',bg:'#22C55E',fg:'#0F0F13',d:'Complete sua missão sem ninguém perceber.',meta:'3+ · 20 min'},
+        {n:'Bomba-relógio',cat:'Caótico',e:'💣',bg:'#EF4444',fg:'#FAFAFA',d:'Responda rápido e passe adiante antes do estouro.',meta:'4+ · 15 min'},
+        {n:'Verdade ou mito',cat:'Rápido',e:'⚡',bg:'#A78BFA',fg:'#0F0F13',d:'Cinco minutos, uma resposta certa por vez.',meta:'2+ · 5 min'},
+        {n:'Casal perfeito',cat:'Casais',e:'❤️',bg:'#19191F',fg:'#FAFAFA',d:'Quem conhece mesmo quem?',meta:'2–8 · 20 min'},
+      ],
+      perks:['Jogos criados com IA','Todos os jogos','Categorias exclusivas','Partidas ilimitadas'],
+      faq:faqs.map(([q,a],i)=>({q,a,open:s.open===i,rot:s.open===i?'45deg':'0deg',toggle:()=>this.setState({open:s.open===i?-1:i})}),),
+      inviteAvatars:[{i:'A',bg:'#7C3AED',fg:'#FAFAFA'},{i:'C',bg:'#FACC15',fg:'#0F0F13'},{i:'L',bg:'#22C55E',fg:'#0F0F13'},{i:'P',bg:'#A78BFA',fg:'#0F0F13'},{i:'J',bg:'#EF4444',fg:'#FAFAFA'}],
+      lobbyRows:[{n:'Você',i:'V',bg:'#FACC15',fg:'#0F0F13'},{n:'André',i:'A',bg:'#7C3AED',fg:'#FAFAFA'},{n:'Carol',i:'C',bg:'#FACC15',fg:'#0F0F13'},{n:'Lucas',i:'L',bg:'#22C55E',fg:'#0F0F13'},{n:'Pedro',i:'P',bg:'#A78BFA',fg:'#0F0F13'}],
+      privacy:priv.map(([t,d])=>({t,d})),
+      terms:terms.map(([t,d])=>({t,d})),
+      deleteRows:[
+        {ic:'✕',bg:'#EF4444',fg:'#FAFAFA',n:'Apagados na hora',d:'Nome, @username, e-mail, cor do avatar, amizades, conquistas e histórico de partidas.'},
+        {ic:'✕',bg:'#EF4444',fg:'#FAFAFA',n:'Apagados em até 30 dias',d:'Cópias de segurança e logs técnicos que ainda contenham sua conta.'},
+        {ic:'~',bg:'#FACC15',fg:'#0F0F13',n:'Anonimizados',d:'Pontuações de salas antigas continuam no placar dos outros jogadores como "jogador removido".'},
+        {ic:'✓',bg:'#27272F',fg:'#FAFAFA',n:'Mantidos por lei',d:'Registros fiscais de assinatura, pelo prazo que a legislação exige.'},
+        {ic:'!',bg:'#7C3AED',fg:'#FAFAFA',n:'Fora do nosso alcance',d:'A assinatura é cobrada pela loja: cancele na App Store ou no Google Play.'},
+      ],
+      routes:[
+        {p:'/',d:'Landing de venda: proposta, jogos, premium, FAQ e botões das lojas.'},
+        {p:'/j/:codigo',d:'Convite de sala. Sem o app: página de convite. Com o app: abre o lobby.'},
+        {p:'/:username',d:'Convite de amizade. Deve conviver com as rotas fixas — reservar /privacidade, /termos, /excluir-conta, /j.'},
+        {p:'/privacidade',d:'Política de privacidade. URL enviada às duas lojas.'},
+        {p:'/termos',d:'Termos de uso. Linkada no cadastro e em Configurações.'},
+        {p:'/excluir-conta',d:'Exclusão de conta e dados. Exigida pelo Google Play.'},
+        {p:'/.well-known/*',d:'apple-app-site-association e assetlinks.json — servidos estáticos, sem redirect, com HTTPS válido.'},
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
