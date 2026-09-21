@@ -6,11 +6,11 @@ import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Chip, Display, Overline, Screen, Spacer, Txt, WaitingButton, toast } from '@/core/ui';
 import { plural } from '@/core/utils/format';
 import { getGame } from '@/features/catalog/data/games';
-import { services } from '@/services';
 
 import { PlayerCard, WaitingSlot } from '../components/cards';
 import { IMPOSTOR_RULES } from '@jogae/engine';
 import { leaveMatch } from '../hooks/leaveMatch';
+import { roomActions } from '../hooks/roomActions';
 import { useMatch } from '../store/matchStore';
 
 export const roomLink = (code: string) => `https://jogae.app/j/${code}`;
@@ -102,7 +102,7 @@ export function LobbyScreen() {
           <Button
             label={canStart ? 'Começar partida' : `Mínimo ${IMPOSTOR_RULES.minPlayers} jogadores`}
             disabled={!canStart}
-            onPress={() => services.room.startMatch()}
+            onPress={() => roomActions.startMatch()}
           />
           <Txt font="body400" size={12} color={colors.muted} center>
             Só o host pode iniciar

@@ -5,21 +5,21 @@ import { colors } from '@/core/theme';
 import { Button, Display, ModalCard, Txt, toast } from '@/core/ui';
 import { HowToPlaySheet } from '@/features/catalog/components/HowToPlaySheet';
 import { getGame } from '@/features/catalog/data/games';
-import { services } from '@/services';
 
 import { leaveMatch } from '../hooks/leaveMatch';
+import { roomActions } from '../hooks/roomActions';
 import type { MatchView } from '../store/matchStore';
 
 /** Tela 19: Pausar / Sair. Visível enquanto `room.paused` for verdadeiro. */
 export function PauseModal({ match }: { match: MatchView }) {
   const [askQuit, setAskQuit] = useState(false);
   const [rules, setRules] = useState(false);
-  const { room, isHost, connectedPlayers } = match;
+  const { room, isHost } = match;
   const game = getGame(room.gameId);
 
   const resume = () => {
     setAskQuit(false);
-    services.room.setPaused(false);
+    roomActions.setPaused(false);
   };
 
   const quit = async () => {
@@ -73,11 +73,11 @@ export function PauseModal({ match }: { match: MatchView }) {
           <>
             <Txt size={40}>👋</Txt>
             <Display size={34} center>
-              {isHost ? 'Encerrar para todos?' : 'Sair da partida?'}
+              Sair da partida?
             </Display>
             <Txt font="body400" size={14} lh={1.4} color={colors.muted} center>
               {isHost
-                ? `Você é o host: sair encerra a sala ${room.code} para os ${connectedPlayers.length} jogadores.`
+                ? `Você é o host: se sair, outro jogador assume e a sala ${room.code} continua sem você.`
                 : 'Os outros continuam sem você. Você perde os pontos desta rodada.'}
             </Txt>
             <View style={{ flexDirection: 'row', gap: 8, alignSelf: 'stretch', marginTop: 6 }}>

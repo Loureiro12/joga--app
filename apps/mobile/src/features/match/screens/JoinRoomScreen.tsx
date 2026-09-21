@@ -11,6 +11,7 @@ import { services } from '@/services';
 import { CODE_LENGTH, CodeBoxes, Keypad } from '../components/CodeEntry';
 import { QrScanner } from '../components/QrScanner';
 import { RoomError } from '@jogae/engine';
+import { roomErrorMessage } from '../hooks/roomActions';
 import { getIdentity } from '../hooks/useIdentity';
 import { MOCK_JOINABLE_CODE } from '../services/MockRoomService';
 
@@ -41,7 +42,7 @@ export function JoinRoomScreen() {
         setError(true);
         setCode('');
       } else {
-        toast('Não deu para entrar na sala. Tente de novo.', 'error');
+        toast(roomErrorMessage(e, 'Não deu para entrar na sala. Tente de novo.'), 'error');
       }
     } finally {
       setLoading(false);

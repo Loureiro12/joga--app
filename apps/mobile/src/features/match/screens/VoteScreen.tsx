@@ -4,8 +4,8 @@ import { View } from 'react-native';
 import { colors } from '@/core/theme';
 import { Button, Display, Screen, Spacer, Txt } from '@/core/ui';
 import { haptics } from '@/core/utils/haptics';
-import { services } from '@/services';
 
+import { roomActions } from '../hooks/roomActions';
 import { VoteCard } from '../components/cards';
 import type { PlayerId } from '@jogae/engine';
 import { useMatch } from '../store/matchStore';
@@ -15,7 +15,9 @@ export function VoteScreen() {
   const match = useMatch();
   const [target, setTarget] = useState<PlayerId | null>(null);
   if (!match) return null;
-  const { others, player } = match;
+  const { players, me, player } = match;
+  // Inclui quem está sem sinal no momento: um impostor desconectado não pode ficar "invotável".
+  const others = players.filter((p) => p.id !== me.id);
 
   const rows: (typeof others)[] = [];
   for (let i = 0; i < others.length; i += 2) rows.push(others.slice(i, i + 2));
@@ -56,7 +58,7 @@ export function VoteScreen() {
         variant="action"
         disabled={!target}
         label={target ? `Confirmar voto em ${player(target)?.name}` : 'Escolha alguém'}
-        onPress={() => target && services.room.castVote(target)}
+        onPress={() => target && roomActions.castVote(target)}
       />
     </Screen>
   );

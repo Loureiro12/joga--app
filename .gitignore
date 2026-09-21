@@ -40,3 +40,6 @@ yarn-error.*
 # generated native folders (expo prebuild)
 apps/mobile/ios/
 apps/mobile/android/
+
+# estado das salas do room-server em dev
+.data/

@@ -6,9 +6,10 @@ import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Display, IconButton, Overline, ProgressRing, RoundProgress, Screen, Spacer, Txt, WaitingButton } from '@/core/ui';
 import { formatClock } from '@/core/utils/format';
 import { haptics } from '@/core/utils/haptics';
-import { services } from '@/services';
 
 import { PauseModal } from '../components/PauseModal';
+import { roomActions } from '../hooks/roomActions';
+import { useRoundTimer } from '../hooks/useRoundTimer';
 import { useMatch } from '../store/matchStore';
 
 const timerColor = (sec: number) => (sec <= 10 ? colors.danger : sec <= 20 ? colors.accent : colors.primary);
@@ -16,7 +17,7 @@ const timerColor = (sec: number) => (sec <= 10 ? colors.danger : sec <= 20 ? col
 /** Tela 13: Rodada + cronômetro (e o modal de pausa, tela 19). */
 export function RoundScreen() {
   const match = useMatch();
-  const remaining = match?.round?.timer.remainingSec;
+  const remaining = useRoundTimer(match?.round?.timer);
   const prev = useRef(remaining);
 
   // Vibração no fim do tempo.
@@ -44,7 +45,7 @@ export function RoundScreen() {
               <View style={{ backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 10 }}>
                 <Overline>{round.category}</Overline>
               </View>
-              <IconButton label="Pausar partida" size={40} onPress={() => services.room.setPaused(true)}>
+              <IconButton label="Pausar partida" size={40} onPress={() => roomActions.setPaused(true)}>
                 <View style={{ flexDirection: 'row', gap: 4 }}>
                   <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: colors.text }} />
                   <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: colors.text }} />
@@ -71,9 +72,9 @@ export function RoundScreen() {
       </Txt>
 
       <View style={{ backgroundColor: colors.surface, borderRadius: radii.card, paddingVertical: 18, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', gap: 18 }}>
-        <ProgressRing size={96} thickness={9} progress={timer.remainingSec / timer.durationSec} color={timerColor(timer.remainingSec)}>
-          <Display size={30} tabular accessibilityLabel={`${timer.remainingSec} segundos restantes`}>
-            {formatClock(timer.remainingSec)}
+        <ProgressRing size={96} thickness={9} progress={remaining / timer.durationSec} color={timerColor(remaining)}>
+          <Display size={30} tabular accessibilityLabel={`${remaining} segundos restantes`}>
+            {formatClock(remaining)}
           </Display>
         </ProgressRing>
         <View style={{ flex: 1, gap: 8 }}>
@@ -81,15 +82,15 @@ export function RoundScreen() {
           {isHost ? (
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Button
-                label={timer.running ? 'Pausar' : timer.remainingSec === 0 ? 'Acabou' : 'Iniciar'}
+                label={timer.running && remaining > 0 ? 'Pausar' : remaining === 0 ? 'Acabou' : 'Iniciar'}
                 height={44}
                 radius={14}
                 fontSize={18}
-                disabled={timer.remainingSec === 0}
-                onPress={() => services.room.setTimerRunning(!timer.running)}
+                disabled={remaining === 0}
+                onPress={() => roomActions.setTimerRunning(!timer.running)}
                 style={{ flex: 1 }}
               />
-              <Button label="↺" variant="tertiary" height={44} radius={14} fontSize={18} onPress={() => services.room.resetTimer()} style={{ width: 44, paddingHorizontal: 0 }} />
+              <Button label="↺" variant="tertiary" height={44} radius={14} fontSize={18} onPress={() => roomActions.resetTimer()} style={{ width: 44, paddingHorizontal: 0 }} />
             </View>
           ) : (
             <Txt size={13} lh={1.4} color={colors.muted}>
@@ -126,7 +127,7 @@ export function RoundScreen() {
       <Spacer />
 
       {isHost ? (
-        <Button label="Todos deram pistas → Votar" variant="action" onPress={() => services.room.openVoting()} />
+        <Button label="Todos deram pistas → Votar" variant="action" onPress={() => roomActions.openVoting()} />
       ) : (
         <WaitingButton label="Aguardando o host abrir a votação" />
       )}

@@ -37,16 +37,27 @@ export type Room = {
   closedReason?: ClosedReason;
 };
 
+/**
+ * `remainingSec` vale no instante em que o snapshot foi emitido. O servidor NÃO manda um snapshot
+ * por segundo: com `running: true`, o cliente faz a contagem local a partir do momento em que recebeu.
+ */
 export type RoundTimer = { durationSec: number; remainingSec: number; running: boolean };
 
 /** Parte pública da rodada (todos veem). */
 export type RoundPublic = {
   index: number;
+  /**
+   * Número do sorteio. Muda quando a MESMA rodada é sorteada de novo (alguém saiu no meio):
+   * o cliente usa para esconder o papel antigo e pedir uma nova revelação.
+   */
+  deal: number;
   /** Categoria sorteada da rodada (difere de `room.category` quando a sala é "Aleatório"). */
   category: string;
   starterId: PlayerId;
   /** Ordem das pistas, começando pelo sorteado. */
   order: PlayerId[];
+  /** Quem já viu o papel e tocou em "Entendi". A fase só avança quando todos os conectados confirmarem. */
+  ackedIds: PlayerId[];
   timer: RoundTimer;
 };
 
@@ -97,7 +108,19 @@ export type PlayerIdentity = { id: PlayerId; name: string; color: string };
 
 export type CreateRoomInput = { gameId: string; category: string; totalRounds: number; maxPlayers: number };
 
-export type RoomErrorCode = 'room_not_found' | 'room_full' | 'not_host' | 'invalid_phase' | 'not_in_room';
+export type RoomErrorCode =
+  | 'room_not_found'
+  | 'room_full'
+  | 'match_in_progress'
+  | 'not_enough_players'
+  | 'not_host'
+  | 'invalid_phase'
+  | 'not_in_room'
+  | 'bad_request'
+  | 'rate_limited'
+  | 'unauthenticated'
+  /** Só no cliente: o servidor não respondeu a tempo. */
+  | 'timeout';
 
 export class RoomError extends Error {
   constructor(public readonly code: RoomErrorCode) {

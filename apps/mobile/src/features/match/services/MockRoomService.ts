@@ -1,26 +1,20 @@
-import { wait } from '@/core/utils/format';
-
 import {
+  RoomEngine,
   RoomError,
+  botVote,
   type ConnectionState,
   type CreateRoomInput,
-  type Player,
   type PlayerId,
   type PlayerIdentity,
-  type Room,
+  type RoomCommand,
   type RoomSnapshot,
-  type RoundResult,
-  type Score,
-  IMPOSTOR_RULES,
-  botVote,
-  createImpostorRound,
-  resolveImpostorRound,
-  type ImpostorRound,
 } from '@jogae/engine';
+
+import { wait } from '@/core/utils/format';
 
 import type { RoomService, RoomServiceDebug, Unsubscribe } from './RoomService';
 
-/** Timings da simulação (README, "Fase 1"). Ajustáveis para testes. */
+/** Timings da simulação (README do handoff, "Fase 1"). Ajustáveis para testes. */
 export type MockRoomConfig = {
   latencyMs: number;
   botJoinEveryMs: number;
@@ -67,54 +61,34 @@ const BOTS: { name: string; color: string }[] = [
   { name: 'Nina', color: '#7C3AED' },
 ];
 
-type State = {
-  room: Room;
-  players: Player[];
-  meId: PlayerId;
-  round: ImpostorRound | null;
-  timer: { remainingSec: number; running: boolean };
-  votes: Record<PlayerId, PlayerId>;
-  result: RoundResult | null;
-  scores: Record<PlayerId, Score>;
-  usedWords: Set<string>;
-  impostorsCaught: number;
-  pendingBots: { name: string; color: string }[];
-};
+const botIdentity = (bot: { name: string; color: string }): PlayerIdentity => ({ id: `bot-${bot.name}`, ...bot });
+const isBot = (id: PlayerId) => id.startsWith('bot-');
 
 /**
- * "Servidor" em memória: aplica as regras de verdade (sorteio, votos, pontuação)
- * e simula os outros jogadores com bots. Implementa `RoomService` — trocar por
- * Supabase/Firebase é criar outra classe com a mesma interface.
+ * Modo simulado: o MESMO `RoomEngine` que o servidor de salas executa, com bots no lugar dos
+ * outros celulares. Regras, fases, migração de host e prazos são idênticos aos do servidor real;
+ * o que é simulado aqui é só a presença dos outros jogadores e a queda de conexão.
  */
 export class MockRoomService implements RoomService {
-  private state: State | null = null;
+  private engine: RoomEngine | null = null;
+  private meId: PlayerId | null = null;
+  private pendingBots: PlayerIdentity[] = [];
   private connection: ConnectionState = { status: 'online' };
   private listeners = new Set<(s: RoomSnapshot | null) => void>();
   private connectionListeners = new Set<(c: ConnectionState) => void>();
-  private timers = new Set<ReturnType<typeof setTimeout>>();
+  private timers = new Map<string, ReturnType<typeof setTimeout>>();
   private intervals = new Map<string, ReturnType<typeof setInterval>>();
+  /** Para agendar cada automação do bot-host uma vez por situação. */
+  private hostPlanKey = '';
 
   constructor(private readonly config: MockRoomConfig = DEFAULT_MOCK_CONFIG) {}
 
-  /* ------------------------------------------------------------ lifecycle */
+  /* ------------------------------------------------------------ ciclo de vida */
 
   async createRoom(input: CreateRoomInput, me: PlayerIdentity): Promise<RoomSnapshot> {
     this.reset();
-    const host = this.makePlayer(me, true);
-    this.state = this.initialState(
-      {
-        code: String(Math.floor(1000 + Math.random() * 9000)),
-        hostId: host.id,
-        ...input,
-        phase: 'lobby',
-        roundIndex: 0,
-        paused: false,
-      },
-      [host],
-      me.id,
-      BOTS.slice(0, input.maxPlayers - 1),
-    );
-    this.startBotJoins();
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    this.open(code, input, me, me, BOTS.slice(0, input.maxPlayers - 1).map(botIdentity));
     return this.snapshot()!;
   }
 
@@ -122,16 +96,8 @@ export class MockRoomService implements RoomService {
     await wait(this.config.latencyMs);
     if (code !== MOCK_JOINABLE_CODE) throw new RoomError('room_not_found');
     this.reset();
-    const [hostBot, secondBot, ...rest] = BOTS;
-    const host: Player = { ...this.makePlayer({ id: 'bot-André', ...hostBot }, true), joinedAt: Date.now() - 60000 };
-    const second: Player = { ...this.makePlayer({ id: 'bot-Carol', ...secondBot }, false), joinedAt: Date.now() - 30000 };
-    this.state = this.initialState(
-      { code, hostId: host.id, gameId: 'impostor', category: 'Comidas', totalRounds: 5, maxPlayers: 6, phase: 'lobby', roundIndex: 0, paused: false },
-      [host, second, this.makePlayer(me, false)],
-      me.id,
-      rest.slice(0, 3),
-    );
-    this.startBotJoins();
+    const [host, second, ...rest] = BOTS.map(botIdentity);
+    this.open(code, { gameId: 'impostor', category: 'Comidas', totalRounds: 5, maxPlayers: 6 }, host, me, rest.slice(0, 3), [second, me]);
     return this.snapshot()!;
   }
 
@@ -140,7 +106,7 @@ export class MockRoomService implements RoomService {
     this.emit();
   }
 
-  /* --------------------------------------------------------------- stream */
+  /* ------------------------------------------------------------------- stream */
 
   subscribe(listener: (s: RoomSnapshot | null) => void): Unsubscribe {
     this.listeners.add(listener);
@@ -158,245 +124,148 @@ export class MockRoomService implements RoomService {
     this.runReconnect(true);
   }
 
-  /* ------------------------------------------------------- host commands */
+  /* ----------------------------------------------------------------- comandos */
 
-  async startMatch(): Promise<void> {
-    const s = this.requireHost();
-    if (s.room.phase !== 'lobby') throw new RoomError('invalid_phase');
-    if (this.connectedPlayers().length < IMPOSTOR_RULES.minPlayers) throw new RoomError('invalid_phase');
-    this.clearInterval('botJoins');
-    s.pendingBots = [];
-    this.beginRound(1);
-  }
-
-  async setTimerRunning(running: boolean): Promise<void> {
-    this.requireHost();
-    this.applyTimerRunning(running);
-  }
-
-  async resetTimer(): Promise<void> {
-    const s = this.requireHost();
-    this.clearInterval('roundTimer');
-    s.timer = { remainingSec: IMPOSTOR_RULES.roundSeconds, running: false };
-    this.emit();
-  }
-
-  async openVoting(): Promise<void> {
-    this.requireHost();
-    this.applyOpenVoting();
-  }
-
-  async nextRound(): Promise<void> {
-    this.requireHost();
-    this.applyNextRound();
-  }
-
-  async playAgain(): Promise<void> {
-    const s = this.requireHost();
-    s.scores = Object.fromEntries(s.players.map((p) => [p.id, { playerId: p.id, points: 0, lastDelta: 0 }]));
-    s.usedWords.clear();
-    s.impostorsCaught = 0;
-    s.round = null;
-    s.result = null;
-    s.votes = {};
-    s.room = { ...s.room, phase: 'lobby', roundIndex: 0, paused: false };
-    this.emit();
-  }
-
-  /* ----------------------------------------------------- player commands */
-
-  async ackRole(): Promise<void> {
-    const s = this.requireState();
-    if (s.room.phase !== 'role_reveal') return;
-    // Bots "confirmam" na hora; no backend real a fase avança quando todos confirmarem.
-    s.room = { ...s.room, phase: 'clues' };
-    this.emit();
-    if (!this.iAmHost()) {
-      this.after(1000, () => this.applyTimerRunning(true));
-      this.after(this.config.botHostOpenVotingMs, () => this.whenNotPaused(() => this.applyOpenVoting()));
-    }
-  }
+  startMatch = () => this.command({ type: 'startMatch' });
+  setTimerRunning = (running: boolean) => this.command({ type: 'setTimerRunning', running });
+  resetTimer = () => this.command({ type: 'resetTimer' });
+  openVoting = () => this.command({ type: 'openVoting' });
+  nextRound = () => this.command({ type: 'nextRound' });
+  playAgain = () => this.command({ type: 'playAgain' });
+  ackRole = () => this.command({ type: 'ackRole' });
+  setPaused = (paused: boolean) => this.command({ type: 'setPaused', paused });
 
   async castVote(targetId: PlayerId): Promise<void> {
-    const s = this.requireState();
-    if (s.room.phase !== 'voting' || s.votes[s.meId]) return;
-    s.votes = { ...s.votes, [s.meId]: targetId };
-    this.emit();
+    await this.command({ type: 'castVote', targetId });
+    // Os bots só votam depois de você, para a tela "Aguardando votos" ter o que mostrar.
     this.startBotVotes();
   }
 
-  async setPaused(paused: boolean): Promise<void> {
-    const s = this.requireState();
-    if (paused) this.applyTimerRunning(false);
-    s.room = { ...s.room, paused };
-    this.emit();
+  private async command(cmd: RoomCommand): Promise<void> {
+    if (!this.engine || !this.meId) throw new RoomError('not_in_room');
+    if (cmd.type === 'startMatch' && this.engine.hostId === this.meId) {
+      // A partida começa com quem já entrou; os bots que ainda "estavam chegando" desistem.
+      this.clearInterval('botJoins');
+      this.pendingBots = [];
+    }
+    this.engine.dispatch(this.meId, cmd);
   }
 
-  /* ---------------------------------------------------------------- debug */
+  /* -------------------------------------------------------------------- debug */
 
   readonly debug: RoomServiceDebug = {
     simulateConnectionDrop: ({ recover }) => this.runReconnect(recover),
-    simulateHostLeft: () => this.close('host_left'),
+    // Com migração de host, "o host saiu" não fecha a sala: o próximo jogador assume.
+    simulateHostLeft: () => {
+      const engine = this.engine;
+      if (engine && isBot(engine.hostId)) engine.leave(engine.hostId);
+    },
     simulateNotEnoughPlayers: () => {
-      const s = this.state;
-      if (!s) return;
-      const keep = new Set([s.meId, ...s.players.filter((p) => p.id !== s.meId).slice(0, 1).map((p) => p.id)]);
-      s.players = s.players.filter((p) => keep.has(p.id));
-      this.close('not_enough_players');
+      const engine = this.engine;
+      if (!engine) return;
+      this.clearInterval('botJoins');
+      this.pendingBots = [];
+      engine.playerIds.filter(isBot).slice(1).forEach((id) => engine.leave(id));
     },
     simulatePlayerDisconnect: () => {
-      const s = this.state;
-      const target = s?.players.find((p) => p.id !== s.meId && !p.isHost && p.connected);
-      if (!s || !target) return;
-      s.players = s.players.map((p) => (p.id === target.id ? { ...p, connected: false } : p));
-      this.emit();
+      const engine = this.engine;
+      const target = engine?.playerIds.find((id) => isBot(id) && id !== engine.hostId && this.snapshot()?.players.find((p) => p.id === id)?.connected);
+      if (engine && target) engine.setConnected(target, false);
     },
     hostAdvance: () => {
-      const phase = this.state?.room.phase;
-      if (phase === 'lobby') this.beginRound(1);
-      else if (phase === 'clues') this.applyOpenVoting();
-      else if (phase === 'revealing') this.applyNextRound();
+      const engine = this.engine;
+      if (!engine) return;
+      const asHost = (cmd: RoomCommand) => this.tryDispatch(engine.hostId, cmd);
+      if (engine.phase === 'lobby') asHost({ type: 'startMatch' });
+      else if (engine.phase === 'clues') asHost({ type: 'openVoting' });
+      else if (engine.phase === 'revealing') asHost({ type: 'nextRound' });
     },
   };
 
-  /* ------------------------------------------------------------ internals */
+  /* ------------------------------------------------------------------ interno */
 
-  private initialState(room: Room, players: Player[], meId: PlayerId, pendingBots: State['pendingBots']): State {
-    return {
-      room,
-      players,
-      meId,
-      round: null,
-      timer: { remainingSec: IMPOSTOR_RULES.roundSeconds, running: false },
-      votes: {},
-      result: null,
-      scores: Object.fromEntries(players.map((p) => [p.id, { playerId: p.id, points: 0, lastDelta: 0 }])),
-      usedWords: new Set(),
-      impostorsCaught: 0,
-      pendingBots,
-    };
-  }
-
-  private makePlayer(identity: PlayerIdentity, isHost: boolean): Player {
-    return { ...identity, isHost, connected: true, joinedAt: Date.now() };
-  }
-
-  private startBotJoins() {
-    this.every('botJoins', this.config.botJoinEveryMs, () => {
-      const s = this.state;
-      const bot = s?.pendingBots.shift();
-      if (!s || !bot || s.room.phase !== 'lobby') return this.clearInterval('botJoins');
-      const player = this.makePlayer({ id: `bot-${bot.name}`, ...bot }, false);
-      s.players = [...s.players, player];
-      s.scores[player.id] = { playerId: player.id, points: 0, lastDelta: 0 };
-      this.emit();
-      if (s.pendingBots.length === 0) {
-        this.clearInterval('botJoins');
-        if (!this.iAmHost()) this.after(this.config.botHostStartMs, () => this.state?.room.phase === 'lobby' && this.beginRound(1));
-      }
+  private open(code: string, input: CreateRoomInput, host: PlayerIdentity, me: PlayerIdentity, pendingBots: PlayerIdentity[], alreadyIn: PlayerIdentity[] = []) {
+    this.meId = me.id;
+    this.pendingBots = pendingBots;
+    const { revealStage1Ms, revealStage2Ms, allVotedPauseMs } = this.config;
+    this.engine = RoomEngine.create(code, input, host, {
+      config: { revealStage1Ms, revealStage2Ms, allVotedPauseMs },
+      onChange: () => this.onEngineChange(),
     });
+    alreadyIn.forEach((p) => this.engine!.join(p));
+    this.every('botJoins', this.config.botJoinEveryMs, () => {
+      const bot = this.pendingBots.shift();
+      if (!bot || this.engine?.phase !== 'lobby') return this.clearInterval('botJoins');
+      try {
+        this.engine.join(bot);
+      } catch {
+        this.pendingBots = [];
+      }
+      if (this.pendingBots.length === 0) this.clearInterval('botJoins');
+    });
+    this.onEngineChange();
   }
 
-  private beginRound(index: number) {
-    const s = this.requireState();
-    this.clearInterval('roundTimer');
-    this.clearInterval('botVotes');
-    s.round = createImpostorRound(this.connectedPlayers(), s.room.category, s.usedWords);
-    s.usedWords.add(s.round.word.word);
-    s.timer = { remainingSec: IMPOSTOR_RULES.roundSeconds, running: false };
-    s.votes = {};
-    s.result = null;
-    s.room = { ...s.room, phase: 'role_reveal', roundIndex: index, paused: false };
+  /** Toda mudança da sala passa por aqui: avisa a UI e deixa os bots reagirem. */
+  private onEngineChange() {
     this.emit();
-  }
+    const engine = this.engine;
+    if (!engine) return;
 
-  private applyTimerRunning(running: boolean) {
-    const s = this.state;
-    if (!s || s.room.phase !== 'clues') return;
-    this.clearInterval('roundTimer');
-    if (running && s.timer.remainingSec > 0) {
-      this.every('roundTimer', 1000, () => {
-        const st = this.state;
-        if (!st) return;
-        const remainingSec = Math.max(0, st.timer.remainingSec - 1);
-        st.timer = { remainingSec, running: remainingSec > 0 };
-        if (remainingSec === 0) this.clearInterval('roundTimer');
-        this.emit();
-      });
+    // Bots confirmam o papel na hora: quem segura a fase é você.
+    if (engine.phase === 'role_reveal') {
+      const acked = new Set(engine.serialize().ackedIds);
+      engine.playerIds.filter((id) => isBot(id) && !acked.has(id)).forEach((id) => this.tryDispatch(id, { type: 'ackRole' }));
     }
-    s.timer = { ...s.timer, running: running && s.timer.remainingSec > 0 };
-    this.emit();
+    this.planBotHost();
   }
 
-  private applyOpenVoting() {
-    const s = this.state;
-    if (!s || s.room.phase !== 'clues') return;
-    this.clearInterval('roundTimer');
-    s.timer = { ...s.timer, running: false };
-    s.room = { ...s.room, phase: 'voting', paused: false };
-    this.emit();
+  /** Quando o host é um bot, ele conduz a partida sozinho (com calma, respeitando a pausa). */
+  private planBotHost() {
+    const engine = this.engine;
+    if (!engine || !isBot(engine.hostId)) return;
+    const snap = engine.snapshotFor(engine.hostId);
+    const lobbyReady = snap.room.phase === 'lobby' && this.pendingBots.length === 0;
+    const key = `${engine.hostId}|${snap.room.phase}|${snap.room.roundIndex}|${snap.result?.stage ?? '-'}|${lobbyReady}`;
+    if (key === this.hostPlanKey) return;
+    this.hostPlanKey = key;
+    this.clearTimer('botHost');
+    this.clearTimer('botHostTimer');
+
+    const host = engine.hostId;
+    const { botHostStartMs, botHostOpenVotingMs, botHostNextRoundMs } = this.config;
+    if (lobbyReady) this.after('botHost', botHostStartMs, () => this.tryDispatch(host, { type: 'startMatch' }));
+    else if (snap.room.phase === 'clues') {
+      this.after('botHostTimer', Math.min(1000, botHostOpenVotingMs / 2), () => this.tryDispatch(host, { type: 'setTimerRunning', running: true }));
+      this.after('botHost', botHostOpenVotingMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'openVoting' })));
+    } else if (snap.room.phase === 'revealing' && snap.result?.stage === 2) {
+      this.after('botHost', botHostNextRoundMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'nextRound' })));
+    }
   }
 
   private startBotVotes() {
     this.every('botVotes', this.config.botVoteEveryMs, () => {
-      const s = this.state;
-      if (!s || !s.round || s.room.phase !== 'voting') return this.clearInterval('botVotes');
-      const voters = this.connectedPlayers();
-      const next = voters.find((p) => !s.votes[p.id]);
-      if (next) {
-        s.votes = { ...s.votes, [next.id]: botVote(next.id, s.round, voters) };
-        this.emit();
-      }
-      if (voters.every((p) => s.votes[p.id])) {
-        this.clearInterval('botVotes');
-        this.after(this.config.allVotedPauseMs, () => this.reveal());
-      }
+      const engine = this.engine;
+      const state = engine?.serialize();
+      if (!engine || !state?.round || state.room.phase !== 'voting') return this.clearInterval('botVotes');
+      const voter = state.players.find((p) => isBot(p.id) && p.connected && !state.votes[p.id]);
+      if (!voter) return this.clearInterval('botVotes');
+      this.tryDispatch(voter.id, { type: 'castVote', targetId: botVote(voter.id, state.round, state.players) });
     });
   }
 
-  private reveal() {
-    const s = this.state;
-    if (!s || !s.round || s.room.phase !== 'voting') return;
-    const resolved = resolveImpostorRound(s.round, s.votes, this.connectedPlayers());
-    s.result = { ...resolved, stage: 0 };
-    if (resolved.caught) s.impostorsCaught += 1;
-    for (const [id, delta] of Object.entries(resolved.pointsDelta)) {
-      const prev = s.scores[id] ?? { playerId: id, points: 0, lastDelta: 0 };
-      s.scores[id] = { playerId: id, points: prev.points + delta, lastDelta: delta };
-    }
-    s.room = { ...s.room, phase: 'revealing' };
-    this.emit();
-
-    const setStage = (stage: 1 | 2) => {
-      if (!this.state?.result || this.state.room.phase !== 'revealing') return;
-      this.state.result = { ...this.state.result, stage };
-      this.emit();
-    };
-    this.after(this.config.revealStage1Ms, () => setStage(1));
-    this.after(this.config.revealStage2Ms, () => {
-      setStage(2);
-      if (!this.iAmHost()) this.after(this.config.botHostNextRoundMs, () => this.whenNotPaused(() => this.applyNextRound()));
-    });
-  }
-
-  private applyNextRound() {
-    const s = this.state;
-    if (!s || s.room.phase !== 'revealing') return;
-    if (s.room.roundIndex >= s.room.totalRounds) {
-      s.room = { ...s.room, phase: 'finished' };
-      this.emit();
-    } else {
-      this.beginRound(s.room.roundIndex + 1);
+  /** Ações de bot nunca podem derrubar o app: se a fase mudou no meio do caminho, só ignora. */
+  private tryDispatch(playerId: PlayerId, cmd: RoomCommand) {
+    try {
+      this.engine?.dispatch(playerId, cmd);
+    } catch {
+      /* fase mudou; nada a fazer */
     }
   }
 
-  private close(reason: NonNullable<Room['closedReason']>) {
-    const s = this.state;
-    if (!s) return;
-    this.clearAllTimers();
-    if (reason === 'host_left') s.players = s.players.map((p) => (p.isHost && p.id !== s.meId ? { ...p, connected: false } : p));
-    s.room = { ...s.room, phase: 'closed', closedReason: reason, paused: false };
-    this.emit();
+  private whenNotPaused(fn: () => void) {
+    if (this.snapshot()?.room.paused) this.after('botHost', 1000, () => this.whenNotPaused(fn));
+    else fn();
   }
 
   private runReconnect(recover: boolean) {
@@ -417,58 +286,7 @@ export class MockRoomService implements RoomService {
   }
 
   private snapshot(): RoomSnapshot | null {
-    const s = this.state;
-    if (!s) return null;
-    const connected = this.connectedPlayers();
-    const ranked = Object.values(s.scores)
-      .filter((sc) => s.players.some((p) => p.id === sc.playerId))
-      .sort((a, b) => b.points - a.points);
-    const inRound = s.round && s.room.phase !== 'lobby';
-    return {
-      room: { ...s.room },
-      players: [...s.players],
-      meId: s.meId,
-      round: inRound
-        ? {
-            index: s.room.roundIndex,
-            category: s.round!.category,
-            starterId: s.round!.order[0],
-            order: s.round!.order,
-            timer: { durationSec: IMPOSTOR_RULES.roundSeconds, ...s.timer },
-          }
-        : null,
-      secret: inRound
-        ? s.round!.impostorId === s.meId
-          ? { role: 'impostor' }
-          : { role: 'word', word: s.round!.word.word, emoji: s.round!.word.emoji }
-        : null,
-      votes:
-        s.room.phase === 'voting' || s.room.phase === 'revealing'
-          ? { votedIds: Object.keys(s.votes), total: connected.length, myVote: s.votes[s.meId] ?? null }
-          : null,
-      result: s.result ? { ...s.result } : null,
-      scores: ranked,
-      summary: s.room.phase === 'finished' && ranked[0] ? { winnerId: ranked[0].playerId, impostorsCaught: s.impostorsCaught } : null,
-    };
-  }
-
-  private connectedPlayers(): Player[] {
-    return this.state?.players.filter((p) => p.connected) ?? [];
-  }
-
-  private iAmHost(): boolean {
-    return !!this.state && this.state.room.hostId === this.state.meId;
-  }
-
-  private requireState(): State {
-    if (!this.state) throw new RoomError('not_in_room');
-    return this.state;
-  }
-
-  private requireHost(): State {
-    const s = this.requireState();
-    if (!this.iAmHost()) throw new RoomError('not_host');
-    return s;
+    return this.engine && this.meId && this.engine.has(this.meId) ? this.engine.snapshotFor(this.meId) : null;
   }
 
   private emit() {
@@ -481,18 +299,21 @@ export class MockRoomService implements RoomService {
     this.connectionListeners.forEach((l) => l(c));
   }
 
-  /** Bot-host respeita a pausa: tenta de novo a cada segundo. */
-  private whenNotPaused(fn: () => void) {
-    if (this.state?.room.paused) this.after(1000, () => this.whenNotPaused(fn));
-    else fn();
+  private after(key: string, ms: number, fn: () => void) {
+    this.clearTimer(key);
+    this.timers.set(
+      key,
+      setTimeout(() => {
+        this.timers.delete(key);
+        fn();
+      }, ms),
+    );
   }
 
-  private after(ms: number, fn: () => void) {
-    const t = setTimeout(() => {
-      this.timers.delete(t);
-      fn();
-    }, ms);
-    this.timers.add(t);
+  private clearTimer(key: string) {
+    const t = this.timers.get(key);
+    if (t) clearTimeout(t);
+    this.timers.delete(key);
   }
 
   private every(key: string, ms: number, fn: () => void) {
@@ -506,15 +327,14 @@ export class MockRoomService implements RoomService {
     this.intervals.delete(key);
   }
 
-  private clearAllTimers() {
-    this.timers.forEach(clearTimeout);
-    this.timers.clear();
-    [...this.intervals.keys()].forEach((k) => this.clearInterval(k));
-  }
-
   private reset() {
-    this.clearAllTimers();
-    this.state = null;
+    [...this.timers.keys()].forEach((k) => this.clearTimer(k));
+    [...this.intervals.keys()].forEach((k) => this.clearInterval(k));
+    this.engine?.dispose();
+    this.engine = null;
+    this.meId = null;
+    this.pendingBots = [];
+    this.hostPlanKey = '';
     this.setConnection({ status: 'online' });
   }
 }

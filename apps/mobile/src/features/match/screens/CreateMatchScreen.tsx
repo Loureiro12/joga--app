@@ -9,6 +9,7 @@ import { getGame } from '@/features/catalog/data/games';
 import { usePremiumStore } from '@/features/premium/premiumStore';
 import { services } from '@/services';
 
+import { roomErrorMessage } from '../hooks/roomActions';
 import { getIdentity } from '../hooks/useIdentity';
 
 /** Tela 8: Criar partida. Meta do design: começar em menos de 30 s. */
@@ -26,8 +27,8 @@ export function CreateMatchScreen() {
     try {
       await services.room.createRoom({ gameId: game.id, category, totalRounds: rounds, maxPlayers: players }, getIdentity());
       router.push(routes.match.lobby);
-    } catch {
-      toast('Não deu para criar a sala. Tente de novo.', 'error');
+    } catch (e) {
+      toast(roomErrorMessage(e, 'Não deu para criar a sala. Tente de novo.'), 'error');
     } finally {
       setLoading(false);
     }
