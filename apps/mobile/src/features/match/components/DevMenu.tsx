@@ -23,8 +23,8 @@ export function DevMenu() {
     ['Queda de conexão (recupera)', () => room.debug.simulateConnectionDrop({ recover: true })],
     ['Queda de conexão (falha)', () => room.debug.simulateConnectionDrop({ recover: false })],
     ['Um jogador desconecta', () => room.debug.simulatePlayerDisconnect()],
-    ['Host saiu', () => room.debug.simulateHostLeft()],
-    ['Jogadores insuficientes', () => room.debug.simulateNotEnoughPlayers()],
+    ['Host sai (outro assume)', () => room.debug.simulateHostLeft()],
+    ['Jogadores insuficientes (no meio da partida)', () => room.debug.simulateNotEnoughPlayers()],
   ];
 
   return (

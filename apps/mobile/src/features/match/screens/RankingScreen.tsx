@@ -3,8 +3,8 @@ import { View } from 'react-native';
 import { Trophy } from '@/core/illustrations';
 import { colors } from '@/core/theme';
 import { Button, Display, Screen, Spacer, Txt, WaitingButton } from '@/core/ui';
-import { services } from '@/services';
 
+import { roomActions } from '../hooks/roomActions';
 import { RankingRow } from '../components/cards';
 import { useMatch } from '../store/matchStore';
 
@@ -41,7 +41,7 @@ export function RankingScreen() {
       <Spacer />
 
       {isHost ? (
-        <Button label={last ? 'Ver resultado final' : 'Próxima rodada'} onPress={() => services.room.nextRound()} />
+        <Button label={last ? 'Ver resultado final' : 'Próxima rodada'} onPress={() => roomActions.nextRound()} />
       ) : (
         <WaitingButton label="O host inicia a próxima" />
       )}

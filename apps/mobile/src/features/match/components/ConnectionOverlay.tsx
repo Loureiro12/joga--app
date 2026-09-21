@@ -30,7 +30,7 @@ export function ConnectionOverlay() {
               style={{
                 height: '100%',
                 backgroundColor: colors.accent,
-                width: `${Math.min(100, ((connection.timeoutSec - connection.secondsLeft) / 6) * 100)}%`,
+                width: `${Math.min(100, ((connection.timeoutSec - connection.secondsLeft) / connection.timeoutSec) * 100)}%`,
               }}
             />
           </View>

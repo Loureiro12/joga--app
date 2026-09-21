@@ -54,11 +54,12 @@ async function guest() {
   await until(svc, (x) => x.result?.stage === 2, 'guest result');
   s = await until(svc, (x) => x.room.roundIndex === 2, 'guest round 2 (bot host)');
   console.log('guest: bot host advanced to round', s.room.roundIndex);
-  const conn: string[] = [];
-  svc.subscribeConnection((c) => conn.push(c.status));
+    const oldHost = s.room.hostId;
   svc.debug.simulateHostLeft();
-  s = await until(svc, (x) => x.room.phase === 'closed', 'closed');
-  console.log('host left →', s.room.closedReason, 'host connected:', s.players.find((p) => p.isHost)?.connected);
+  s = await until(svc, (x) => x.room.hostId !== oldHost, 'host migrou');
+  const newHost = s.players.find((p) => p.isHost)!;
+  console.log('host saiu → novo host:', newHost.name, '| fase:', s.room.phase, '| antigo ainda na sala:', s.players.some((p) => p.id === oldHost));
+  if (s.room.phase === 'closed' || s.players.some((p) => p.id === oldHost)) throw new Error('migração de host falhou');
   await svc.leaveRoom();
 }
 

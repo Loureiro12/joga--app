@@ -4,11 +4,14 @@ import { platformAuth } from '@/features/auth/platformAuth';
 import { SupabaseAuthService } from '@/features/auth/SupabaseAuthService';
 import { MockHistoryService, type HistoryService } from '@/features/history/HistoryService';
 import { MockRoomService } from '@/features/match/services/MockRoomService';
+import { RemoteRoomService } from '@/features/match/services/RemoteRoomService';
 import type { RoomService } from '@/features/match/services/RoomService';
 import { MockBillingService, type BillingService } from '@/features/premium/BillingService';
 import { MockProfileService, type ProfileService } from '@/features/profile/ProfileService';
 import { SupabaseProfileService } from '@/features/profile/SupabaseProfileService';
 import { MockSocialService, type SocialService } from '@/features/social/SocialService';
+
+import { AppState } from 'react-native';
 
 import { createSupabaseClient, isSupabaseConfigured } from './supabase/client';
 
@@ -31,8 +34,22 @@ export type Services = {
 
 const supabase = isSupabaseConfigured ? createSupabaseClient() : null;
 
+/** `ws://IP-DO-MAC:8787/ws` em dev. Exige o Supabase: é o token dele que identifica o jogador na sala. */
+const roomServerUrl = process.env.EXPO_PUBLIC_ROOM_SERVER_URL;
+
+function createRoomService(): RoomService {
+  if (!supabase || !roomServerUrl) return new MockRoomService();
+  const remote = new RemoteRoomService({
+    url: roomServerUrl,
+    getToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
+  });
+  // O sistema costuma matar o socket com o app em segundo plano, às vezes sem avisar.
+  AppState.addEventListener('change', (state) => state === 'active' && remote.notifyForeground());
+  return remote;
+}
+
 export const services: Services = {
-  room: new MockRoomService(),
+  room: createRoomService(),
   auth: supabase ? new SupabaseAuthService(supabase, platformAuth) : new MockAuthService(),
   profile: supabase ? new SupabaseProfileService(supabase) : new MockProfileService(),
   billing: new MockBillingService(),
@@ -42,3 +59,4 @@ export const services: Services = {
 };
 
 export const backendMode: 'supabase' | 'mock' = supabase ? 'supabase' : 'mock';
+export const roomMode: 'remote' | 'mock' = supabase && roomServerUrl ? 'remote' : 'mock';

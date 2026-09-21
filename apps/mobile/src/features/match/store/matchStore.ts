@@ -19,7 +19,21 @@ export const useMatchStore = create<MatchState>(() => ({
   connection: { status: 'online' },
 }));
 
-services.room.subscribe((snapshot) => useMatchStore.setState({ snapshot }));
+services.room.subscribe((snapshot) => {
+  const previous = useMatchStore.getState().snapshot;
+  useMatchStore.setState({ snapshot });
+  if (!previous || !snapshot || previous.room.code !== snapshot.room.code) return;
+
+  // Migração de host: alguém precisa saber que agora é ele quem conduz.
+  if (previous.room.hostId !== snapshot.room.hostId) {
+    const host = snapshot.players.find((p) => p.id === snapshot.room.hostId);
+    toast(snapshot.room.hostId === snapshot.meId ? 'O host saiu. Agora você conduz a partida.' : `O host saiu. ${host?.name ?? 'Outro jogador'} assumiu.`, 'neutral', '👑');
+  }
+  // Mesma rodada sorteada de novo: alguém saiu no meio.
+  if (previous.round && snapshot.round && previous.round.index === snapshot.round.index && previous.round.deal !== snapshot.round.deal) {
+    toast('Alguém saiu: a rodada foi sorteada de novo.', 'neutral', '🎲');
+  }
+});
 services.room.subscribeConnection((connection) => {
   const prev = useMatchStore.getState().connection;
   if (prev.status !== 'online' && connection.status === 'online') toast('Conexão restabelecida');

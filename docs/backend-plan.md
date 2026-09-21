@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 (fundação) e 2 (conta e perfil) concluídos. Passos 3–7 não iniciados.
+**Estado:** passos 1 (fundação), 2 (conta e perfil) e 3 (servidor de salas) concluídos. Passos 4–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -47,7 +47,7 @@ Supabase-only continua sendo o **plano B** se um dia a prioridade for ter uma pl
 ### Custos e riscos assumidos
 
 - **Duas plataformas** para operar em vez de uma.
-- **Deploy derruba salas em memória.** Mitigação: o servidor grava o estado da sala a cada transição e o app já tem a tela "Reconectando…" de 30 s, que absorve o reinício.
+- **Deploy derruba salas em memória.** Mitigação (implementada e testada): o servidor grava o estado da sala a cada mudança, restaura no boot, e o app reconecta sozinho por trás da tela "Reconectando…" de 30 s.
 - **Uma instância só.** Suficiente por muito tempo (uma sala gera dezenas de mensagens por partida). Quando não for, roteia-se por código de sala ou porta-se o `engine` para Cloudflare Durable Objects — por isso o `engine` é TypeScript puro, sem Node.
 - **Código de 4 dígitos = 9.000 salas simultâneas no máximo.** O código é único só entre salas ativas e é reciclado. Entradas erradas em sequência têm limite por IP/usuário, senão dá para invadir festas alheias por força bruta.
 
@@ -115,17 +115,22 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 - `packages/db/src/database.types.ts` foi escrito à mão no formato do gerador; rode `npm run db:types` assim que o stack local subir.
 - Login com Google e Apple (precisam das credenciais e de um build nativo) e a tela de nova senha aberta por deep link num aparelho.
 
-### Passo 3 — Servidor de salas
+### Passo 3 — Servidor de salas ✅
 
-- Protocolo WebSocket: comandos do cliente (`createRoom`, `joinRoom`, `startMatch`, `castVote`…) e um único evento do servidor, o `RoomSnapshot` filtrado por jogador. Os tipos ficam no `engine`.
-- Uma sala = um objeto em memória com fila de comandos; timers no servidor; estado gravado a cada transição para sobreviver a reinício.
-- Reconexão: o jogador que cai fica `connected: false` por 30 s antes de ser removido; host que não volta encerra a sala (`closedReason: 'host_left'`).
-- Cronômetro por **horário de término** (`endsAt`), não um tick por segundo na rede.
-- `ackRole` espera todos os jogadores ou um tempo limite (hoje o mock avança no primeiro).
-- Limite de tentativas em `joinRoom`.
-- No app: `RemoteRoomService` com a mesma interface; `npm run smoke:room` passa a rodar também contra o servidor real; os bots do mock viram cliente de teste de carga.
+- **`RoomEngine` (em `@jogae/engine`)**: a sala como máquina de estados pura e determinística, com relógio injetado. Todo prazo é um carimbo de tempo no estado e existe um único alarme, armado para o prazo mais próximo — por isso o estado é salvo e restaurado em outro processo sem perder timers. **O mock do app e o servidor executam este mesmo código**: o mock é "engine + bots", o servidor é "engine + WebSockets".
+- **Protocolo** (`room/protocol.ts`): JSON sobre WebSocket. `hello` com o token → `welcome`; requisições com `id` → `ack`; o estado chega só como `snapshot`, já filtrado para quem recebe.
+- **Segredo por construção**: o snapshot só traz o papel de quem pediu; votos alheios nunca saem; o desfecho (impostor, palavra, pontos) só sai no último dos 3 tempos da revelação — nem o placar entrega o resultado antes.
+- **`apps/room-server`**: valida o token perguntando ao Supabase (`/auth/v1/user`, uma vez por conexão); valida toda mensagem; código de 4 dígitos único entre salas ativas; limite de tentativas de entrada por usuário e por IP; ping do WebSocket para achar conexão morta; limite de mensagens por conexão; salas gravadas em disco a cada mudança (`ROOM_STORE_DIR`) e restauradas no boot.
+- **Regras de presença**: quem cai mantém vaga e pontos por 30 s. **Se o host sai ou não volta, assume quem está na sala há mais tempo** (decisão de 2026-09-20, no lugar de "a sala encerra" do design). Se alguém sai no meio de uma rodada, ela é sorteada de novo com o mesmo número; abaixo de 3 jogadores no meio da partida, a sala fecha. Papel e votação esperam só quem está conectado.
+- **Cronômetro**: o servidor não manda um snapshot por segundo; o app conta localmente a partir do instante em que o snapshot chegou (dispensa relógios sincronizados).
+- **No app**: `RemoteRoomService` com a mesma interface do mock (reconexão automática com `resume`, overlay "Reconectando…"), escolhido quando `EXPO_PUBLIC_ROOM_SERVER_URL` está definida. Novos: espera "Aguardando os outros" depois de ver o papel, avisos de troca de host e de novo sorteio, erros da sala traduzidos.
+- **Bots de dev** (`npm run bots -- --code 1234`): entram numa sala real pelo WebSocket, reconectam sozinhos e, se virarem host, conduzem a partida. Exigem `AUTH_MODE=dev` ou `supabase+dev` — que o servidor recusa em produção.
 
-**Pronto quando:** três celulares físicos jogam uma partida inteira juntos, um deles cai e volta no meio.
+**Como foi verificado (2026-09-20):** 26 testes do engine com relógio falso; 13 testes do servidor com clientes WebSocket reais (segredo conferido nos bytes que passaram pelo fio, reconexão, migração de host, limite de tentativas, reinício com restauração do disco); 4 testes ponta a ponta do `RemoteRoomService` contra o servidor; e o app (build web) com login real no Supabase de dev + servidor real + bots, jogando até a rodada 2 com o servidor derrubado e reiniciado no meio.
+
+**Não verificado:** celulares físicos (o critério de pronto — três aparelhos jogando juntos, um caindo e voltando — depende de você); a tela "Aguardando os outros" não chegou a aparecer no teste de navegador porque os bots confirmam rápido (a regra está coberta no engine); comportamento com o app em segundo plano no iOS/Android.
+
+**Fica para depois:** hospedagem (Fly.io, Dockerfile, volume para `ROOM_STORE_DIR`); trocar o arquivo em disco por tabela quando o servidor ganhar a service role (passo 4); `AbortedScreen` ainda tem a variante "O host saiu da sala", hoje inalcançável.
 
 ### Passo 4 — Histórico e estatísticas
 
@@ -158,4 +163,4 @@ Decisões que o backend força e que ainda não foram tomadas:
 3. **Limite do plano grátis.** "Partidas ilimitadas" é benefício premium, mas nada define o limite de quem não paga.
 4. ~~Regras de pontuação do Impostor~~ — confirmadas em 2026-09-19: +200 por inocente quando o grupo acerta, +300 para o impostor que escapa, +50 por voto certo, empate = impostor escapa. Cobertas por teste em `packages/engine/test`.
 5. **LGPD.** Usuários brasileiros, possivelmente menores (existe a categoria Família): política de privacidade, base legal e fluxo de exclusão de dados.
-6. **Host caiu = sala encerra** (como no design) ou o host migra para outro jogador? O plano assume o design.
+6. ~~Host caiu~~ — decidido em 2026-09-20: outro jogador assume (o mais antigo na sala que esteja conectado).

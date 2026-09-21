@@ -23,7 +23,8 @@
     "db:diff": "supabase db diff --schema public",
     "db:types": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts",
     "db:stop": "supabase stop",
-    "test:db": "tsx --tsconfig apps/mobile/tsconfig.json --test apps/mobile/test/*.integration.test.ts"
+    "test:db": "tsx --tsconfig apps/mobile/tsconfig.json --test apps/mobile/test/*.integration.test.ts",
+    "bots": "npm run bots -w @jogae/room-server --"
   },
   "devDependencies": {
     "supabase": "^2.117.0"

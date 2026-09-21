@@ -7,9 +7,9 @@ import { colors } from '@/core/theme';
 import { Button, Chip, Display, Overline, Screen, Txt, WaitingButton } from '@/core/ui';
 import { formatPoints, plural } from '@/core/utils/format';
 import { getGame } from '@/features/catalog/data/games';
-import { services } from '@/services';
 
 import { leaveMatch } from '../hooks/leaveMatch';
+import { roomActions } from '../hooks/roomActions';
 import { useMatch } from '../store/matchStore';
 
 /** Tela 18: Fim da partida. */
@@ -48,7 +48,7 @@ export function EndScreen() {
       </View>
 
       {isHost ? (
-        <Button label="Jogar novamente" variant="onColor" onPress={() => services.room.playAgain()} />
+        <Button label="Jogar novamente" variant="onColor" onPress={() => roomActions.playAgain()} />
       ) : (
         <WaitingButton label="Aguardando o host" />
       )}

@@ -5,10 +5,10 @@ import { useSharedValue } from 'react-native-reanimated';
 import { Enter } from '@/core/animation/Enter';
 import { Eyes } from '@/core/illustrations';
 import { colors, radii } from '@/core/theme';
-import { Button, Display, Overline, Screen, Txt } from '@/core/ui';
-import { services } from '@/services';
+import { Button, Display, Overline, Screen, Txt, WaitingButton } from '@/core/ui';
 
 import { HoldToRevealButton, SecretCard } from '../components/SecretReveal';
+import { roomActions } from '../hooks/roomActions';
 import { useMatch } from '../store/matchStore';
 
 /** Tela 12: Revelação do papel (secret card → palavra | impostor). */
@@ -36,13 +36,23 @@ export function RevealScreen() {
     return () => sub.remove();
   }, [progress]);
 
-  if (!match || !match.secret) return null;
-  const { room, secret, round } = match;
-  const category = round?.category ?? room.category;
+  // Novo sorteio da mesma rodada (alguém saiu): o papel mudou, então volta para a carta fechada.
+  const deal = match?.round?.deal;
+  useEffect(() => {
+    progress.value = 0;
+    setRevealed(false);
+  }, [deal, progress]);
+
+  if (!match || !match.secret || !match.round) return null;
+  const { room, secret, round, me, connectedPlayers } = match;
+  const category = round.category;
   const impostor = secret.role === 'impostor';
+  // A partida só segue quando todos virem o papel; depois de confirmar, este jogador espera aqui.
+  const acked = round.ackedIds.includes(me.id);
+  const ackedCount = connectedPlayers.filter((p) => round.ackedIds.includes(p.id)).length;
 
   return (
-    <Screen scroll={false} bg={revealed && impostor ? colors.impostorBg : colors.background}>
+    <Screen scroll={false} bg={revealed && impostor && !acked ? colors.impostorBg : colors.background}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Overline>
           Rodada {room.roundIndex} · {category}
@@ -50,7 +60,15 @@ export function RevealScreen() {
         <Overline>Só você vê isso</Overline>
       </View>
 
-      {!revealed ? (
+      {acked ? (
+        <>
+          <Display size={40}>{'Papel\nguardado.'}</Display>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+            <SecretCard progress={progress} />
+          </View>
+          <WaitingButton label={`Aguardando os outros (${ackedCount}/${connectedPlayers.length})`} />
+        </>
+      ) : !revealed ? (
         <>
           <Display size={40}>{'Seu papel\nestá pronto.'}</Display>
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -106,7 +124,7 @@ export function RevealScreen() {
               </>
             )}
           </Enter>
-          <Button label="Entendi, esconder" onPress={() => armed && services.room.ackRole()} />
+          <Button label="Entendi, esconder" onPress={() => armed && roomActions.ackRole()} />
         </>
       )}
     </Screen>
