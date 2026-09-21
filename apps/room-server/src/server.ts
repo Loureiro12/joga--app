@@ -57,7 +57,7 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
         games: { impostor: { minPlayers: IMPOSTOR_RULES.minPlayers, roundSeconds: IMPOSTOR_RULES.roundSeconds } },
       });
     }
-    // Página de convite do site (jogae.app/j/4827). Público de propósito: quem tem o código já pode entrar na sala.
+    // Página de convite do site (jogaeapp.com.br/j/4827). Público de propósito: quem tem o código já pode entrar na sala.
     const room = req.method === 'GET' ? /^\/api\/room\/(\d{4})$/.exec(req.url?.split('?')[0] ?? '') : null;
     if (room) {
       // 9.000 códigos são fáceis de varrer: o limite impede listar as salas ativas em massa.

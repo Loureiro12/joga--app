@@ -1,12 +1,12 @@
 import * as WebBrowser from 'expo-web-browser';
 
 /**
- * Endereço público do site (jogae.app). É ele que aparece nos links de convite e onde moram as páginas
+ * Endereço público do site (jogaeapp.com.br). É ele que aparece nos links de convite e onde moram as páginas
  * legais. Enquanto o domínio não existe, aponte para o endereço provisório com EXPO_PUBLIC_SITE_URL.
  */
-export const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL || 'https://jogae.app').replace(/\/$/, '');
+export const SITE_URL = (process.env.EXPO_PUBLIC_SITE_URL || 'https://jogaeapp.com.br').replace(/\/$/, '');
 
-/** `jogae.app` — como o link aparece para as pessoas (sem https://). */
+/** `jogaeapp.com.br` — como o link aparece para as pessoas (sem https://). */
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, '');
 
 export const siteLinks = {

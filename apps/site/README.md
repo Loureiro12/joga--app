@@ -1,6 +1,6 @@
 # jogae-site
 
-O site `jogae.app`: landing, páginas de convite (que fazem os links do app funcionarem), páginas legais exigidas pelas lojas e os arquivos `.well-known`. Astro 5, zero JavaScript de framework no navegador.
+O site `jogaeapp.com.br`: landing, páginas de convite (que fazem os links do app funcionarem), páginas legais exigidas pelas lojas e os arquivos `.well-known`. Astro 5, zero JavaScript de framework no navegador.
 
 ```bash
 npm install
