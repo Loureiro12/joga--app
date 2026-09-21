@@ -21,10 +21,12 @@
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff --schema public",
-    "db:types": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts",
+    "db:types": "supabase gen types typescript --linked --schema public > packages/db/src/database.types.ts",
     "db:stop": "supabase stop",
     "test:db": "tsx --tsconfig apps/mobile/tsconfig.json --test apps/mobile/test/*.integration.test.ts",
-    "bots": "npm run bots -w @jogae/room-server --"
+    "bots": "npm run bots -w @jogae/room-server --",
+    "db:types:local": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts",
+    "verify:history": "npm run verify:history -w @jogae/mobile"
   },
   "devDependencies": {
     "supabase": "^2.117.0"

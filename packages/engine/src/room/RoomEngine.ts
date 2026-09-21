@@ -3,6 +3,7 @@ import {
   RoomError,
   type ClosedReason,
   type CreateRoomInput,
+  type MatchRecord,
   type Player,
   type PlayerId,
   type PlayerIdentity,
@@ -76,6 +77,12 @@ export type EngineState = {
   scores: Record<PlayerId, Score>;
   usedWords: string[];
   impostorsCaught: number;
+  /** Identidade e início da partida em curso; `null` no lobby. */
+  matchId: string | null;
+  matchStartedAt: number | null;
+  matchEndedAt: number | null;
+  /** Por jogador, na partida em curso: vezes como impostor e vezes em que escapou. */
+  roleStats: Record<PlayerId, { timesImpostor: number; timesEscaped: number }>;
   lastActivityAt: number;
 };
 
@@ -127,6 +134,10 @@ export class RoomEngine {
         scores: { [host.id]: newScore(host.id) },
         usedWords: [],
         impostorsCaught: 0,
+        matchId: null,
+        matchStartedAt: null,
+        matchEndedAt: null,
+        roleStats: {},
         lastActivityAt: now,
       },
       deps,
@@ -137,7 +148,9 @@ export class RoomEngine {
 
   /** Recria a sala a partir de um estado salvo; prazos vencidos durante a parada disparam em seguida. */
   static restore(state: EngineState, deps: RoomEngineDeps = {}): RoomEngine {
-    const engine = new RoomEngine(JSON.parse(JSON.stringify(state)) as EngineState, deps);
+    // Estado salvo por uma versão anterior do servidor pode não ter os campos mais novos.
+    const defaults = { deal: 0, matchId: null, matchStartedAt: null, matchEndedAt: null, roleStats: {} };
+    const engine = new RoomEngine({ ...defaults, ...(JSON.parse(JSON.stringify(state)) as EngineState) }, deps);
     engine.arm();
     return engine;
   }
@@ -211,6 +224,34 @@ export class RoomEngine {
     };
   }
 
+  /**
+   * Boletim da partida, disponível só quando ela chegou ao fim (`finished`).
+   * Partida abandonada ou fechada por falta de gente não gera boletim.
+   */
+  matchRecord(): MatchRecord | null {
+    const s = this.state;
+    if (s.room.phase !== 'finished' || !s.matchId || s.matchStartedAt === null) return null;
+    const ranked = s.players
+      .map((p) => ({ player: p, points: s.scores[p.id]?.points ?? 0 }))
+      .sort((a, b) => b.points - a.points || a.player.joinedAt - b.player.joinedAt);
+    return {
+      matchId: s.matchId,
+      roomCode: s.room.code,
+      gameId: s.room.gameId,
+      category: s.room.category,
+      totalRounds: s.room.totalRounds,
+      impostorsCaught: s.impostorsCaught,
+      startedAt: s.matchStartedAt,
+      endedAt: s.matchEndedAt ?? this.scheduler.now(),
+      players: ranked.map(({ player, points }) => {
+        // Colocação "de competição": quem empata divide a posição, e a seguinte é pulada (1, 1, 3).
+        const position = 1 + ranked.filter((other) => other.points > points).length;
+        const role = s.roleStats[player.id] ?? { timesImpostor: 0, timesEscaped: 0 };
+        return { playerId: player.id, name: player.name, color: player.color, position, points, won: position === 1, ...role };
+      }),
+    };
+  }
+
   /** Nada do desfecho sai antes da hora: tempo 0 = suspense, tempo 1 = só o escolhido, tempo 2 = tudo. */
   private maskedResult(result: Omit<RoundResult, 'stage'>, stage: 0 | 1 | 2): RoundResult {
     if (stage === 2) return { ...result, stage };
@@ -277,6 +318,10 @@ export class RoomEngine {
       case 'startMatch': {
         if (phase !== 'lobby') throw new RoomError('invalid_phase');
         if (s.players.filter((p) => p.connected).length < IMPOSTOR_RULES.minPlayers) throw new RoomError('not_enough_players');
+        s.matchId = this.newId();
+        s.matchStartedAt = now;
+        s.matchEndedAt = null;
+        s.roleStats = {};
         this.beginRound(1);
         break;
       }
@@ -320,8 +365,10 @@ export class RoomEngine {
       }
       case 'nextRound': {
         if (phase !== 'revealing' || s.stage !== 2) throw new RoomError('invalid_phase');
-        if (s.room.roundIndex >= s.room.totalRounds) s.room.phase = 'finished';
-        else this.beginRound(s.room.roundIndex + 1);
+        if (s.room.roundIndex >= s.room.totalRounds) {
+          s.room.phase = 'finished';
+          s.matchEndedAt = now;
+        } else this.beginRound(s.room.roundIndex + 1);
         break;
       }
       case 'playAgain': {
@@ -329,6 +376,10 @@ export class RoomEngine {
         s.scores = Object.fromEntries(s.players.map((p) => [p.id, newScore(p.id)]));
         s.usedWords = [];
         s.impostorsCaught = 0;
+        s.matchId = null;
+        s.matchStartedAt = null;
+        s.matchEndedAt = null;
+        s.roleStats = {};
         this.clearRound();
         s.room.phase = 'lobby';
         s.room.roundIndex = 0;
@@ -353,6 +404,12 @@ export class RoomEngine {
   }
 
   /* --------------------------------------------------------------- transições */
+
+  /** UUID v4 a partir do `rng` injetado: o engine não pode depender de `crypto` (o Hermes não tem). */
+  private newId(): string {
+    const hex = (n: number) => Array.from({ length: n }, () => Math.floor(this.rng() * 16).toString(16)).join('');
+    return `${hex(8)}-${hex(4)}-4${hex(3)}-${'89ab'[Math.floor(this.rng() * 4)]}${hex(3)}-${hex(12)}`;
+  }
 
   private beginRound(index: number): void {
     const s = this.state;
@@ -416,6 +473,9 @@ export class RoomEngine {
     const s = this.state;
     if (!s.result) return;
     if (s.result.caught) s.impostorsCaught += 1;
+    const role = (s.roleStats[s.result.impostorId] ??= { timesImpostor: 0, timesEscaped: 0 });
+    role.timesImpostor += 1;
+    if (!s.result.caught) role.timesEscaped += 1;
     for (const player of s.players) {
       const delta = s.result.pointsDelta[player.id] ?? 0;
       const previous = s.scores[player.id] ?? newScore(player.id);

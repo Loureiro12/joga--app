@@ -6,11 +6,13 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { createTokenVerifier, type TokenVerifier } from './auth';
 import type { Config } from './config';
 import { parseClientMessage } from './messages';
+import { createMatchRecorder, type MatchRecorder } from './rooms/MatchRecorder';
 import { RoomManager } from './rooms/RoomManager';
 import { FileRoomStore, MemoryRoomStore } from './rooms/RoomStore';
 
 export type RoomServerOptions = {
   verifyToken?: TokenVerifier;
+  recorder?: MatchRecorder;
   engineConfig?: Partial<EngineConfig>;
   scheduler?: Scheduler;
   /** Quanto o cliente tem para mandar o `hello` depois de conectar. */
@@ -31,6 +33,7 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
   const verifyToken = options.verifyToken ?? createTokenVerifier(config);
   const manager = new RoomManager({
     store: config.storeDir ? new FileRoomStore(config.storeDir) : new MemoryRoomStore(),
+    recorder: options.recorder ?? createMatchRecorder(config, log),
     engineConfig: options.engineConfig,
     scheduler: options.scheduler,
     log,

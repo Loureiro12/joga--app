@@ -225,6 +225,63 @@ test('partida inteira: rodadas, fim com campeão e "jogar novamente" zera o plac
   assert.equal(again.players.length, 4, 'os jogadores continuam na sala');
 });
 
+test('boletim: só existe no fim, com colocação de competição, vitórias no empate e papéis contados', () => {
+  const { engine, clock, toVoting, voteAndReveal, impostor } = room(['a', 'b', 'c', 'd'], { ...INPUT, totalRounds: 2 });
+  assert.equal(engine.matchRecord(), null, 'lobby não tem boletim');
+  toVoting();
+  const firstImpostor = impostor();
+  assert.equal(engine.matchRecord(), null, 'partida em andamento não tem boletim');
+  voteAndReveal(firstImpostor); // pego: os 3 inocentes fazem 250
+  engine.dispatch('a', { type: 'nextRound' });
+  toVoting();
+  const secondImpostor = impostor();
+  const scapegoat = engine.playerIds.find((id) => id !== secondImpostor)!;
+  voteAndReveal(scapegoat); // escapou: o impostor faz 300
+  clock.advance(5_000);
+  engine.dispatch('a', { type: 'nextRound' });
+
+  const record = engine.matchRecord()!;
+  assert.match(record.matchId, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.deepEqual([record.roomCode, record.gameId, record.totalRounds, record.impostorsCaught], ['4827', 'impostor', 2, 1]);
+  assert.ok(record.endedAt - record.startedAt > 0);
+  assert.equal(record.players.length, 4);
+
+  const byId = Object.fromEntries(record.players.map((p) => [p.playerId, p]));
+  assert.deepEqual([byId[firstImpostor].timesImpostor, byId[firstImpostor].timesEscaped], secondImpostor === firstImpostor ? [2, 1] : [1, 0]);
+  assert.equal(byId[secondImpostor].timesEscaped, 1);
+  assert.equal(record.players.reduce((n, p) => n + p.timesImpostor, 0), 2, 'um impostor por rodada');
+
+  const top = Math.max(...record.players.map((p) => p.points));
+  for (const p of record.players) {
+    assert.equal(p.won, p.points === top, 'vence quem tem a maior pontuação, inclusive empatados');
+    assert.equal(p.position, 1 + record.players.filter((o) => o.points > p.points).length);
+  }
+  assert.deepEqual(record.players.map((p) => p.points), [...record.players.map((p) => p.points)].sort((x, y) => y - x), 'ordenado do 1º ao último');
+
+  const sameAgain = engine.matchRecord()!;
+  assert.equal(sameAgain.matchId, record.matchId, 'o mesmo boletim pode ser pedido de novo (gravação idempotente)');
+  engine.dispatch('a', { type: 'playAgain' });
+  assert.equal(engine.matchRecord(), null);
+  engine.dispatch('a', { type: 'startMatch' });
+  assert.notEqual(engine.serialize().matchId, record.matchId, 'jogar novamente é outra partida');
+});
+
+test('boletim: quem saiu no meio não entra; sala fechada por falta de gente não gera boletim', () => {
+  const left = room(['a', 'b', 'c', 'd'], { ...INPUT, totalRounds: 1 });
+  left.engine.dispatch('a', { type: 'startMatch' });
+  left.engine.leave('d');
+  left.toVoting();
+  left.voteAndReveal(left.impostor());
+  left.engine.dispatch(left.engine.hostId, { type: 'nextRound' });
+  assert.deepEqual(left.engine.matchRecord()!.players.map((p) => p.playerId).sort(), ['a', 'b', 'c']);
+
+  const closed = room(['a', 'b', 'c']);
+  closed.engine.dispatch('a', { type: 'startMatch' });
+  closed.engine.leave('c');
+  assert.equal(closed.engine.phase, 'closed');
+  assert.equal(closed.engine.matchRecord(), null);
+});
+
 test('reconexão: quem cai mantém vaga e pontos por 30 s, e voltando nada muda', () => {
   const { engine, clock } = room();
   engine.dispatch('a', { type: 'startMatch' });

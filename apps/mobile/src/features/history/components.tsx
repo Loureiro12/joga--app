@@ -5,6 +5,7 @@ import { Display, Txt } from '@/core/ui';
 import { formatPoints } from '@/core/utils/format';
 import { getGame } from '@/features/catalog/data/games';
 
+import { whenLabel } from './historyDates';
 import type { HistoryEntry } from './HistoryService';
 
 export const positionLabel = (position: number) => (position === 1 ? '🥇 1º' : `${position}º`);
@@ -14,7 +15,7 @@ export function HistoryRow({ entry, compact }: { entry: HistoryEntry; compact?: 
   const game = getGame(entry.gameId);
   const icon = compact ? 38 : 44;
   const bg = game?.color === colors.surface ? colors.surfaceLight : (game?.color ?? colors.surfaceLight);
-  const detail = [entry.when, `${entry.players} jogadores`, compact ? null : entry.wordCategory].filter(Boolean).join(' · ');
+  const detail = [whenLabel(entry.endedAt), `${entry.players} jogadores`, compact ? null : entry.wordCategory].filter(Boolean).join(' · ');
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: radii.input, paddingVertical: 12, paddingHorizontal: 14 }}>
       <View style={{ width: icon, height: icon, borderRadius: compact ? 12 : 14, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -29,7 +30,7 @@ export function HistoryRow({ entry, compact }: { entry: HistoryEntry; compact?: 
         </Txt>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
-        <Display font="display700" size={compact ? 15 : 16} color={entry.position === 1 ? colors.accent : colors.muted}>
+        <Display font="display700" size={compact ? 15 : 16} color={entry.won ? colors.accent : colors.muted}>
           {positionLabel(entry.position)}
         </Display>
         {!compact && (

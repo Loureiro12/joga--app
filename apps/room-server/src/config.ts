@@ -11,6 +11,8 @@ export type Config = {
   authMode: AuthMode;
   supabaseUrl: string | null;
   supabaseAnonKey: string | null;
+  /** Chave SECRETA (service role). Só o servidor a conhece; é o que permite gravar o histórico. */
+  supabaseServiceRoleKey: string | null;
   /** Pasta onde o estado das salas é gravado para sobreviver a reinícios. `null` = só memória. */
   storeDir: string | null;
 };
@@ -30,5 +32,5 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   // Token de dev é "confie em mim, eu sou o usuário X": jamais em produção.
   if (env === 'production' && authMode !== 'supabase') throw new Error('Em produção AUTH_MODE tem que ser "supabase"');
 
-  return { port, env, authMode, supabaseUrl, supabaseAnonKey, storeDir: source.ROOM_STORE_DIR || null };
+  return { port, env, authMode, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey: source.SUPABASE_SERVICE_ROLE_KEY || null, storeDir: source.ROOM_STORE_DIR || null };
 }

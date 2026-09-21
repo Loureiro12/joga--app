@@ -50,7 +50,9 @@ jobs:
         run: npx supabase db lint --level warning --fail-on error
       - name: Tipos do banco estão em dia
         run: |
-          npm run db:types
-          git diff --exit-code packages/db/src/database.types.ts || echo "::warning::packages/db está defasado — rode npm run db:types e commite"
-      - name: Testes de integração (conta e perfil)
+          # No CI não há projeto linkado: gera a partir do Supabase LOCAL, que acabou de aplicar as migrations.
+          # A versão do PostgREST difere entre o local e o hospedado, então essa linha é ignorada na comparação.
+          npm run db:types:local
+          git diff --exit-code -I 'PostgrestVersion' packages/db/src/database.types.ts || echo "::warning::packages/db está defasado em relação às migrations — rode npm run db:types e commite"
+      - name: Testes de integração (conta, perfil e histórico)
         run: npm run test:db
