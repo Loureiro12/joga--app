@@ -1,0 +1,15 @@
+# O build só precisa dos package.json, do lockfile, do engine e do room-server.
+**/node_modules
+**/dist
+**/.expo
+**/.env*
+**/.data
+.git
+.github
+docs
+design_handoff_jogae
+supabase
+apps/mobile/**
+!apps/mobile/package.json
+apps/room-server/test
+packages/engine/test

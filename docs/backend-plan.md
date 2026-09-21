@@ -130,7 +130,9 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 
 **Não verificado:** celulares físicos (o critério de pronto — três aparelhos jogando juntos, um caindo e voltando — depende de você); a tela "Aguardando os outros" não chegou a aparecer no teste de navegador porque os bots confirmam rápido (a regra está coberta no engine); comportamento com o app em segundo plano no iOS/Android.
 
-**Fica para depois:** hospedagem (Fly.io, Dockerfile, volume para `ROOM_STORE_DIR`); trocar o arquivo em disco por tabela quando o servidor ganhar a service role (passo 4); `AbortedScreen` ainda tem a variante "O host saiu da sala", hoje inalcançável.
+**Hospedagem:** `fly.toml`, Dockerfile e o passo a passo estão em [deploy-fly.md](deploy-fly.md) (preparados em 2026-09-20; a publicação depende da conta do Fly).
+
+**Fica para depois:** trocar o arquivo em disco por tabela quando o servidor ganhar a service role (passo 4); `AbortedScreen` ainda tem a variante "O host saiu da sala", hoje inalcançável.
 
 ### Passo 4 — Histórico e estatísticas
 
