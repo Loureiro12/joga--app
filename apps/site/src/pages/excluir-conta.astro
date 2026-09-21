@@ -1,0 +1,131 @@
+---
+import { contact } from '../lib/config';
+import { deletionRows } from '../data/legal';
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Excluir sua conta — Jogaê" description="Como apagar sua conta do Jogaê e seus dados, pelo app ou por e-mail, e o que acontece com cada informação." path="/excluir-conta">
+  <article class="prose-page" style="max-width:820px">
+    <h1 class="h1-page">Excluir sua conta</h1>
+    <p class="intro">Você pode apagar sua conta do Jogaê a qualquer momento, pelo app ou por e-mail. Não é preciso instalar nada para pedir a exclusão.</p>
+
+    <div class="grid-auto ways">
+      <section class="card way">
+        <div class="step-number" style="background:#7C3AED;color:#FAFAFA">1</div>
+        <h2 class="h3">No app</h2>
+        <p>Perfil → Configurações → Excluir conta. Confirme na janela que aparece. A conta some na hora.</p>
+      </section>
+      <section class="card way">
+        <div class="step-number" style="background:#FACC15;color:#0F0F13">2</div>
+        <h2 class="h3">Por e-mail</h2>
+        <p>
+          Escreva para <a class="mail" href={`mailto:${contact.deletion}?subject=Excluir%20minha%20conta`}>{contact.deletion}</a> do e-mail cadastrado, com seu @username. Respondemos em
+          até 7 dias e concluímos em até 30.
+        </p>
+      </section>
+    </div>
+
+    <section class="card data" aria-labelledby="dados-title">
+      <h2 id="dados-title" class="h3">O que acontece com seus dados</h2>
+      <ul>
+        {
+          deletionRows.map((row) => (
+            <li>
+              <span class="icon" style={`background:${row.bg};color:${row.fg}`} aria-hidden="true">{row.icon}</span>
+              <div>
+                <h3>{row.title}</h3>
+                <p>{row.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <p class="warning" role="note">
+      A exclusão é definitiva: partidas, conquistas e placares não podem ser recuperados. Se você tem assinatura ativa, cancele-a na App Store ou no Google Play — excluir a conta não cancela a
+      cobrança da loja.
+    </p>
+  </article>
+</Base>
+
+<style>
+  .intro {
+    font: 500 18px/1.55 var(--body);
+    color: var(--muted);
+    margin-top: 16px;
+    max-width: 640px;
+  }
+  .ways {
+    grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+    margin-top: 32px;
+  }
+  .way {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .way p {
+    font: 400 15px/1.6 var(--body);
+    color: var(--muted);
+  }
+  .mail,
+  .mail:hover {
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .data {
+    margin-top: 14px;
+  }
+  .data ul {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .data li {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--surface-light);
+  }
+  .data li:last-child {
+    border-bottom: 0;
+  }
+  .icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 700 12px var(--body);
+    flex: none;
+    margin-top: 2px;
+  }
+  .data li div {
+    flex: 1;
+    min-width: 0;
+  }
+  .data h3 {
+    font: 600 16px var(--body);
+  }
+  .data li p {
+    font: 400 14px/1.5 var(--body);
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .warning {
+    background: var(--surface);
+    border: 1px solid var(--danger);
+    border-radius: 20px;
+    padding: 22px;
+    margin-top: 14px;
+    font: 400 15px/1.6 var(--body);
+    color: var(--muted);
+  }
+</style>

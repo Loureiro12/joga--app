@@ -1,0 +1,67 @@
+---
+import InviteScript from '../../components/InviteScript.astro';
+import StoreButtons from '../../components/StoreButtons.astro';
+import { app } from '../../lib/config';
+import Base from '../../layouts/Base.astro';
+
+// Convite de amizade. SSR pelo mesmo motivo do convite de sala: o @username precisa estar no HTML do preview.
+export const prerender = false;
+
+const { username = '' } = Astro.params;
+// Mesma regra do banco (`profiles_username_format`).
+if (!/^[a-z0-9_.]{3,20}$/.test(username)) return Astro.rewrite('/404');
+
+const ogTitle = `@${username} te chamou para o Jogaê`;
+const ogDescription = 'Jogos sociais para jogar com os amigos no mesmo lugar. Aceite o convite e vocês viram amigos no app.';
+Astro.response.headers.set('cache-control', 'private, no-store');
+---
+
+<Base title={`${ogTitle}`} description={ogDescription} ogTitle={ogTitle} ogDescription={ogDescription} ogImage="/og/convite.png" noindex>
+  <div class="invite enter">
+    <div class="from">
+      <div class="avatar" style="width:48px;height:48px;font-size:22px;background:#7C3AED;color:#FAFAFA" aria-hidden="true">{username[0].toUpperCase()}</div>
+      <div>
+        <p class="from-name">@{username} te convidou</p>
+        <p class="from-meta">Convite de amizade</p>
+      </div>
+    </div>
+    <h1 class="title">Bora jogar<br />juntos?</h1>
+    <p class="lead how">Instale o Jogaê e toque neste link de novo: @{username} entra na sua lista de amigos, e vocês veem quando o outro abre uma sala.</p>
+    <StoreButtons long page="convite-amizade" />
+    <a class="open-app" href={`${app.scheme}://u/${username}`}>Já tenho o app — abrir o Jogaê →</a>
+  </div>
+  <InviteScript kind="friend" value={username} />
+</Base>
+
+<style>
+  .invite {
+    padding: 40px 0 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    max-width: 720px;
+  }
+  .from {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .from-name {
+    font: 600 15px var(--body);
+  }
+  .from-meta {
+    font: 400 13px var(--body);
+    color: var(--muted);
+  }
+  .title {
+    font: 800 clamp(44px, 6vw, 80px) / 0.9 var(--display);
+    text-transform: uppercase;
+  }
+  .how {
+    font-size: 17px;
+    max-width: 560px;
+  }
+  .open-app {
+    font: 600 14px var(--body);
+  }
+</style>

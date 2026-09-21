@@ -1,0 +1,158 @@
+---
+/** Mockup 280×600 do lobby do convidado. Mostra o código real e o nome do host quando conhecidos. Decorativo. */
+interface Props {
+  code: string;
+  hostName?: string;
+  hostInitial?: string;
+  hostColor?: string;
+  hostFg?: string;
+  /** Jogadores já na sala (sem contar quem vê o convite). */
+  count?: number;
+}
+const { code, hostName = 'André', hostInitial = 'A', hostColor = '#7C3AED', hostFg = '#FAFAFA', count } = Astro.props;
+
+/** Pessoas na sala, contando com quem está vendo o convite. Sem dado real, o número do design. */
+const total = count ? count + 1 : 6;
+
+// Figurantes da ilustração. Quem tiver o mesmo nome do host de verdade sai, para não aparecer duas vezes.
+const extras = [
+  { n: 'Carol', i: 'C', bg: '#FACC15', fg: '#0F0F13' },
+  { n: 'Lucas', i: 'L', bg: '#22C55E', fg: '#0F0F13' },
+  { n: 'Pedro', i: 'P', bg: '#A78BFA', fg: '#0F0F13' },
+  { n: 'João', i: 'J', bg: '#EF4444', fg: '#FAFAFA' },
+].filter((p) => p.n.toLowerCase() !== hostName.trim().toLowerCase());
+
+const rows = [{ n: 'Você', i: 'V', bg: '#FACC15', fg: '#0F0F13' }, { n: hostName, i: hostInitial, bg: hostColor, fg: hostFg }, ...extras.slice(0, 3)].slice(0, Math.min(5, total));
+---
+
+<div class="phone" aria-hidden="true">
+  <div class="screen">
+    <div class="title">Você entrou 🎉</div>
+    <div class="room">
+      <div class="avatar" style={`width:36px;height:36px;font-size:16px;background:${hostColor};color:${hostFg}`}>{hostInitial}</div>
+      <div class="room-text">
+        <div class="room-name">Sala de {hostName}</div>
+        <div class="room-meta">Impostor · Comidas</div>
+      </div>
+      <div class="room-code">{code}</div>
+    </div>
+    <div class="count">{total} jogadores conectados</div>
+    <div class="rows">
+      {
+        rows.map((p) => (
+          <div class="row">
+            <div class="avatar" style={`width:32px;height:32px;font-size:15px;background:${p.bg};color:${p.fg}`}>{p.i}</div>
+            <div class="row-name">{p.n}</div>
+            <div class="check">✓</div>
+          </div>
+        ))
+      }
+    </div>
+    <div class="spacer"></div>
+    <div class="waiting">Aguardando o host</div>
+  </div>
+</div>
+
+<style>
+  .phone {
+    width: 280px;
+    height: 600px;
+    border-radius: 50px;
+    background: var(--surface);
+    padding: 10px;
+    box-shadow: 0 40px 90px rgba(0, 0, 0, 0.6);
+    max-width: 100%;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 42px;
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    padding: 34px 16px 16px;
+    gap: 12px;
+  }
+  .title {
+    font: 800 26px/1 var(--display);
+    text-transform: uppercase;
+  }
+  .room {
+    background: var(--surface);
+    border-radius: 18px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .room-text {
+    flex: 1;
+    min-width: 0;
+  }
+  .room-name {
+    font: 600 13px var(--body);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .room-meta {
+    font: 400 11px var(--body);
+    color: var(--muted);
+  }
+  .room-code {
+    font: 800 22px var(--display);
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .count {
+    font: 800 17px var(--display);
+    text-transform: uppercase;
+  }
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+  .row-name {
+    flex: 1;
+    min-width: 0;
+    font: 600 14px var(--body);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--success);
+    color: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 700 11px var(--body);
+  }
+  .spacer {
+    flex: 1;
+  }
+  .waiting {
+    height: 50px;
+    border-radius: 16px;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 700 17px var(--display);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+</style>

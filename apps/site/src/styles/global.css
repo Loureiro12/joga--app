@@ -1,0 +1,277 @@
+/* Tokens do design system do Jogaê (site_handoff_jogae/README.md). Site inteiro em dark mode, sem gradiente. */
+:root {
+  --primary: #7c3aed;
+  --primary-light: #a78bfa;
+  --accent: #facc15;
+  --bg: #0f0f13;
+  --surface: #19191f;
+  --surface-light: #27272f;
+  --text: #fafafa;
+  --muted: #a1a1aa;
+  /* O handoff usa #52525B em textos de apoio, mas sobre #0F0F13 isso dá 2,5:1. Este tom passa 4,5:1. */
+  --muted-dark: #8b8b95;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'DM Sans', system-ui, sans-serif;
+  --mono: ui-monospace, Menlo, monospace;
+  --section-gap: 96px;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--primary-light);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent);
+}
+
+/* Foco visível em tudo que é navegável por teclado. */
+:focus-visible {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 8px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font: 600 14px var(--body);
+  z-index: 10;
+}
+.skip-link:focus {
+  left: 16px;
+}
+
+/* ------------------------------------------------------------------ tipografia */
+.display {
+  font-family: var(--display);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.h1 {
+  font: 800 clamp(56px, 7.5vw, 104px) / 0.9 var(--display);
+  text-transform: uppercase;
+  letter-spacing: -1.5px;
+  text-wrap: balance;
+}
+.h1-page {
+  font: 800 clamp(44px, 6vw, 72px) / 0.95 var(--display);
+  text-transform: uppercase;
+}
+.h2 {
+  font: 800 clamp(34px, 4vw, 52px) / 1 var(--display);
+  text-transform: uppercase;
+}
+.h3 {
+  font: 800 26px/1 var(--display);
+  text-transform: uppercase;
+}
+.lead {
+  font: 500 clamp(17px, 2vw, 21px) / 1.5 var(--body);
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.overline {
+  font: 600 11px var(--body);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.muted {
+  color: var(--muted);
+}
+.accent {
+  color: var(--accent);
+}
+
+/* ------------------------------------------------------------------ peças */
+.pill {
+  display: inline-block;
+  border-radius: 99px;
+  padding: 7px 11px;
+}
+.pill-outline {
+  background: var(--surface);
+  border: 1px solid var(--surface-light);
+}
+.pill-accent {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  padding: 14px 22px;
+  font: 700 20px var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  border: 0;
+  transition: transform 0.12s ease;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-white,
+.btn-white:hover {
+  background: var(--text);
+  color: var(--bg);
+}
+.btn-primary,
+.btn-primary:hover {
+  background: var(--primary);
+  color: var(--text);
+}
+.btn[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.75;
+}
+.btn[aria-disabled='true']:active {
+  transform: none;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 26px;
+  min-width: 0;
+}
+.step-number {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 800 22px var(--display);
+}
+.grid-auto {
+  display: grid;
+  gap: 14px;
+}
+.avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 800;
+  flex: none;
+}
+
+/* ------------------------------------------------------------------ páginas de texto */
+.prose-page {
+  padding: 20px 0 80px;
+}
+.prose-section + .prose-section {
+  margin-top: 26px;
+}
+.prose-section p {
+  font: 400 16px/1.65 var(--body);
+  color: var(--muted);
+  white-space: pre-line;
+  text-wrap: pretty;
+  margin-top: 10px;
+}
+
+/* ------------------------------------------------------------------ animações */
+@keyframes jg-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+@keyframes jg-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes jg-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(-4deg);
+  }
+}
+.blink {
+  animation: jg-blink 5s infinite;
+}
+.float {
+  animation: jg-float 6s ease-in-out infinite;
+}
+.enter {
+  animation: jg-in 0.5s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .blink,
+  .float,
+  .enter {
+    animation: none;
+  }
+  .float {
+    transform: rotate(-4deg);
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --section-gap: 56px;
+  }
+}

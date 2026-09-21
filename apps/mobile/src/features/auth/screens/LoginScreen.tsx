@@ -8,6 +8,7 @@ import { routes } from '@/core/navigation/routes';
 import { colors } from '@/core/theme';
 import { Avatar, Button, Display, FieldError, Input, PressableScale, Screen, Segmented, Spacer, Txt, toast } from '@/core/ui';
 import { EMAIL_RE } from '@/core/utils/format';
+import { openSite, siteLinks } from '@/core/utils/site';
 
 import { AuthError, type AuthErrorCode } from '../AuthService';
 import { authActions } from '../useAuthActions';
@@ -212,8 +213,15 @@ export function LoginScreen() {
       />
       {signup && (
         <Txt font="body400" size={12} lh={1.4} color={colors.muted} center>
-          Ao criar conta você aceita os <Txt font="body400" size={12} color={colors.primaryLight}>Termos</Txt> e a{' '}
-          <Txt font="body400" size={12} color={colors.primaryLight}>Privacidade</Txt>.
+          Ao criar conta você aceita os{' '}
+          <Txt font="body400" size={12} color={colors.primaryLight} accessibilityRole="link" onPress={() => openSite(siteLinks.terms)}>
+            Termos
+          </Txt>{' '}
+          e a{' '}
+          <Txt font="body400" size={12} color={colors.primaryLight} accessibilityRole="link" onPress={() => openSite(siteLinks.privacy)}>
+            Privacidade
+          </Txt>
+          .
         </Txt>
       )}
     </Screen>

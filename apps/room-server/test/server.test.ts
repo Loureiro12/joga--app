@@ -289,3 +289,45 @@ test('reinício do servidor: a sala volta do disco e os jogadores retomam com re
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('API pública da sala: só o que cabe num convite, nada secreto, 404 para sala inexistente e limite de consultas', async () => {
+  const server = await startServer();
+  try {
+    const { host, guests, code } = await roomWith(server.url, ['ana', 'bia', 'caio']);
+    const get = (c: string) => fetch(`${server.base}/api/room/${c}`);
+
+    const open = await get(code);
+    assert.equal(open.status, 200);
+    assert.equal(open.headers.get('access-control-allow-origin'), '*');
+    assert.deepEqual(await open.json(), {
+      code,
+      gameId: 'impostor',
+      status: 'open',
+      host: { name: 'ana', initial: 'A', color: ME.color },
+      count: 3,
+      players: [{ initial: 'A', color: ME.color }, { initial: 'B', color: ME.color }, { initial: 'C', color: ME.color }],
+    });
+
+    await host.cmd({ type: 'startMatch' });
+    const playing = await (await get(code)).text();
+    assert.equal(JSON.parse(playing).status, 'playing');
+    for (const secret of ['dev-ana', 'impostor"', 'word', 'secret', 'votes', 'points']) {
+      if (secret === 'impostor"') continue; // o gameId legitimamente é "impostor"
+      assert.ok(!playing.includes(secret), `a API pública vazou "${secret}"`);
+    }
+
+    const wrong = code === '1111' ? '2222' : '1111';
+    assert.equal((await get(wrong)).status, 404);
+    assert.equal((await fetch(`${server.base}/api/room/12345`)).status, 404, 'código malformado nem chega a consultar');
+
+    await guests[1].ok({ t: 'leave' });
+    await host.untilSnapshot((s) => s.room.phase === 'closed', 'sala fechada');
+    assert.equal((await get(code)).status, 404, 'sala fechada some do convite');
+
+    const statuses = new Set<number>();
+    for (let i = 0; i < 70; i++) statuses.add((await get(wrong)).status);
+    assert.ok(statuses.has(429), 'depois de 60 consultas no minuto, 429');
+  } finally {
+    await server.close();
+  }
+});

@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { routes } from '@/core/navigation/routes';
+import { openSite, siteLinks } from '@/core/utils/site';
 import { colors, radii } from '@/core/theme';
 import { Badge, Button, Display, ModalCard, Overline, Screen, Spacer, StackHeader, Toggle, Txt, toast } from '@/core/ui';
 import { useSessionStore } from '@/features/auth/sessionStore';
@@ -103,7 +104,8 @@ export function SettingsScreen() {
       <Group title="Conta">
         <Row emoji="🌎" title="Idioma" onPress={soon} right={<Txt size={14} color={colors.muted}>Português (BR) ›</Txt>} />
         <Row emoji="✨" title="Assinatura" onPress={() => router.push(routes.premium)} right={<Badge label={isPremium ? 'Premium' : 'Grátis'} kind={isPremium ? 'premium' : 'category'} />} />
-        <Row emoji="🔒" title="Privacidade e termos" onPress={soon} right={<Chevron />} />
+        <Row emoji="🔒" title="Privacidade" onPress={() => openSite(siteLinks.privacy)} right={<Chevron />} />
+        <Row emoji="📄" title="Termos de uso" onPress={() => openSite(siteLinks.terms)} right={<Chevron />} />
         <Row emoji="💬" title="Ajuda e feedback" onPress={soon} right={<Chevron />} last />
       </Group>
 

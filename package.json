@@ -3,7 +3,8 @@
   "private": true,
   "description": "Monorepo do Jogaê: app mobile, servidor de salas, engine compartilhado e Supabase.",
   "workspaces": [
-    "apps/*",
+    "apps/mobile",
+    "apps/room-server",
     "packages/*"
   ],
   "engines": {
@@ -26,7 +27,10 @@
     "test:db": "tsx --tsconfig apps/mobile/tsconfig.json --test apps/mobile/test/*.integration.test.ts",
     "bots": "npm run bots -w @jogae/room-server --",
     "db:types:local": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts",
-    "verify:history": "npm run verify:history -w @jogae/mobile"
+    "verify:history": "npm run verify:history -w @jogae/mobile",
+    "site": "npm --prefix apps/site run dev",
+    "site:build": "npm --prefix apps/site run build",
+    "site:check": "npm --prefix apps/site run check"
   },
   "devDependencies": {
     "supabase": "^2.117.0"

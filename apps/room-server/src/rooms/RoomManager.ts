@@ -1,4 +1,4 @@
-import { RoomEngine, RoomError, type CreateRoomInput, type EngineConfig, type PlayerAppearance, type PlayerId, type RoomCommand, type RoomSnapshot, type Scheduler } from '@jogae/engine';
+import { RoomEngine, RoomError, type RoomPublicInfo, type CreateRoomInput, type EngineConfig, type PlayerAppearance, type PlayerId, type RoomCommand, type RoomSnapshot, type Scheduler } from '@jogae/engine';
 
 import { NullMatchRecorder, type MatchRecorder } from './MatchRecorder';
 import type { RoomStore } from './RoomStore';
@@ -131,6 +131,11 @@ export class RoomManager {
     const engine = this.roomFor(userId);
     if (!engine) throw new RoomError('not_in_room');
     engine.dispatch(userId, command);
+  }
+
+  /** Para a página de convite do site. Só leitura e sem nada secreto. */
+  publicInfo(code: string): RoomPublicInfo | null {
+    return this.rooms.get(code)?.publicInfo() ?? null;
   }
 
   /* ------------------------------------------------------------------ manutenção */

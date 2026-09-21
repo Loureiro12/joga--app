@@ -33,6 +33,25 @@ jobs:
         run: npx expo-doctor@latest
         working-directory: apps/mobile
 
+  site:
+    name: Site (jogae.app)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/site/package-lock.json
+      # O site tem lockfile próprio: fica fora dos workspaces do monorepo (ver apps/site/README.md).
+      - run: npm ci
+      - name: Tipos, build e teste de fumaça (rotas, .well-known, Open Graph, escape de HTML)
+        run: npm run check
+
   database:
     name: Migrations + integração (Supabase local)
     runs-on: ubuntu-latest

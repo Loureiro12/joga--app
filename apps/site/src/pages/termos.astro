@@ -1,0 +1,32 @@
+---
+import { lastUpdated, terms } from '../data/legal';
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Termos de uso — Jogaê" description="As regras para usar o Jogaê: conta, conduta nas salas, conteúdo gerado por IA, assinatura e disponibilidade do serviço." path="/termos">
+  <article class="prose-page" style="max-width:760px">
+    <h1 class="h1-page">Termos de uso</h1>
+    <p class="updated">Última atualização: {lastUpdated}</p>
+    <div class="sections">
+      {
+        terms.map((section) => (
+          <section class="prose-section">
+            <h2 class="h3">{section.title}</h2>
+            <p>{section.text}</p>
+          </section>
+        ))
+      }
+    </div>
+  </article>
+</Base>
+
+<style>
+  .updated {
+    font: 400 14px var(--body);
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  .sections {
+    margin-top: 36px;
+  }
+</style>

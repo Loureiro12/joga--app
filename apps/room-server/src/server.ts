@@ -57,8 +57,32 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
         games: { impostor: { minPlayers: IMPOSTOR_RULES.minPlayers, roundSeconds: IMPOSTOR_RULES.roundSeconds } },
       });
     }
+    // Página de convite do site (jogae.app/j/4827). Público de propósito: quem tem o código já pode entrar na sala.
+    const room = req.method === 'GET' ? /^\/api\/room\/(\d{4})$/.exec(req.url?.split('?')[0] ?? '') : null;
+    if (room) {
+      // 9.000 códigos são fáceis de varrer: o limite impede listar as salas ativas em massa.
+      if (!publicApiLimiter(clientIp(req))) return json(429, { error: 'rate_limited' });
+      const info = manager.publicInfo(room[1]);
+      res.setHeader('access-control-allow-origin', '*');
+      res.setHeader('cache-control', 'public, max-age=5');
+      return info ? json(200, info) : json(404, { error: 'not_found' });
+    }
     json(404, { error: 'not_found' });
   });
+
+  const clientIp = (req: IncomingMessage) =>
+    String(req.headers['fly-client-ip'] ?? req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown').split(',')[0].trim();
+
+  const apiHits = new Map<string, number[]>();
+  /** Até 60 consultas por minuto por IP (o site consulta do servidor dele, então o limite é folgado). */
+  const publicApiLimiter = (ip: string) => {
+    const now = Date.now();
+    const recent = (apiHits.get(ip) ?? []).filter((t) => now - t < 60_000);
+    recent.push(now);
+    apiHits.set(ip, recent);
+    if (apiHits.size > 5000) apiHits.clear();
+    return recent.length <= 60;
+  };
 
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES });
   http.on('upgrade', (req, socket, head) => {
@@ -71,7 +95,7 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
 
   function handleSocket(ws: WebSocket, req: IncomingMessage) {
     const connectionId = nextConnectionId++;
-    const ip = String(req.headers['fly-client-ip'] ?? req.headers['x-forwarded-for'] ?? req.socket.remoteAddress ?? 'unknown').split(',')[0].trim();
+    const ip = clientIp(req);
     let userId: string | null = null;
     let authenticating = false;
     let recent: number[] = [];

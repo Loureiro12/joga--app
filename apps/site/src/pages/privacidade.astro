@@ -1,0 +1,61 @@
+---
+import { contact } from '../lib/config';
+import { lastUpdated, privacy } from '../data/legal';
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Política de privacidade — Jogaê" description="Quais dados o Jogaê coleta, por quê, com quem compartilha e como você pode acessar, corrigir ou excluir tudo." path="/privacidade">
+  <article class="prose-page" style="max-width:760px">
+    <h1 class="h1-page">Política de privacidade</h1>
+    <p class="updated">Última atualização: {lastUpdated}</p>
+    <div class="sections">
+      {
+        privacy.map((section) => (
+          <section class="prose-section">
+            <h2 class="h3">{section.title}</h2>
+            <p>{section.text}</p>
+          </section>
+        ))
+      }
+    </div>
+    <aside class="card contact" aria-labelledby="contato-title">
+      <h2 id="contato-title">Contato</h2>
+      <p>
+        Dúvidas sobre dados: <a href={`mailto:${contact.privacy}`}>{contact.privacy}</a> · Encarregado (LGPD):
+        <a href={`mailto:${contact.dpo}`}>{contact.dpo}</a>
+      </p>
+      <a class="more" href="/excluir-conta">Como excluir sua conta e seus dados →</a>
+    </aside>
+  </article>
+</Base>
+
+<style>
+  .updated {
+    font: 400 14px var(--body);
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  .sections {
+    margin-top: 36px;
+  }
+  .contact {
+    border-radius: 20px;
+    padding: 22px;
+    margin-top: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .contact h2 {
+    font: 700 18px var(--body);
+    margin: 0;
+  }
+  .contact p {
+    font: 400 15px/1.6 var(--body);
+    color: var(--muted);
+  }
+  .more {
+    font: 600 15px var(--body);
+    margin-top: 4px;
+  }
+</style>

@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+
+// Sob demanda: as rotas de convite fazem `Astro.rewrite('/404')` para códigos inválidos, e o rewrite
+// só alcança páginas renderizadas no servidor.
+export const prerender = false;
+Astro.response.status = 404;
+---
+
+<Base title="Página não encontrada — Jogaê" description="Essa página não existe." noindex>
+  <div class="lost">
+    <svg viewBox="0 0 200 120" width="200" aria-hidden="true">
+      <ellipse cx="60" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse>
+      <ellipse cx="150" cy="60" rx="52" ry="34" fill="#FAFAFA"></ellipse>
+      <circle cx="60" cy="72" r="17" fill="#0F0F13"></circle>
+      <circle cx="150" cy="72" r="17" fill="#0F0F13"></circle>
+    </svg>
+    <h1 class="h1-page">Essa página sumiu</h1>
+    <p class="lead">O link pode estar errado ou ter expirado. Códigos de sala têm 4 dígitos.</p>
+    <a class="btn btn-primary" href="/">Voltar ao início</a>
+  </div>
+</Base>
+
+<style>
+  .lost {
+    padding: 72px 0 96px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+</style>

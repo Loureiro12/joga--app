@@ -1,4 +1,5 @@
 import { wait } from '@/core/utils/format';
+import { SITE_HOST } from '@/core/utils/site';
 
 export type Friend = {
   id: string;
@@ -32,6 +33,7 @@ export class MockSocialService implements SocialService {
     return FRIENDS;
   }
   inviteLink(username: string) {
-    return `jogae.app/${username}`;
+    // `/u/` evita colisão com as rotas fixas do site (um @termos ou @privacidade quebraria a página).
+    return `${SITE_HOST}/u/${username}`;
   }
 }
