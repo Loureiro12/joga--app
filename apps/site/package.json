@@ -12,7 +12,8 @@
     "build": "astro build",
     "preview": "node ./dist/server/entry.mjs",
     "check": "astro check && astro build && node scripts/smoke.mjs",
-    "og": "./scripts/generate-og.sh"
+    "og": "./scripts/generate-og.sh",
+    "check:isolated": "./scripts/check-isolated.sh"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@types/node": "^20.19.43",
     "typescript": "^5.9.2"
   }
 }

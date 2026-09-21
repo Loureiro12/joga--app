@@ -6,6 +6,7 @@ O site `jogae.app`: landing, páginas de convite (que fazem os links do app func
 npm install
 npm run dev        # http://localhost:4321
 npm run check      # tipos + build + teste de fumaça contra uma API de salas falsa
+npm run check:isolated   # o mesmo, numa cópia fora do repositório — é o ambiente real do CI e da Vercel
 npm run preview    # roda o build de produção (node dist/server/entry.mjs)
 npm run og         # regenera public/og/*.png a partir de scripts/og/*.html (precisa do Chrome)
 ```
@@ -19,6 +20,8 @@ Ele tem `package-lock.json` próprio e não aparece em `workspaces` no `package.
 - o Dockerfile do servidor de salas valida o lockfile da raiz contra **todos** os workspaces — um workspace novo quebraria o `fly deploy`;
 - as ~450 dependências do Astro não mexem nas versões fixadas do app (Expo é sensível a isso);
 - a Vercel constrói só esta pasta, sem instalar o Expo.
+
+**Consequência prática:** dentro do repositório, o Node e o TypeScript sobem as pastas e acham pacotes no `node_modules` da raiz. Uma dependência esquecida no `package.json` daqui passa despercebida localmente e só quebra no CI. Antes de subir mudança de dependência, rode `npm run check:isolated`.
 
 O site não importa nada do monorepo. O que ele precisa saber do app (bundle id, esquema `jogae://`, formato do username) está em `src/lib/config.ts` e é conferido pelo teste de fumaça.
 
