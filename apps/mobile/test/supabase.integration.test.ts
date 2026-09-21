@@ -42,7 +42,7 @@ const admin: SupabaseClient = createClient(stack.API_URL, stack.SERVICE_ROLE_KEY
 
 const run = Date.now().toString(36);
 let n = 0;
-const email = (tag: string) => `${tag}.${run}.${n++}@teste.jogae.app`;
+const email = (tag: string) => `${tag}.${run}.${n++}@teste.jogaeapp.com.br`;
 const PASS = 'senha-segura-123';
 
 const rejectsWith = async (promise: Promise<unknown>, Type: typeof AuthError | typeof ProfileError, code: string) => {

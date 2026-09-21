@@ -9,7 +9,7 @@ import { PillButton, Txt } from '@/core/ui';
 const FRAME = 260;
 const CORNER = 34;
 
-/** Extrai o código de `https://jogae.app/j/4827`, `jogae://j/4827` ou de um "4827" puro. */
+/** Extrai o código de `https://jogaeapp.com.br/j/4827`, `jogae://j/4827` ou de um "4827" puro. */
 export function parseRoomCode(payload: string): string | null {
   return payload.trim().match(/(?:^|\/)(\d{4})\/?$/)?.[1] ?? null;
 }

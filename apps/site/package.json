@@ -2,7 +2,7 @@
   "name": "jogae-site",
   "version": "0.1.0",
   "private": true,
-  "description": "jogae.app — landing, páginas de convite (deep links), páginas legais e arquivos .well-known.",
+  "description": "jogaeapp.com.br — landing, páginas de convite (deep links), páginas legais e arquivos .well-known.",
   "type": "module",
   "engines": {
     "node": ">=20.3.0"

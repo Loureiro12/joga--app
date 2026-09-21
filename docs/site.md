@@ -1,4 +1,4 @@
-# Publicar o site (jogae.app)
+# Publicar o site (jogaeapp.com.br)
 
 O site vive em [`apps/site`](../apps/site). Dá para publicar **antes de ter o domínio**: a Vercel entrega um endereço provisório (`algo.vercel.app`) e tudo funciona nele, menos abrir o app direto pelo link — isso a Apple e o Google só liberam para o domínio definitivo.
 
@@ -30,10 +30,11 @@ e reinicie com `npx expo start --clear`.
 
 ## 2. Quando o domínio existir
 
-1. Vercel → projeto → **Settings → Domains** → adicione `jogae.app` e siga as instruções de DNS. Adicione também `www.jogae.app` redirecionando para o principal.
-2. Variável `SITE_URL` = `https://jogae.app` (é o que vai no `canonical`, no `og:url` e no sitemap) e **Redeploy**.
-3. Tire `EXPO_PUBLIC_SITE_URL` do app (o padrão já é `https://jogae.app`).
-4. Crie as caixas de e-mail citadas nas páginas: `privacidade@`, `dpo@`, `excluir@` e `contato@jogae.app`.
+1. Vercel → projeto → **Settings → Domains** → adicione `jogaeapp.com.br` e `www.jogaeapp.com.br`. **O principal é o sem `www`** (Production); o `www` redireciona para ele. A Vercel sugere o contrário — inverta: a Apple e o Google buscam o `.well-known` no domínio exato declarado no app e não seguem redirecionamento.
+   - No Registro.br: **Configurar endereçamento → Modo avançado** e crie o `A` (nome vazio) e o `CNAME` (`www`) que a Vercel mostra. Não mexa em "Alterar servidores DNS". A zona leva de 30 min a 2 h para publicar; confira com `dig +short A jogaeapp.com.br @a.auto.dns.br`.
+2. Variável `SITE_URL` = `https://jogaeapp.com.br` (é o que vai no `canonical`, no `og:url` e no sitemap) e **Redeploy**.
+3. Tire `EXPO_PUBLIC_SITE_URL` do app (o padrão já é `https://jogaeapp.com.br`).
+4. Crie as caixas de e-mail citadas nas páginas: `privacidade@`, `dpo@`, `excluir@` e `contato@jogaeapp.com.br`.
 
 ## 3. Fazer o link abrir o app
 
@@ -47,11 +48,11 @@ Precisa do domínio definitivo e de dois identificadores:
 Depois de um redeploy, confira:
 
 ```bash
-curl -i https://jogae.app/.well-known/apple-app-site-association
-curl -i https://jogae.app/.well-known/assetlinks.json
+curl -i https://jogaeapp.com.br/.well-known/apple-app-site-association
+curl -i https://jogaeapp.com.br/.well-known/assetlinks.json
 ```
 
-Os dois têm de responder `200`, `content-type: application/json`, **sem redirecionamento**. O app já declara `applinks:jogae.app` (iOS) e o `intent-filter` com `autoVerify` (Android) no `app.json`; é preciso um **build novo pelo EAS** para isso valer. O teste no iOS só funciona em build assinado num aparelho real — o Simulator não valida o arquivo.
+Os dois têm de responder `200`, `content-type: application/json`, **sem redirecionamento**. O app já declara `applinks:jogaeapp.com.br` (iOS) e o `intent-filter` com `autoVerify` (Android) no `app.json`; é preciso um **build novo pelo EAS** para isso valer. O teste no iOS só funciona em build assinado num aparelho real — o Simulator não valida o arquivo.
 
 > O identificador do app é `app.jogae` nas duas plataformas. O handoff do site citava `app.jogae.ios`; o que vale é o do `app.json`.
 
@@ -61,10 +62,10 @@ Os dois têm de responder `200`, `content-type: application/json`, **sem redirec
 
 ## 5. Analytics (opcional)
 
-`PUBLIC_PLAUSIBLE_DOMAIN` = `jogae.app` liga o Plausible (sem cookies, sem banner). Eventos já instrumentados: `download_click`, `invite_view`, `faq_open`, `premium_cta`. Sem a variável, o site não carrega nenhum script de terceiros.
+`PUBLIC_PLAUSIBLE_DOMAIN` = `jogaeapp.com.br` liga o Plausible (sem cookies, sem banner). Eventos já instrumentados: `download_click`, `invite_view`, `faq_open`, `premium_cta`. Sem a variável, o site não carrega nenhum script de terceiros.
 
 ## Pendências antes de divulgar
 
 - **Revisão jurídica** de `/privacidade`, `/termos` e `/excluir-conta`. O texto veio do handoff, com dois ajustes onde ele descrevia algo que o app não faz (estão comentados em `apps/site/src/data/legal.ts`). Confirmar razão social ("Jogaê Tecnologia Ltda."), CNPJ, foro e a idade mínima de 12 anos.
-- Os e-mails `@jogae.app` precisam existir: `/excluir-conta` promete resposta em 7 dias.
+- Os e-mails `@jogaeapp.com.br` precisam existir: `/excluir-conta` promete resposta em 7 dias.
 - O cinza dos textos de apoio foi clareado em relação ao handoff (`#52525B` → `#8B8B95`) para cumprir o contraste mínimo de 4,5:1 que o próprio handoff exige.

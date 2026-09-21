@@ -25,8 +25,8 @@ export const app = {
 };
 
 export const contact = {
-  privacy: 'privacidade@jogae.app',
-  dpo: 'dpo@jogae.app',
-  deletion: 'excluir@jogae.app',
-  general: 'contato@jogae.app',
+  privacy: 'privacidade@jogaeapp.com.br',
+  dpo: 'dpo@jogaeapp.com.br',
+  deletion: 'excluir@jogaeapp.com.br',
+  general: 'contato@jogaeapp.com.br',
 };

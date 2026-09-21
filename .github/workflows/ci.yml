@@ -34,7 +34,7 @@ jobs:
         working-directory: apps/mobile
 
   site:
-    name: Site (jogae.app)
+    name: Site (jogaeapp.com.br)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:

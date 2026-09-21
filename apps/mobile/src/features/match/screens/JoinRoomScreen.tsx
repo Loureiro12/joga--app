@@ -18,7 +18,7 @@ import { MOCK_JOINABLE_CODE } from '../services/MockRoomService';
 
 type Tab = 'code' | 'qr';
 
-/** Tela 10: Entrar na sala por código ou QR. Deep link `jogae.app/j/4827` chega com `?code=`. */
+/** Tela 10: Entrar na sala por código ou QR. Deep link `jogaeapp.com.br/j/4827` chega com `?code=`. */
 export function JoinRoomScreen() {
   const params = useLocalSearchParams<{ code?: string }>();
   const [tab, setTab] = useState<Tab>('code');

@@ -2,10 +2,10 @@ import node from '@astrojs/node';
 import vercel from '@astrojs/vercel';
 import { defineConfig } from 'astro/config';
 
-// Endereço público do site. Enquanto o domínio jogae.app não existe, a Vercel preenche o dela.
+// Endereço público do site: SITE_URL manda; sem ela vale o domínio de produção que a Vercel informa.
 const site =
   process.env.SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://jogae.app');
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://jogaeapp.com.br');
 
 export default defineConfig({
   site,

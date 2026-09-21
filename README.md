@@ -6,7 +6,7 @@
 apps/
   mobile/        App Expo (iOS + Android). Sem variáveis de ambiente roda 100% simulado.
   room-server/   Servidor de salas em tempo real (Node + WebSocket).
-  site/          jogae.app — landing, convites, páginas legais, .well-known (Astro). Fora dos workspaces, com lockfile próprio.
+  site/          jogaeapp.com.br — landing, convites, páginas legais, .well-known (Astro). Fora dos workspaces, com lockfile próprio.
 packages/
   engine/        Tipos, regras dos jogos, protocolo e o RoomEngine (a sala como máquina de estados).
   db/            Tipos do banco gerados pelo Supabase CLI.

@@ -153,11 +153,12 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 **5a · Site — feito (2026-09-21).** `apps/site` (Astro): landing, `/j/:codigo`, `/u/:username`, `/privacidade`, `/termos`, `/excluir-conta`, `.well-known`, robots e sitemap, conforme `site_handoff_jogae/`. Publicação em [site.md](site.md).
 
 - O convite de sala consulta um endpoint público novo do servidor de salas, `GET /api/room/:codigo` — só host, jogo, contagem e iniciais; nada secreto; com limite de consultas por IP, porque 9.000 códigos são fáceis de varrer.
-- Convite de amizade mudou para `jogae.app/u/{username}` (decisão de 2026-09-21), para não colidir com as rotas fixas do site.
+- Convite de amizade mudou para `jogaeapp.com.br/u/{username}` (decisão de 2026-09-21), para não colidir com as rotas fixas do site.
+- **Domínio: `jogaeapp.com.br`** (Registro.br, DNS apontado para a Vercel em 2026-09-21). O plano falava em `jogae.app`, que não foi registrado; o identificador do app nas lojas continua `app.jogae` — é só um nome, não depende do domínio.
 - No app: endereço do site configurável (`EXPO_PUBLIC_SITE_URL`), Termos e Privacidade clicáveis, rota `/u/:username`, botão "Colar código" em Entrar na sala (par do *deferred deep link* do site), e `associatedDomains` / `intentFilters` no `app.json`.
 - **Exclusão de conta agora anonimiza o boletim** (`Jogador removido`), porque é o que a página `/excluir-conta` promete. Antes o nome ficava gravado no histórico dos outros.
 
-**Não verificado:** o link abrindo o app de verdade — depende do domínio, do Team ID da Apple, do fingerprint do Play e de um build assinado. O site nunca foi publicado; foi testado rodando o build de produção localmente, contra o servidor de salas real com uma sala de bots.
+**Não verificado:** o link abrindo o app de verdade — depende do domínio, do Team ID da Apple, do fingerprint do Play e de um build assinado. O site está publicado na Vercel (https://joga-app-zeta.vercel.app, conferido em 2026-09-21: páginas, 404, `.well-known`, convite consultando o servidor no Fly); o domínio próprio aguardava a publicação da zona no Registro.br.
 
 **5b · Backend social — a fazer.**
 

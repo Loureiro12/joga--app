@@ -29,7 +29,7 @@
       },
       "usesAppleSignIn": true,
       "associatedDomains": [
-        "applinks:jogae.app"
+        "applinks:jogaeapp.com.br"
       ]
     },
     "android": {
@@ -47,12 +47,12 @@
           "data": [
             {
               "scheme": "https",
-              "host": "jogae.app",
+              "host": "jogaeapp.com.br",
               "pathPrefix": "/j/"
             },
             {
               "scheme": "https",
-              "host": "jogae.app",
+              "host": "jogaeapp.com.br",
               "pathPrefix": "/u/"
             }
           ],

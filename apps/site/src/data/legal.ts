@@ -20,7 +20,7 @@ export const privacy = [
   { title: '4. Para que usamos', text: 'Criar e manter salas em tempo real, mostrar o placar do grupo, guardar seu histórico e conquistas, processar sua assinatura, corrigir erros e responder ao suporte. Base legal (LGPD): execução do contrato, obrigação legal e legítimo interesse em manter o serviço seguro.' },
   { title: '5. Com quem compartilhamos', text: 'Provedores que operam a infraestrutura em nosso nome: nuvem e banco de dados, processamento de assinatura, envio de e-mails e monitoramento de erros. Eles só podem usar os dados para prestar esse serviço. Também podemos divulgar dados mediante ordem judicial.' },
   { title: '6. Por quanto tempo guardamos', text: 'Enquanto sua conta existir. Salas encerradas são apagadas em 30 dias; o histórico agregado (partidas e pontos) permanece até você excluir a conta. Registros fiscais de assinatura seguem os prazos legais.' },
-  { title: '7. Seus direitos', text: 'Você pode acessar, corrigir, portar ou excluir seus dados, revogar consentimentos e pedir explicação sobre qualquer tratamento. Faça isso no app (Perfil → Configurações) ou escreva para privacidade@jogae.app. Respondemos em até 15 dias.' },
+  { title: '7. Seus direitos', text: 'Você pode acessar, corrigir, portar ou excluir seus dados, revogar consentimentos e pedir explicação sobre qualquer tratamento. Faça isso no app (Perfil → Configurações) ou escreva para privacidade@jogaeapp.com.br. Respondemos em até 15 dias.' },
   { title: '8. Crianças', text: 'O app é destinado a maiores de 12 anos. Não coletamos dados conscientemente de crianças menores. Se identificarmos, apagamos a conta.' },
   { title: '9. Mudanças', text: 'Se mudarmos algo relevante, avisamos no app antes de a alteração valer. A data no topo indica a última versão.' },
 ];
@@ -33,7 +33,7 @@ export const terms = [
   { title: '5. Assinatura', text: 'A cobrança é feita pela App Store ou pelo Google Play, com renovação automática até o cancelamento. Cancele pela própria loja, até 24 horas antes da renovação. Reembolsos seguem as regras da loja.' },
   { title: '6. Propriedade', text: 'A marca Jogaê, as ilustrações, os jogos e o código pertencem a nós. Você recebe uma licença pessoal e intransferível de uso do app.' },
   { title: '7. Disponibilidade', text: 'Fazemos o possível para manter o serviço no ar, mas ele é oferecido "como está". Podemos alterar ou encerrar jogos e funcionalidades, avisando com antecedência razoável.' },
-  { title: '8. Foro e contato', text: 'Estes termos seguem a lei brasileira, com foro na comarca de São Paulo/SP. Contato: contato@jogae.app.' },
+  { title: '8. Foro e contato', text: 'Estes termos seguem a lei brasileira, com foro na comarca de São Paulo/SP. Contato: contato@jogaeapp.com.br.' },
 ];
 
 export const deletionRows = [
