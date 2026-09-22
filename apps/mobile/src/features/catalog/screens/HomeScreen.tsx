@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { features } from '@/core/config/features';
 import { routes } from '@/core/navigation/routes';
 import { colors } from '@/core/theme';
 import { Avatar, Badge, Chip, Display, ListCard, Screen, Txt } from '@/core/ui';
@@ -57,13 +58,15 @@ export function HomeScreen() {
         right={<Txt size={18} color={colors.muted}>→</Txt>}
         onPress={() => router.push(routes.join)}
       />
-      <ListCard
-        icon={<Txt size={18}>✨</Txt>}
-        title="Criar jogo com IA"
-        subtitle="Descreva o grupo e a gente monta a brincadeira."
-        right={<Badge label="Premium" kind="premiumSolid" />}
-        onPress={() => router.push(routes.ai)}
-      />
+      {features.premium && (
+        <ListCard
+          icon={<Txt size={18}>✨</Txt>}
+          title="Criar jogo com IA"
+          subtitle="Descreva o grupo e a gente monta a brincadeira."
+          right={<Badge label="Premium" kind="premiumSolid" />}
+          onPress={() => router.push(routes.ai)}
+        />
+      )}
 
       <View>
         <Display size={22} style={{ marginBottom: 12 }}>

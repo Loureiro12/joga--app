@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { features } from '@/core/config/features';
 import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
 import { Button, Chip, Screen, Segmented, Spacer, StackHeader, Stepper, Txt, toast } from '@/core/ui';
@@ -53,7 +54,7 @@ export function CreateMatchScreen() {
           Categoria
         </Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {game.wordCategories.map((c) => {
+          {game.wordCategories.filter((c) => features.premium || !c.premium).map((c) => {
             const locked = !!c.premium && !isPremium;
             return (
               <Chip

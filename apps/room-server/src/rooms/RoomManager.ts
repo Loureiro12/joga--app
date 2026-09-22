@@ -1,6 +1,7 @@
 import { RoomEngine, RoomError, type RoomPublicInfo, type CreateRoomInput, type EngineConfig, type PlayerAppearance, type PlayerId, type RoomCommand, type RoomSnapshot, type Scheduler } from '@jogae/engine';
 
 import { NullMatchRecorder, type MatchRecorder } from './MatchRecorder';
+import { NullRoomPresence, type PresenceRoom, type RoomPresence } from './RoomPresence';
 import type { RoomStore } from './RoomStore';
 
 /** Um celular conectado. O gerenciador só precisa saber mandar o snapshot e fechar. */
@@ -14,6 +15,8 @@ export type RoomManagerOptions = {
   store: RoomStore;
   /** Recebe o boletim quando uma partida chega ao fim. */
   recorder?: MatchRecorder;
+  /** Recebe o estado das salas vivas — o "jogando agora" da tela Amigos. */
+  presence?: RoomPresence;
   scheduler?: Scheduler;
   engineConfig?: Partial<EngineConfig>;
   rng?: () => number;
@@ -23,6 +26,13 @@ export type RoomManagerOptions = {
   idleRoomMs?: number;
   log?: (event: string, data?: Record<string, unknown>) => void;
 };
+
+/** Sala encerrada (placar final) ou fechada não conta como "jogando agora". */
+function presenceOf(engine: RoomEngine): PresenceRoom | null {
+  const info = engine.publicInfo();
+  if (!info || info.status === 'finished') return null;
+  return { code: info.code, gameId: info.gameId, status: info.status, playerIds: engine.playerIds };
+}
 
 const CODE_SPACE = 9000;
 /** Acima disso o sorteio de código livre começa a demorar e o código fica fácil de adivinhar. */
@@ -40,12 +50,14 @@ export class RoomManager {
   /** Partidas já enviadas ao histórico neste processo (a gravação em si também é idempotente). */
   private readonly recorded = new Set<string>();
   private readonly recorder: MatchRecorder;
+  private readonly presence: RoomPresence;
   private readonly now: () => number;
   private readonly opts: Required<Pick<RoomManagerOptions, 'maxFailedJoinsPerMinute' | 'idleRoomMs'>> & RoomManagerOptions;
 
   constructor(options: RoomManagerOptions) {
     this.opts = { maxFailedJoinsPerMinute: 10, idleRoomMs: 10 * 60_000, ...options };
     this.recorder = options.recorder ?? new NullMatchRecorder();
+    this.presence = options.presence ?? new NullRoomPresence();
     this.now = options.scheduler ? () => options.scheduler!.now() : () => Date.now();
   }
 
@@ -67,6 +79,7 @@ export class RoomManager {
         engine.setConnected(id, false);
       }
     }
+    this.presence.reset([...this.rooms.values()].map(presenceOf).filter((room) => room !== null));
     return this.rooms.size;
   }
 
@@ -162,6 +175,7 @@ export class RoomManager {
       this.opts.store.save(code, engine.serialize());
       engine.dispose();
     }
+    this.presence.dispose();
   }
 
   /* ------------------------------------------------------------------ interno */
@@ -183,6 +197,9 @@ export class RoomManager {
 
     this.opts.store.save(code, engine.serialize());
     this.recordIfFinished(engine);
+    const presence = presenceOf(engine);
+    if (presence) this.presence.publish(presence);
+    else this.presence.remove(code);
     const present = new Set(engine.playerIds);
     for (const id of present) this.connections.get(id)?.sendSnapshot(engine.snapshotFor(id));
 
@@ -214,6 +231,7 @@ export class RoomManager {
     engine.dispose();
     this.rooms.delete(code);
     this.opts.store.remove(code);
+    this.presence.remove(code);
     for (const [userId, roomCode] of this.roomOfUser) if (roomCode === code) this.roomOfUser.delete(userId);
     this.opts.log?.('room_destroyed', { code, rooms: this.rooms.size });
   }

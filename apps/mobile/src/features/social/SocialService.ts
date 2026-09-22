@@ -1,39 +1,37 @@
-import { wait } from '@/core/utils/format';
-import { SITE_HOST } from '@/core/utils/site';
-
 export type Friend = {
   id: string;
   name: string;
   username: string;
   color: string;
   gamesTogether: number;
+  /** Vitórias do amigo (1º lugar, empates inclusos — a mesma regra do histórico). */
   trophies: number;
-  /** Preenchido quando o amigo está em uma sala agora. */
-  playing?: { gameName: string; roomCode: string };
+  /** Preenchido quando o amigo está em uma sala agora. `joinable`: ainda no lobby, dá para entrar. */
+  playing?: { gameId: string; roomCode: string; joinable: boolean };
 };
 
-export interface SocialService {
-  listFriends(): Promise<Friend[]>;
-  inviteLink(username: string): string;
+export type AddedFriend = { id: string; name: string; username: string; alreadyFriends: boolean };
+
+export type SocialErrorCode = 'not_found' | 'self' | 'rate_limited' | 'unknown';
+
+export class SocialError extends Error {
+  constructor(
+    readonly code: SocialErrorCode,
+    detail?: string,
+  ) {
+    super(detail ? `${code}: ${detail}` : code);
+    this.name = 'SocialError';
+  }
 }
 
-const FRIENDS: Friend[] = [
-  { id: 'f1', name: 'André', username: 'andre', color: '#7C3AED', gamesTogether: 18, trophies: 5, playing: { gameName: 'Impostor', roomCode: '4827' } },
-  { id: 'f2', name: 'Carol', username: 'carolz', color: '#FACC15', gamesTogether: 15, trophies: 4, playing: { gameName: 'Desafio secreto', roomCode: '9130' } },
-  { id: 'f3', name: 'Lucas', username: 'lucasm', color: '#22C55E', gamesTogether: 12, trophies: 3 },
-  { id: 'f4', name: 'Pedro', username: 'pedrão', color: '#A78BFA', gamesTogether: 9, trophies: 2 },
-  { id: 'f5', name: 'João', username: 'joaov', color: '#EF4444', gamesTogether: 7, trophies: 1 },
-  { id: 'f6', name: 'Bia', username: 'biars', color: '#27272F', gamesTogether: 4, trophies: 1 },
-  { id: 'f7', name: 'Rafa', username: 'rafinha', color: '#FACC15', gamesTogether: 2, trophies: 0 },
-];
-
-export class MockSocialService implements SocialService {
-  async listFriends() {
-    await wait(500);
-    return FRIENDS;
-  }
-  inviteLink(username: string) {
-    // `/u/` evita colisão com as rotas fixas do site (um @termos ou @privacidade quebraria a página).
-    return `${SITE_HOST}/u/${username}`;
-  }
+/**
+ * Amizade no Jogaê não tem pedido nem aceite: quem abre o link de convite de alguém
+ * (`jogaeapp.com.br/u/{username}`) vira amigo na hora, dos dois lados.
+ */
+export interface SocialService {
+  listFriends(): Promise<Friend[]>;
+  /** O que o link de convite faz. Repetir é inofensivo (`alreadyFriends`). */
+  addFriend(username: string): Promise<AddedFriend>;
+  removeFriend(friendId: string): Promise<void>;
+  inviteLink(username: string): string;
 }

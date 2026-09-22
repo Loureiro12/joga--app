@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { features } from '@/core/config/features';
 import { useAsync } from '@/core/hooks/useAsync';
 import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
@@ -106,7 +107,7 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      {!isPremium && (
+      {features.premium && !isPremium && (
         <PressableScale
           accessibilityRole="button"
           pressedScale={0.98}

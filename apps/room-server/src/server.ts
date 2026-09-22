@@ -8,11 +8,13 @@ import type { Config } from './config';
 import { parseClientMessage } from './messages';
 import { createMatchRecorder, type MatchRecorder } from './rooms/MatchRecorder';
 import { RoomManager } from './rooms/RoomManager';
+import { createRoomPresence, type RoomPresence } from './rooms/RoomPresence';
 import { FileRoomStore, MemoryRoomStore } from './rooms/RoomStore';
 
 export type RoomServerOptions = {
   verifyToken?: TokenVerifier;
   recorder?: MatchRecorder;
+  presence?: RoomPresence;
   engineConfig?: Partial<EngineConfig>;
   scheduler?: Scheduler;
   /** Quanto o cliente tem para mandar o `hello` depois de conectar. */
@@ -34,6 +36,7 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
   const manager = new RoomManager({
     store: config.storeDir ? new FileRoomStore(config.storeDir) : new MemoryRoomStore(),
     recorder: options.recorder ?? createMatchRecorder(config, log),
+    presence: options.presence ?? createRoomPresence(config, log),
     engineConfig: options.engineConfig,
     scheduler: options.scheduler,
     log,
