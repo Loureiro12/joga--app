@@ -1,4 +1,6 @@
-import { colors } from '@/core/theme';
+// De `tokens` e não do barrel `@/core/theme`: o barrel carrega os arquivos de fonte, e este módulo
+// é só dado — assim ele roda em teste, no servidor ou em qualquer lugar sem o ambiente do app.
+import { colors } from '@/core/theme/tokens';
 
 export type IllustrationKey = 'eyes' | 'pillArrow' | 'mask' | 'bomb' | 'dice' | 'trophy';
 
@@ -77,6 +79,10 @@ export const GAMES: GameDefinition[] = [
       { id: 'Filmes', label: 'Filmes', emoji: '🎬' },
       { id: 'Futebol', label: 'Futebol', emoji: '⚽' },
       { id: 'Lugares', label: 'Lugares', emoji: '🌎' },
+      { id: 'Animais', label: 'Animais', emoji: '🐶' },
+      { id: 'Profissões', label: 'Profissões', emoji: '👷' },
+      { id: 'Objetos', label: 'Objetos', emoji: '🪑' },
+      // 'Aleatório' não é uma lista: o engine sorteia uma categoria diferente a cada rodada.
       { id: 'Aleatório', label: 'Aleatório', emoji: '🎲' },
     ],
     roundOptions: [3, 5, 10],

@@ -175,6 +175,11 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 
 **5c · Push — a fazer.** `push_tokens` e "Fulano criou uma sala" respeitando a configuração de notificações (é aqui que `settings.notif` vai para o servidor). Precisa de build nativo e das credenciais de push (APNs / FCM).
 
+**Conteúdo do Impostor (2026-09-22).** O banco de palavras saiu de 40 para **210 palavras em 7 categorias** (as 4 do handoff mais Animais, Profissões e Objetos), 30 cada — o suficiente para uma partida de 10 rodadas, a maior que o app oferece, nunca repetir palavra. Critério, no comentário do próprio arquivo: substantivo concreto que um grupo brasileiro reconheça e consiga descrever sem dizer o nome, sem nome de pessoa real e sem palavra repetida entre categorias (`usedWords` é único por partida).
+
+- O catálogo do app e o banco do engine são listas separadas, e sair de sincronia falha em silêncio: quem escolhesse uma categoria desconhecida jogaria com outra, sorteada sem avisar. `apps/mobile/test/games.unit.test.ts` agora trava isso nos dois sentidos.
+- **As palavras moram no código, então mudá-las exige `fly deploy`** — numa partida real quem sorteia é o servidor. Quando o jogo estiver no ar e você quiser ajustar conteúdo sem publicar versão, o passo é mover o banco para uma tabela no Supabase, que o servidor carrega na subida. Gerar com IA é o passo 7, e o caminho seguro é gerar em lote, revisar e gravar no banco — não na hora da rodada.
+
 **Premium escondido (2026-09-21).** `apps/mobile/src/core/config/features.ts` (`premium: false`) tira da navegação a assinatura e o que depende dela (criar jogo com IA, categorias exclusivas); o site faz o mesmo com `premiumEnabled` em `src/data/content.ts`. Motivo: a compra ainda é simulada, e a App Store rejeita isso. Religar no passo 6.
 
 ### Passo 6 — Assinatura
