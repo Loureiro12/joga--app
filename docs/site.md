@@ -32,6 +32,9 @@ e reinicie com `npx expo start --clear`.
 
 1. Vercel → projeto → **Settings → Domains** → adicione `jogaeapp.com.br` e `www.jogaeapp.com.br`. **O principal é o sem `www`** (Production); o `www` redireciona para ele. A Vercel sugere o contrário — inverta: a Apple e o Google buscam o `.well-known` no domínio exato declarado no app e não seguem redirecionamento.
    - No Registro.br: **Configurar endereçamento → Modo avançado** e crie o `A` (nome vazio) e o `CNAME` (`www`) que a Vercel mostra. Não mexa em "Alterar servidores DNS". A zona leva de 30 min a 2 h para publicar; confira com `dig +short A jogaeapp.com.br @a.auto.dns.br`.
+   - **Confira qual dos dois responde 200** (o outro devolve 308 e não serve para deep link):
+     `curl -s -o /dev/null -w '%{http_code}\n' https://jogaeapp.com.br/.well-known/apple-app-site-association`
+     O app declara os dois hosts (`app.json`), então qualquer um dos arranjos funciona — mas `EXPO_PUBLIC_SITE_URL` e a `SITE_URL` da Vercel têm que apontar para o que responde 200, senão os links de convite passam por um redirect e abrem o navegador em vez do app.
 2. Variável `SITE_URL` = `https://jogaeapp.com.br` (é o que vai no `canonical`, no `og:url` e no sitemap) e **Redeploy**.
 3. Tire `EXPO_PUBLIC_SITE_URL` do app (o padrão já é `https://jogaeapp.com.br`).
 4. Crie as caixas de e-mail citadas nas páginas: `privacidade@`, `dpo@`, `excluir@` e `contato@jogaeapp.com.br`.
