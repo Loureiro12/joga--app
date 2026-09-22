@@ -99,6 +99,8 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 - *Excluir conta por função SQL, não Edge Function.* Uma função a menos para publicar e operar, e é testável junto com as migrations. Se um dia a exclusão precisar chamar serviços externos (RevenueCat, storage), vira Edge Function.
 - *`settings` não entrou em `profiles`.* Só `notif` interessa ao servidor, e só no passo 5 (push). Entra lá.
 
+- *Convidado → Google/Apple mantém o usuário* (2026-09-21): o Apple nativo também vincula (`linkIdentity` com ID token) em vez de criar conta nova; e se a identidade já pertence a outra conta, o app entra nela em vez de mostrar "e-mail já tem conta" (que era um beco sem saída). Configuração dos provedores em [login-social.md](login-social.md).
+
 **Ainda depende de você:** criar os projetos no Supabase e, no painel de cada um: ligar *Anonymous sign-ins* e *Manual linking*; cadastrar `jogae://**` em *Redirect URLs*; configurar os provedores Google (client ID + secret do Google Cloud) e Apple (Services ID + chave). Decidir se o cadastro exige confirmação de e-mail — o app trata os dois casos.
 
 **Como foi verificado (2026-09-19):**

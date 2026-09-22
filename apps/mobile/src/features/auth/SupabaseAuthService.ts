@@ -85,39 +85,57 @@ export class SupabaseAuthService implements AuthService {
   }
 
   async signInWithProvider(provider: AuthProvider): Promise<AuthUser> {
+    // Convidado → conta: primeiro tenta VINCULAR o provedor ao usuário atual, para o histórico continuar.
+    // Se aquela conta Google/Apple já for de outro usuário, a pessoa está voltando: entra na conta dela.
+    const guest = await this.isAnonymous();
+
     if (provider === 'apple' && this.platform.appleNative) {
       const credential = await this.platform.appleNative();
       if (!credential) throw new AuthError('cancelled');
-      const { data, error } = await this.supabase.auth.signInWithIdToken({ provider: 'apple', token: credential.idToken, nonce: credential.rawNonce });
-      if (error) throw translate(error);
+      const idToken = { provider: 'apple' as const, token: credential.idToken, nonce: credential.rawNonce };
+      // Literal direto na chamada: é o que faz o TypeScript escolher a variante de ID token do `linkIdentity`, e não a de OAuth.
+      let result = guest
+        ? await this.supabase.auth.linkIdentity({ provider: 'apple', token: credential.idToken, nonce: credential.rawNonce })
+        : await this.supabase.auth.signInWithIdToken(idToken);
+      if (guest && result.error?.code === 'identity_already_exists') result = await this.supabase.auth.signInWithIdToken(idToken);
+      if (result.error) throw translate(result.error);
+      const user = result.data.user;
+      if (!user) throw new AuthError('unknown', 'login Apple sem usuário');
       // A Apple só informa o nome no PRIMEIRO login; aproveita para trocar o nome genérico do perfil.
       if (credential.fullName) {
         await this.supabase.auth.updateUser({ data: { name: credential.fullName } });
-        await this.supabase.from('profiles').update({ name: credential.fullName.slice(0, 24) }).eq('id', data.user.id);
-        return { ...toUser(data.user), name: credential.fullName };
+        await this.supabase.from('profiles').update({ name: credential.fullName.slice(0, 24) }).eq('id', user.id);
+        return { ...toUser(user), name: credential.fullName };
       }
-      return toUser(data.user);
+      return toUser(user);
     }
 
     // Fluxo web (Google nos dois sistemas; Apple no Android), com PKCE.
+    let code = await this.oauthRound(provider, guest);
+    if (code === 'identity_already_exists') code = await this.oauthRound(provider, false);
+    if (code === 'identity_already_exists') throw new AuthError('email_in_use');
+
+    const exchanged = await this.supabase.auth.exchangeCodeForSession(code);
+    if (exchanged.error) throw translate(exchanged.error);
+    return toUser(exchanged.data.user);
+  }
+
+  /** Uma ida ao navegador. Devolve o `code` do PKCE, ou `'identity_already_exists'` se o vínculo esbarrou numa conta existente. */
+  private async oauthRound(provider: AuthProvider, link: boolean): Promise<string> {
     const redirectTo = this.platform.redirectTo('auth/callback');
     const options = { redirectTo, skipBrowserRedirect: true };
-    const { data, error } = (await this.isAnonymous())
-      ? await this.supabase.auth.linkIdentity({ provider, options })
-      : await this.supabase.auth.signInWithOAuth({ provider, options });
+    const { data, error } = link ? await this.supabase.auth.linkIdentity({ provider, options }) : await this.supabase.auth.signInWithOAuth({ provider, options });
     if (error) throw translate(error);
     if (!data.url) throw new AuthError('provider_unavailable');
 
     const returned = await this.platform.openAuthSession(data.url, redirectTo);
     if (!returned) throw new AuthError('cancelled');
     const params = new URL(returned).searchParams;
-    if (params.get('error')) throw new AuthError(params.get('error_code') === 'identity_already_exists' ? 'email_in_use' : 'provider_unavailable', params.get('error_description') ?? undefined);
+    if (params.get('error_code') === 'identity_already_exists') return 'identity_already_exists';
+    if (params.get('error')) throw new AuthError('provider_unavailable', params.get('error_description') ?? undefined);
     const code = params.get('code');
     if (!code) throw new AuthError('provider_unavailable', 'retorno sem code');
-
-    const exchanged = await this.supabase.auth.exchangeCodeForSession(code);
-    if (exchanged.error) throw translate(exchanged.error);
-    return toUser(exchanged.data.user);
+    return code;
   }
 
   async signInAsGuest(): Promise<AuthUser> {

@@ -11,7 +11,7 @@ packages/
   engine/        Tipos, regras dos jogos, protocolo e o RoomEngine (a sala como máquina de estados).
   db/            Tipos do banco gerados pelo Supabase CLI.
 supabase/        Config local, migrations e seed (Auth, Postgres, Edge Functions).
-docs/            backend-plan.md (arquitetura e passos) · deploy-fly.md (servidor) · site.md (site)
+docs/            backend-plan.md (arquitetura e passos) · deploy-fly.md (servidor) · site.md (site) · login-social.md (Google e Apple)
 design_handoff_jogae/   Referência de design (protótipo + design system).
 ```
 

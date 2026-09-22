@@ -27,7 +27,8 @@ function fake(opts: { session?: ReturnType<typeof user> | null; results?: Record
     updateUser: async (a: unknown) => (calls.push(['updateUser', a]), result('updateUser', ok())),
     signInAnonymously: async () => (calls.push(['signInAnonymously']), result('signInAnonymously', ok(user({ is_anonymous: true, email: undefined, user_metadata: {} })))),
     signInWithOAuth: async (a: unknown) => (calls.push(['signInWithOAuth', a]), result('oauth', { data: { url: 'https://sb/authorize' }, error: null })),
-    linkIdentity: async (a: unknown) => (calls.push(['linkIdentity', a]), result('oauth', { data: { url: 'https://sb/authorize' }, error: null })),
+    // Duas variantes, como no supabase-js: com `token` vincula um ID token (Apple nativo); sem, devolve a URL do OAuth.
+    linkIdentity: async (a: { token?: string }) => (calls.push(['linkIdentity', a]), a.token ? result('linkIdToken', ok()) : result('oauth', { data: { url: 'https://sb/authorize' }, error: null })),
     signInWithIdToken: async (a: unknown) => (calls.push(['signInWithIdToken', a]), result('signInWithIdToken', ok())),
     exchangeCodeForSession: async (code: string) => (calls.push(['exchangeCodeForSession', code]), result('exchange', ok())),
     resetPasswordForEmail: async (...a: unknown[]) => (calls.push(['resetPasswordForEmail', ...a]), { error: null }),
@@ -131,8 +132,27 @@ test('OAuth: fechar a janela é "cancelled"; erro no retorno não tenta trocar c
   assert.equal(await code(new SupabaseAuthService(denied.client, p).signInWithProvider('google')), 'provider_unavailable');
   assert.ok(!names(denied.calls).includes('exchangeCodeForSession'));
 
-  const linked = platform({ openAuthSession: async () => 'jogae://auth/callback?error=x&error_code=identity_already_exists' });
-  assert.equal(await code(new SupabaseAuthService(fake().client, linked).signInWithProvider('google')), 'email_in_use');
+});
+
+test('convidado cuja conta Google já existe: o vínculo falha e ele entra na conta antiga', async () => {
+  const f = fake({ session: user({ is_anonymous: true }) });
+  const returns = ['jogae://auth/callback?error=x&error_code=identity_already_exists', 'jogae://auth/callback?code=CODE123'];
+  const p = platform({ openAuthSession: async () => returns.shift() ?? null });
+  await new SupabaseAuthService(f.client, p).signInWithProvider('google');
+  assert.deepEqual(names(f.calls), ['linkIdentity', 'signInWithOAuth', 'exchangeCodeForSession']);
+});
+
+test('Apple nativo com sessão de convidado vincula o ID token; se a conta Apple já existe, entra nela', async () => {
+  const p = platform({ appleNative: async () => ({ idToken: 'T', rawNonce: 'R', fullName: null }) });
+  const fresh = fake({ session: user({ is_anonymous: true }) });
+  await new SupabaseAuthService(fresh.client, p).signInWithProvider('apple');
+  assert.deepEqual(fresh.calls, [['linkIdentity', { provider: 'apple', token: 'T', nonce: 'R' }]]);
+
+  const taken = { data: { user: null, session: null }, error: { code: 'identity_already_exists', message: 'Identity is already linked to another user' } };
+  const back = fake({ session: user({ is_anonymous: true }), results: { linkIdToken: taken } });
+  const u = await new SupabaseAuthService(back.client, p).signInWithProvider('apple');
+  assert.deepEqual(names(back.calls), ['linkIdentity', 'signInWithIdToken']);
+  assert.equal(u.id, 'u1');
 });
 
 test('Apple nativo: manda o nonce cru ao Supabase e grava o nome do primeiro login', async () => {
