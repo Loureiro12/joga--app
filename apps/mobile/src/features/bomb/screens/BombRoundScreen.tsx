@@ -7,9 +7,11 @@ import { Enter } from '@/core/animation/Enter';
 import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Display, IconButton, ModalCard, Overline, Screen, Txt, useScreenPadding } from '@/core/ui';
+import { playSound } from '@/core/audio/sounds';
 import { haptics } from '@/core/utils/haptics';
 
 import { BurningFuse, useBombPulse } from '../components/BurningFuse';
+import { HandoffFlash } from '../components/HandoffFlash';
 import { LetterGrid } from '../components/LetterGrid';
 import { useBombSound } from '../useBombSound';
 import { remainingLetters } from '@jogae/engine';
@@ -30,6 +32,9 @@ export function BombRoundScreen() {
   const [saindo, setSaindo] = useState(false);
   const pad = useScreenPadding();
   const alarmes = useRef(0);
+  /** A passagem que acabou de acontecer, para o flash. `null` enquanto ninguém passou. */
+  const [passagem, setPassagem] = useState<{ name: string; color: string; letter?: string } | null>(null);
+  const ultimoAtivo = useRef<string | null>(null);
   const shake = useSharedValue(0);
   // O pulso é teatro: sorteia o próprio ritmo e nunca olha o relógio da bomba.
   const pulso = useBombPulse();
@@ -61,6 +66,23 @@ export function BombRoundScreen() {
   useEffect(() => {
     if (match?.phase === 'exploded') haptics.error();
     if (match?.phase === 'finished') router.replace(routes.bomb.end);
+  }, [match?.phase]);
+
+  // Trocou de mão com a bomba acesa: anuncia. A primeira vez de cada rodada não conta — ali a
+  // tela de "passe o celular" já disse de quem é a vez.
+  useEffect(() => {
+    if (!match) return;
+    const anterior = ultimoAtivo.current;
+    ultimoAtivo.current = match.activeId;
+    if (match.phase !== 'armed' || anterior === null || anterior === match.activeId) return;
+    const quem = match.players.find((p) => p.id === match.activeId);
+    if (!quem) return;
+    setPassagem({ name: quem.name, color: quem.color, letter: match.alphabet?.used.at(-1)?.letter });
+  }, [match]);
+
+  // Fora da bomba acesa o flash não faz sentido: some junto com a fase.
+  useEffect(() => {
+    if (match?.phase !== 'armed') setPassagem(null);
   }, [match?.phase]);
 
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value * 14 }] }));
@@ -231,6 +253,8 @@ export function BombRoundScreen() {
   const alfabeto = match.alphabet;
   const usadas = new Set(alfabeto?.used.map((u) => u.letter) ?? []);
 
+  const flash = passagem ? <HandoffFlash name={passagem.name} color={passagem.color} letter={passagem.letter} onDone={() => setPassagem(null)} /> : null;
+
   return (
     <Animated.View style={[{ flex: 1 }, shakeStyle]}>
       <Screen scroll={false}>
@@ -268,6 +292,8 @@ export function BombRoundScreen() {
               used={usadas}
               onPick={(letra) => {
                 haptics.light();
+                // Som seco e curto, por cima do tique-taque: confirma que a jogada valeu.
+                playSound('voto');
                 bombActions.useLetter(letra);
               }}
             />
@@ -303,6 +329,7 @@ export function BombRoundScreen() {
               accessibilityLabel="Passar bomba"
               onPress={() => {
                 haptics.light();
+                playSound('voto');
                 bombActions.pass();
               }}
               style={({ pressed }) => ({
@@ -317,6 +344,7 @@ export function BombRoundScreen() {
           </>
         )}
       </Screen>
+      {flash}
     </Animated.View>
   );
 }

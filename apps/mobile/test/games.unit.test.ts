@@ -130,3 +130,17 @@ test('as duas bombas são locais e apontam para a variante certa do motor', () =
   // Sem a variante, o fluxo local cairia sempre no clássico sem avisar.
   assert.ok(GAMES.filter((g) => g.device === 'local').every((g) => g.bombVariant), 'jogo local sem variante definida');
 });
+
+/**
+ * O aviso de passagem cobre a tela por meio segundo. Se ele bloqueasse o toque, quem recebeu a
+ * bomba perderia esse tempo sem poder jogar — com o pavio correndo por baixo.
+ */
+test('o aviso de passagem nunca bloqueia o toque', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const flash = await readFile(new URL('../src/features/bomb/components/HandoffFlash.tsx', import.meta.url), 'utf8');
+  assert.match(flash, /pointerEvents="none"/, 'o flash passou a capturar toques');
+  // E não pode saber do pavio, como o resto da tensão da bomba.
+  for (const proibido of ['explodeAt', 'bombStore', 'pendingAlarms']) {
+    assert.ok(!flash.includes(proibido), `o flash toca em "${proibido}"`);
+  }
+});
