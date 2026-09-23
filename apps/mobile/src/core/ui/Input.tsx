@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { TextInput, View, type TextInputProps } from 'react-native';
+import { useState, type ReactNode, type Ref } from 'react';
+import { TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 
 import { Shake } from '@/core/animation/loops';
 import { colors, fonts, radii } from '@/core/theme';
@@ -11,28 +11,40 @@ type Props = TextInputProps & {
   left?: ReactNode;
   right?: ReactNode;
   height?: number;
+  /**
+   * Estilo da MOLDURA (a caixa com borda), não do texto — `style` vai para o campo de digitação.
+   * É por aqui que se dá `flex: 1` quando o input divide uma linha com um botão; em `style`,
+   * o flex iria para o campo interno e a caixa encolheria até sumir.
+   */
+  containerStyle?: StyleProp<ViewStyle>;
+  /** Encaminhada para o campo de digitação (focar o próximo, devolver o foco depois de enviar). */
+  ref?: Ref<TextInput>;
 };
 
 /** Input 56 alto, raio 16, borda 2: surfaceLight → primaryLight (foco) → danger (erro). */
-export function Input({ error, left, right, height = 56, style, onFocus, onBlur, ...rest }: Props) {
+export function Input({ error, left, right, height = 56, style, containerStyle, ref, onFocus, onBlur, ...rest }: Props) {
   const [focused, setFocused] = useState(false);
   const borderColor = error ? colors.danger : focused ? colors.primaryLight : colors.surfaceLight;
   return (
     <View
-      style={{
-        height,
-        borderRadius: radii.input,
-        backgroundColor: colors.surface,
-        borderWidth: 2,
-        borderColor,
-        paddingHorizontal: 14,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-      }}
+      style={[
+        {
+          height,
+          borderRadius: radii.input,
+          backgroundColor: colors.surface,
+          borderWidth: 2,
+          borderColor,
+          paddingHorizontal: 14,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+        },
+        containerStyle,
+      ]}
     >
       {left}
       <TextInput
+        ref={ref}
         placeholderTextColor={colors.muted}
         selectionColor={colors.primaryLight}
         autoCapitalize="none"
