@@ -42,3 +42,19 @@ test('só o impostor está jogável; os outros jogos não prometem categoria', (
     assert.deepEqual(game.wordCategories, [], `${game.id} não é jogável mas oferece categorias`);
   }
 });
+
+test('a Bomba-Relógio é local: não passa por sala nem por motor de rede', () => {
+  const bomba = getGame('bomba-relogio')!;
+  assert.equal(bomba.playable, true);
+  assert.equal(bomba.device, 'local');
+  assert.equal(bomba.engineId, undefined, 'jogo local não pode apontar para um motor de sala');
+  assert.equal(bomba.wordCategories.length, 0, 'as categorias dele ficam na própria tela de configuração');
+});
+
+test('todo jogo jogável sabe como começar: ou tem motor de sala, ou é local', () => {
+  for (const game of GAMES.filter((g) => g.playable)) {
+    assert.ok(game.engineId || game.device === 'local', `${game.id} está jogável mas não diz por onde começa`);
+    assert.ok(game.minPlayers <= game.recommendedPlayers, `${game.id}: o piso não pode passar do recomendado`);
+    assert.ok(game.recommendedPlayers <= game.maxPlayers, `${game.id}: o recomendado não cabe no teto`);
+  }
+});

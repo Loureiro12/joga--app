@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Dois jogos jogáveis: Impostor e Quem é Mais Provável. Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Três jogos jogáveis: Impostor, Quem é Mais Provável e Bomba-Relógio (este sem sala, num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -205,6 +205,23 @@ Segundo jogo com partida de verdade. A spec (42 seções) foi entregue em duas e
 **Fica para a etapa 2:** modo Um Celular (§4, o usuário pediu junto), cronômetro configurável, rodada de desempate, opção "Ninguém", estatísticas sociais (§22), perguntas personalizadas, card de compartilhamento, denunciar pergunta e geração por IA.
 
 **Dívida conhecida:** `MatchRecord` ainda carrega `impostorsCaught` / `timesImpostor` / `timesEscaped`, que são do Impostor — o jogo novo grava zeros. Generalizar isso pede uma migration e mexe nas conquistas.
+
+### Jogo 3 — Bomba-Relógio (2026-09-23)
+
+Terceiro jogo, e o primeiro **sem sala**: um celular só, passando de mão em mão, presencialmente. Não cria sala, não pede conta e não fala com o servidor — forçá-lo no `RoomEngine` seria sincronizar o que não tem o que sincronizar. As regras são funções puras (`games/bomb.ts`) e o estado vive num store local do app (`features/bomb/bombStore.ts`), sem persistência: a partida acontece com todo mundo na mesma mesa, e recuperar uma partida velha ao reabrir o app só confundiria.
+
+O catálogo ganhou `device: 'sala' | 'local'`, e é ele que decide o destino do botão na tela do jogo. Um teste garante que todo jogo jogável sabe por onde começa (motor de sala **ou** local).
+
+- **O tempo é secreto e absoluto.** O pavio é sorteado quando a bomba acende e nunca é recalculado: não depende de quem está com ela nem de quantas passagens houve (§46). É um carimbo de tempo, não um contador de tela — minimizar o app não segura a explosão (§45), e a tela nunca mostra quanto falta (§13).
+- **A distribuição não é uniforme** (§15): `u^0.65` empurra a massa para o fim da faixa, então explosão precoce é rara e a tensão cresce. Piso de segurança de 8 s por cima (§16).
+- **Passar não reinicia o pavio** (§18), e a responsabilidade muda no toque, não na entrega física (§19) — é o que evita a discussão de "explodiu enquanto eu passava".
+- **Sustos** (§38) em ~8% das rodadas, sempre entre 25% e 55% do pavio: perto do fim, um susto viraria aviso.
+- Três modos: casual (bombas), eliminação (vidas até sobrar um) e pontos. Ordem circular ou caos, e quem perdeu começa a próxima.
+- **Conteúdo:** 180 desafios, 18 em cada uma das 10 categorias, com `pool` estimado por desafio. Pelo menos 12 de cada categoria são de resposta farta, porque num grupo de 8 um desafio curto acaba antes da bomba (§40) — travado por teste.
+
+**Verificado:** 72 testes no engine, incluindo o viés do sorteio, o piso de segurança, o pavio que não reinicia, a explosão depois do app voltar do segundo plano, ordem caos sem repetição, os três modos até o fim, desafio sem repetir e os destaques. **Não verificado:** as telas num aparelho de verdade, e o háptico (não roda no navegador).
+
+**Fica de fora por ora:** sons (o projeto não tem assets de áudio), botão de contestação (§27 — a própria spec sugere deixar verbal no MVP), modificadores de rodada (§39), desafios personalizados (§42), IA (§43) e card de compartilhamento (§52). Nada disso está no caminho do resto.
 
 ### Passo 6 — Assinatura
 
