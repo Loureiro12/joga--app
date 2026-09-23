@@ -12,6 +12,11 @@ import type { AddressInfo } from 'node:net';
 import { resolve } from 'node:path';
 
 import { createClient } from '@supabase/supabase-js';
+
+import type { RoomSnapshot } from '@jogae/engine';
+
+/** Este roteiro joga Impostor: estreita a parte do jogo no snapshot. */
+const view = (s: RoomSnapshot | null) => s?.game as Extract<RoomSnapshot['game'], { kind: 'impostor' }>;
 import WebSocket from 'ws';
 
 import { loadConfig } from '../../room-server/src/config';
@@ -71,11 +76,11 @@ async function main() {
     await until(() => phase(ana) === 'clues', 'pistas');
     await ana.room.openVoting();
     await until(() => all.every((p) => phase(p) === 'voting'), 'votação');
-    const impostor = all.find((p) => snaps.get(p)!.secret!.role === 'impostor')!;
+    const impostor = all.find((p) => view(snaps.get(p)!).secret!.role === 'impostor')!;
     const innocent = all.find((p) => p !== impostor)!;
     const idOf = (p: object) => snaps.get(p)!.meId;
     for (const p of all) await p.room.castVote(p === impostor ? idOf(innocent) : idOf(impostor));
-    await until(() => snaps.get(ana)?.result?.stage === 2, 'desfecho');
+    await until(() => view(snaps.get(ana) ?? null)?.result?.stage === 2, 'desfecho');
     await ana.room.nextRound();
     await until(() => phase(ana) === 'finished', 'fim');
     console.log('✓ partida real jogada até o fim na sala', room.code);

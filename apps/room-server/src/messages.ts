@@ -1,4 +1,4 @@
-import { PROTOCOL_VERSION, type ClientMessage, type CreateRoomInput, type PlayerAppearance, type RoomCommand } from '@jogae/engine';
+import { PROTOCOL_VERSION, type ClientMessage, type CreateRoomInput, type LikelyIntensity, type PlayerAppearance, type RoomCommand } from '@jogae/engine';
 
 /**
  * Tudo que chega do cliente é tratado como hostil até ser validado aqui.
@@ -16,12 +16,30 @@ function appearance(v: unknown): PlayerAppearance | null {
   return { name, color: v.color };
 }
 
+const INTENSITIES = new Set<string>(['leve', 'moderado', 'pesado']);
+
+/** As opções do "Quem é Mais Provável?". O engine normaliza de novo; aqui só barramos lixo. */
+function likelySettings(v: unknown): CreateRoomInput['settings'] {
+  if (!isObject(v)) return undefined;
+  const list = (x: unknown, max: number) => (Array.isArray(x) && x.length <= max && x.every((i) => typeof i === 'string' && i.length <= 30) ? (x as string[]) : undefined);
+  const bool = (x: unknown) => (typeof x === 'boolean' ? x : undefined);
+  return {
+    categories: list(v.categories, 12),
+    intensities: list(v.intensities, 3)?.filter((i): i is LikelyIntensity => INTENSITIES.has(i)),
+    allowSelfVote: bool(v.allowSelfVote),
+    openVotes: bool(v.openVotes),
+    competitive: bool(v.competitive),
+  };
+}
+
 function roomInput(v: unknown): CreateRoomInput | null {
   if (!isObject(v)) return null;
-  if (v.gameId !== 'impostor') return null; // único jogo com regras no engine
+  if (v.gameId !== 'impostor' && v.gameId !== 'likely') return null; // jogos com regras no engine
   if (typeof v.category !== 'string' || v.category.length < 1 || v.category.length > 30) return null;
-  if (!isInt(v.totalRounds, 1, 20) || !isInt(v.maxPlayers, 3, 12)) return null;
-  return { gameId: v.gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers };
+  // `totalRounds: 0` no "Quem é Mais Provável?" é a partida sem limite; o Impostor exige pelo menos 1.
+  const minRounds = v.gameId === 'likely' ? 0 : 1;
+  if (!isInt(v.totalRounds, minRounds, 30) || !isInt(v.maxPlayers, 3, 20)) return null;
+  return { gameId: v.gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers, settings: likelySettings(v.settings) };
 }
 
 function command(v: unknown): RoomCommand | null {
@@ -33,6 +51,9 @@ function command(v: unknown): RoomCommand | null {
     case 'nextRound':
     case 'playAgain':
     case 'ackRole':
+    case 'endVoting':
+    case 'skipQuestion':
+    case 'endMatch':
       return { type: v.type };
     case 'setTimerRunning':
       return typeof v.running === 'boolean' ? { type: v.type, running: v.running } : null;

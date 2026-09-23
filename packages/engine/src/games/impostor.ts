@@ -1,4 +1,4 @@
-import type { Player, PlayerId, RoundResult, TallyEntry } from '../types';
+import type { ImpostorRoundResult, Player, PlayerId, TallyEntry } from '../types';
 
 /**
  * Regras puras do Impostor (sem I/O, sem timers) — reutilizáveis pelo mock hoje
@@ -289,7 +289,7 @@ export function resolveImpostorRound(
   round: ImpostorRound,
   votes: Record<PlayerId, PlayerId>,
   players: Player[],
-): Omit<RoundResult, 'stage'> {
+): Omit<ImpostorRoundResult, 'stage'> {
   const counts = new Map<PlayerId, number>();
   Object.values(votes).forEach((target) => counts.set(target, (counts.get(target) ?? 0) + 1));
   const tally: TallyEntry[] = [...counts.entries()]

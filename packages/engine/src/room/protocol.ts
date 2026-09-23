@@ -13,6 +13,12 @@ export type RoomCommand =
   | { type: 'setTimerRunning'; running: boolean }
   | { type: 'resetTimer' }
   | { type: 'openVoting' }
+  /** Quem é Mais Provável: host encerra a votação adiantado (precisa de ao menos um voto). */
+  | { type: 'endVoting' }
+  /** Quem é Mais Provável: troca a pergunta, só antes de a votação abrir. */
+  | { type: 'skipQuestion' }
+  /** Encerra uma partida sem limite de rodadas. */
+  | { type: 'endMatch' }
   | { type: 'nextRound' }
   | { type: 'playAgain' }
   | { type: 'ackRole' }

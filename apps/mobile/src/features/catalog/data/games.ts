@@ -1,5 +1,7 @@
 // De `tokens` e não do barrel `@/core/theme`: o barrel carrega os arquivos de fonte, e este módulo
 // é só dado — assim ele roda em teste, no servidor ou em qualquer lugar sem o ambiente do app.
+import type { GameId } from '@jogae/engine';
+
 import { colors } from '@/core/theme/tokens';
 
 export type IllustrationKey = 'eyes' | 'pillArrow' | 'mask' | 'bomb' | 'dice' | 'trophy';
@@ -37,6 +39,8 @@ export type GameDefinition = {
   trending?: boolean;
   /** Tem fluxo de partida implementado? Os demais aparecem como "Em breve". */
   playable: boolean;
+  /** Qual motor conduz a partida. Só os jogáveis têm — é o que vai em `createRoom`. */
+  engineId?: GameId;
 };
 
 const comingSoon = {
@@ -51,6 +55,7 @@ const comingSoon = {
 export const GAMES: GameDefinition[] = [
   {
     id: 'impostor',
+    engineId: 'impostor',
     name: 'Impostor',
     category: 'Dedução',
     tagline: 'Todo mundo sabe a palavra. Menos um.',
@@ -92,8 +97,8 @@ export const GAMES: GameDefinition[] = [
     playable: true,
   },
   {
-    ...comingSoon,
     id: 'mais-provavel',
+    engineId: 'likely',
     name: 'Quem é mais provável?',
     category: 'Polêmico',
     tagline: 'Descubra o que seus amigos pensam.',
@@ -102,11 +107,38 @@ export const GAMES: GameDefinition[] = [
     color: colors.accent,
     illustration: 'pillArrow',
     minPlayers: 3,
-    maxPlayers: 12,
-    playersLabel: '3+ jogadores',
-    durationLabel: '10 min',
-    durationShort: '10 min',
+    maxPlayers: 20,
+    playersLabel: '3–20 jogadores',
+    durationLabel: '10–30 min',
+    durationShort: '20 min',
+    infoChips: [
+      { emoji: '👥', label: '3–20 jogadores' },
+      { emoji: '⏱', label: '10–30 minutos' },
+      { emoji: '🗳', label: 'Voto secreto' },
+    ],
+    howToPlay: [
+      'Uma pergunta aparece para todos: "quem é mais provável de…".',
+      'Cada um vota em silêncio na pessoa que mais combina. Ninguém vê os votos parciais.',
+      'Os votos são revelados juntos. Empate vale: não existe resposta certa, só o que o grupo acha.',
+    ],
+    // As categorias do banco de perguntas, na mesma ordem em que aparecem na tela.
+    wordCategories: [
+      { id: 'Engraçado', label: 'Engraçado', emoji: '😂' },
+      { id: 'Exposed', label: 'Exposed', emoji: '👀' },
+      { id: 'Caos', label: 'Caos', emoji: '🔥' },
+      { id: 'Relacionamentos', label: 'Relacionamentos', emoji: '❤️' },
+      { id: 'Festa', label: 'Festa', emoji: '🎉' },
+      { id: 'Trabalho', label: 'Trabalho', emoji: '💼' },
+      { id: 'Família', label: 'Família', emoji: '👨‍👩‍👧' },
+      { id: 'Futebol', label: 'Futebol', emoji: '⚽' },
+      { id: 'Aleatório', label: 'Aleatório', emoji: '🎲' },
+    ],
+    // "Sem limite" é o 0: a partida vai até o host encerrar.
+    roundOptions: [10, 20, 30, 0],
+    defaults: { players: 8, category: 'Aleatório', rounds: 10 },
     tags: ['Em alta', 'Engraçados', 'Festa'],
+    trending: true,
+    playable: true,
   },
   {
     ...comingSoon,

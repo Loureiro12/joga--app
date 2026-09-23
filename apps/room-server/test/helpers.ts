@@ -21,10 +21,19 @@ export async function startServer(env: Record<string, string> = {}, options: Roo
 type Ack = { ok: true } | { ok: false; error: RoomErrorCode };
 
 /** Cliente de teste: fala o protocolo cru e guarda tudo que recebeu, para checar o que passou pelo fio. */
+/** A view do jogo em curso, já estreitada. Os testes daqui jogam Impostor. */
+export type ImpostorView = Extract<RoomSnapshot['game'], { kind: 'impostor' }>;
+export const impostorView = (snapshot: RoomSnapshot | null) => snapshot?.game as ImpostorView | undefined;
+
 export class TestClient {
   readonly frames: string[] = [];
   readonly messages: ServerMessage[] = [];
   snapshot: RoomSnapshot | null = null;
+
+  /** Atalho: a parte do snapshot que é do Impostor. */
+  get game(): ImpostorView {
+    return this.snapshot!.game as ImpostorView;
+  }
   closed: { code: number; reason: string } | null = null;
   private nextId = 1;
   private readonly acks = new Map<number, (ack: Ack) => void>();

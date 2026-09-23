@@ -30,5 +30,11 @@ export const routes = {
     ranking: '/match/ranking',
     end: '/match/end',
     aborted: '/match/aborted',
+    // Quem é Mais Provável: telas próprias da rodada; lobby, placar e sala fechada são compartilhados.
+    question: '/match/question',
+    likelyVote: '/match/likely-vote',
+    likelyWaiting: '/match/likely-waiting',
+    likelyResult: '/match/likely-result',
+    likelyEnd: '/match/likely-end',
   },
 } as const;

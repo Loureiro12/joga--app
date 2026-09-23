@@ -5,7 +5,7 @@ import type { MatchRecord } from '@jogae/engine';
 
 import { loadConfig } from '../src/config';
 import { SupabaseMatchRecorder, type MatchRecorder } from '../src/rooms/MatchRecorder';
-import { INPUT, roomWith, sleep, startServer, type TestClient } from './helpers';
+import { INPUT, roomWith, sleep, startServer, type TestClient , type ImpostorView } from './helpers';
 
 class SpyRecorder implements MatchRecorder {
   readonly records: MatchRecord[] = [];
@@ -23,10 +23,10 @@ async function playToTheEnd(clients: TestClient[], host: TestClient) {
     await host.untilSnapshot((s) => s.room.phase === 'clues', 'pistas');
     await host.cmd({ type: 'openVoting' });
     await Promise.all(clients.map((c) => c.untilSnapshot((s) => s.room.phase === 'voting', 'votação')));
-    const impostor = clients.find((c) => c.snapshot!.secret!.role === 'impostor')!;
+    const impostor = clients.find((c) => c.game.secret!.role === 'impostor')!;
     const innocent = clients.find((c) => c !== impostor)!;
     for (const c of clients) await c.cmd({ type: 'castVote', targetId: c === impostor ? innocent.id : impostor.id });
-    await host.untilSnapshot((s) => s.result?.stage === 2, 'desfecho');
+    await host.untilSnapshot((s) => (s.game as ImpostorView).result?.stage === 2, 'desfecho');
     await host.cmd({ type: 'nextRound' });
   }
   await Promise.all(clients.map((c) => c.untilSnapshot((s) => s.room.phase === 'finished', 'fim')));

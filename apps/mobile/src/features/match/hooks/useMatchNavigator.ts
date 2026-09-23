@@ -6,8 +6,12 @@ import { routes } from '@/core/navigation/routes';
 import type { RoomSnapshot } from '@jogae/engine';
 import { useSnapshot } from '../store/matchStore';
 
-/** Fase do servidor → tela. É aqui (e só aqui) que o fluxo de partida é decidido. */
+/**
+ * Fase do servidor → tela. É aqui (e só aqui) que o fluxo de partida é decidido.
+ * Cada jogo tem suas telas de rodada; lobby, fim e sala fechada são as mesmas para todos.
+ */
 export function routeForSnapshot(s: RoomSnapshot): string {
+  const likely = s.game.kind === 'likely';
   switch (s.room.phase) {
     case 'lobby':
       return routes.match.lobby;
@@ -15,12 +19,15 @@ export function routeForSnapshot(s: RoomSnapshot): string {
       return routes.match.reveal;
     case 'clues':
       return routes.match.round;
+    case 'question':
+      return routes.match.question;
     case 'voting':
-      return s.votes?.myVote ? routes.match.waitingVotes : routes.match.vote;
+      if (!s.votes?.myVote) return likely ? routes.match.likelyVote : routes.match.vote;
+      return likely ? routes.match.likelyWaiting : routes.match.waitingVotes;
     case 'revealing':
-      return routes.match.result;
+      return likely ? routes.match.likelyResult : routes.match.result;
     case 'finished':
-      return routes.match.end;
+      return likely ? routes.match.likelyEnd : routes.match.end;
     case 'closed':
       return routes.match.aborted;
   }

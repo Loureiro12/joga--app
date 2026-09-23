@@ -1,8 +1,8 @@
-import { IMPOSTOR_RULES, createImpostorRound, resolveImpostorRound, type ImpostorRound } from '../games/impostor';
 import {
   RoomError,
   type ClosedReason,
   type CreateRoomInput,
+  type GameId,
   type MatchRecord,
   type Player,
   type PlayerId,
@@ -10,9 +10,12 @@ import {
   type Room,
   type RoomPublicInfo,
   type RoomSnapshot,
-  type RoundResult,
   type Score,
 } from '../types';
+
+import type { GameCtx, GameRules } from './GameRules';
+import { impostorGame, type ImpostorState } from './impostorGame';
+import { likelyGame, type LikelyState } from './likelyGame';
 import type { RoomCommand } from './protocol';
 
 /**
@@ -23,8 +26,11 @@ import type { RoomCommand } from './protocol';
  * - Todo prazo (revelação em 3 tempos, cronômetro, tolerância de reconexão…) é um carimbo de tempo
  *   no estado. Existe UM alarme, sempre armado para o prazo mais próximo — por isso o estado pode ser
  *   salvo e restaurado em outro processo sem perder nenhum timer.
- * - Segredo por construção: `snapshotFor` só inclui o papel de quem pediu, e o resultado da votação
- *   só sai completo no último tempo da revelação.
+ * - Segredo por construção: `snapshotFor` só inclui o que AQUELE jogador pode ver, e o resultado
+ *   da votação só sai completo no último tempo da revelação.
+ *
+ * O que é de SALA mora aqui: quem entrou, quem caiu, migração de host, alarme, salvar/restaurar.
+ * O que é de PARTIDA mora em um `GameRules` (ver `GameRules.ts`) — um por jogo.
  */
 
 export type EngineConfig = {
@@ -60,31 +66,21 @@ export const realScheduler: Scheduler = {
 
 type EnginePlayer = Player & { disconnectedAt: number | null };
 
+/** Estado de um jogo, discriminado pelo `gameId` da sala. */
+export type GameState = ImpostorState | LikelyState;
+
 /** Tudo que é preciso para recriar a sala em outro processo. JSON puro. */
 export type EngineState = {
   room: Room;
   players: EnginePlayer[];
-  round: ImpostorRound | null;
-  /** Conta os sorteios da partida; ver `RoundPublic.deal`. */
-  deal: number;
-  roundStartedAt: number | null;
-  ackedIds: PlayerId[];
-  timer: { remainingMs: number; endsAt: number | null };
-  votes: Record<PlayerId, PlayerId>;
-  allVotedAt: number | null;
-  result: Omit<RoundResult, 'stage'> | null;
-  revealStartedAt: number | null;
-  stage: 0 | 1 | 2;
   scores: Record<PlayerId, Score>;
-  usedWords: string[];
-  impostorsCaught: number;
   /** Identidade e início da partida em curso; `null` no lobby. */
   matchId: string | null;
   matchStartedAt: number | null;
   matchEndedAt: number | null;
-  /** Por jogador, na partida em curso: vezes como impostor e vezes em que escapou. */
-  roleStats: Record<PlayerId, { timesImpostor: number; timesEscaped: number }>;
   lastActivityAt: number;
+  /** A partida em si. Quem entende deste campo é o `GameRules` do jogo. */
+  game: GameState;
 };
 
 export type RoomEngineDeps = {
@@ -95,8 +91,17 @@ export type RoomEngineDeps = {
   onChange?: () => void;
 };
 
-const HOST_COMMANDS = new Set<RoomCommand['type']>(['startMatch', 'setTimerRunning', 'resetTimer', 'openVoting', 'nextRound', 'playAgain']);
-const ROUND_MS = IMPOSTOR_RULES.roundSeconds * 1000;
+/** Os jogos com partida implementada. O catálogo do app tem outros, ainda "em breve". */
+const GAMES: Record<GameId, GameRules<never>> = {
+  impostor: impostorGame as GameRules<never>,
+  likely: likelyGame as GameRules<never>,
+};
+
+export const rulesFor = (gameId: GameId): GameRules<never> => GAMES[gameId] ?? GAMES.impostor;
+
+/** Comandos que a sala trata sozinha, antes de chegar ao jogo. */
+const ROOM_COMMANDS = new Set<RoomCommand['type']>(['startMatch', 'playAgain']);
+
 const newScore = (playerId: PlayerId): Score => ({ playerId, points: 0, lastDelta: 0 });
 
 export class RoomEngine {
@@ -105,6 +110,7 @@ export class RoomEngine {
   private readonly rng: () => number;
   private readonly config: EngineConfig;
   private readonly onChange: () => void;
+  private readonly game: GameRules<never>;
   private alarm: unknown = null;
   private disposed = false;
 
@@ -114,32 +120,26 @@ export class RoomEngine {
     this.rng = deps.rng ?? Math.random;
     this.config = { ...DEFAULT_ENGINE_CONFIG, ...deps.config };
     this.onChange = deps.onChange ?? (() => {});
+    this.game = rulesFor(state.room.gameId);
   }
 
   static create(code: string, input: CreateRoomInput, host: PlayerIdentity, deps: RoomEngineDeps = {}): RoomEngine {
     const now = (deps.scheduler ?? realScheduler).now();
+    const rules = rulesFor(input.gameId);
+    const room: Room = { code, hostId: host.id, ...input, phase: 'lobby', roundIndex: 0, paused: false };
+    const players: EnginePlayer[] = [{ ...host, isHost: true, connected: true, joinedAt: now, disconnectedAt: null }];
+    const scores = { [host.id]: newScore(host.id) };
+    const ctx: GameCtx = { room, players, scores, now, rng: deps.rng ?? Math.random, config: { ...DEFAULT_ENGINE_CONFIG, ...deps.config } };
     const engine = new RoomEngine(
       {
-        room: { code, hostId: host.id, ...input, phase: 'lobby', roundIndex: 0, paused: false },
-        players: [{ ...host, isHost: true, connected: true, joinedAt: now, disconnectedAt: null }],
-        round: null,
-        deal: 0,
-        roundStartedAt: null,
-        ackedIds: [],
-        timer: { remainingMs: ROUND_MS, endsAt: null },
-        votes: {},
-        allVotedAt: null,
-        result: null,
-        revealStartedAt: null,
-        stage: 0,
-        scores: { [host.id]: newScore(host.id) },
-        usedWords: [],
-        impostorsCaught: 0,
+        room,
+        players,
+        scores,
         matchId: null,
         matchStartedAt: null,
         matchEndedAt: null,
-        roleStats: {},
         lastActivityAt: now,
+        game: rules.initial(input, ctx) as GameState,
       },
       deps,
     );
@@ -149,9 +149,10 @@ export class RoomEngine {
 
   /** Recria a sala a partir de um estado salvo; prazos vencidos durante a parada disparam em seguida. */
   static restore(state: EngineState, deps: RoomEngineDeps = {}): RoomEngine {
+    const copy = JSON.parse(JSON.stringify(state)) as EngineState;
     // Estado salvo por uma versão anterior do servidor pode não ter os campos mais novos.
-    const defaults = { deal: 0, matchId: null, matchStartedAt: null, matchEndedAt: null, roleStats: {} };
-    const engine = new RoomEngine({ ...defaults, ...(JSON.parse(JSON.stringify(state)) as EngineState) }, deps);
+    const engine = new RoomEngine(Object.assign({ matchId: null, matchStartedAt: null, matchEndedAt: null }, copy), deps);
+    engine.state.game = engine.game.hydrate(copy.game as never) as GameState;
     engine.arm();
     return engine;
   }
@@ -186,46 +187,20 @@ export class RoomEngine {
 
   snapshotFor(playerId: PlayerId): RoomSnapshot {
     const s = this.state;
-    const now = this.scheduler.now();
-    const connected = s.players.filter((p) => p.connected);
+    const ctx = this.ctx();
     const present = new Set(s.players.map((p) => p.id));
-    const scores = Object.values(s.scores)
-      .filter((score) => present.has(score.playerId))
-      .sort((a, b) => b.points - a.points || a.playerId.localeCompare(b.playerId));
-    const inRound = s.round !== null && s.room.phase !== 'lobby';
-    const remainingMs = s.timer.endsAt !== null ? Math.max(0, s.timer.endsAt - now) : s.timer.remainingMs;
-
     return {
       room: { ...s.room },
       players: s.players.map(({ disconnectedAt: _ignored, ...player }) => player),
       meId: playerId,
-      round: inRound
-        ? {
-            index: s.room.roundIndex,
-            deal: s.deal,
-            category: s.round!.category,
-            starterId: s.round!.order[0],
-            order: [...s.round!.order],
-            ackedIds: [...s.ackedIds],
-            timer: { durationSec: IMPOSTOR_RULES.roundSeconds, remainingSec: Math.ceil(remainingMs / 1000), running: s.timer.endsAt !== null },
-          }
-        : null,
-      secret: inRound
-        ? s.round!.impostorId === playerId
-          ? { role: 'impostor' }
-          : { role: 'word', word: s.round!.word.word, emoji: s.round!.word.emoji }
-        : null,
-      votes:
-        s.room.phase === 'voting' || s.room.phase === 'revealing'
-          ? { votedIds: Object.keys(s.votes), total: connected.length, myVote: s.votes[playerId] ?? null }
-          : null,
-      result: s.room.phase === 'revealing' && s.result ? this.maskedResult(s.result, s.stage) : null,
-      scores,
-      summary: s.room.phase === 'finished' && scores[0] ? { winnerId: scores[0].playerId, impostorsCaught: s.impostorsCaught } : null,
+      votes: this.game.voteProgress(s.game as never, ctx, playerId),
+      scores: Object.values(s.scores)
+        .filter((score) => present.has(score.playerId))
+        .sort((a, b) => b.points - a.points || a.playerId.localeCompare(b.playerId)),
+      game: this.game.viewFor(s.game as never, ctx, playerId),
     };
   }
 
-  /** Visão pública para a página de convite. `null` quando a sala já foi fechada ou esvaziou. */
   publicInfo(): RoomPublicInfo | null {
     const s = this.state;
     const host = s.players.find((p) => p.id === s.room.hostId);
@@ -248,6 +223,7 @@ export class RoomEngine {
   matchRecord(): MatchRecord | null {
     const s = this.state;
     if (s.room.phase !== 'finished' || !s.matchId || s.matchStartedAt === null) return null;
+    const extras = this.game.recordExtras(s.game as never);
     const ranked = s.players
       .map((p) => ({ player: p, points: s.scores[p.id]?.points ?? 0 }))
       .sort((a, b) => b.points - a.points || a.player.joinedAt - b.player.joinedAt);
@@ -256,31 +232,16 @@ export class RoomEngine {
       roomCode: s.room.code,
       gameId: s.room.gameId,
       category: s.room.category,
-      totalRounds: s.room.totalRounds,
-      impostorsCaught: s.impostorsCaught,
+      totalRounds: s.room.roundIndex,
+      impostorsCaught: extras.impostorsCaught,
       startedAt: s.matchStartedAt,
       endedAt: s.matchEndedAt ?? this.scheduler.now(),
       players: ranked.map(({ player, points }) => {
         // Colocação "de competição": quem empata divide a posição, e a seguinte é pulada (1, 1, 3).
         const position = 1 + ranked.filter((other) => other.points > points).length;
-        const role = s.roleStats[player.id] ?? { timesImpostor: 0, timesEscaped: 0 };
+        const role = extras.perPlayer[player.id] ?? { timesImpostor: 0, timesEscaped: 0 };
         return { playerId: player.id, name: player.name, color: player.color, position, points, won: position === 1, ...role };
       }),
-    };
-  }
-
-  /** Nada do desfecho sai antes da hora: tempo 0 = suspense, tempo 1 = só o escolhido, tempo 2 = tudo. */
-  private maskedResult(result: Omit<RoundResult, 'stage'>, stage: 0 | 1 | 2): RoundResult {
-    if (stage === 2) return { ...result, stage };
-    return {
-      stage,
-      chosenId: stage === 1 ? result.chosenId : '',
-      impostorId: '',
-      caught: false,
-      word: '',
-      tally: [],
-      pointsDelta: {},
-      headline: { points: 0, target: 'group' },
     };
   }
 
@@ -317,8 +278,7 @@ export class RoomEngine {
     player.connected = connected;
     player.disconnectedAt = connected ? null : this.scheduler.now();
     // Quem caiu deixa de ser esperado: a rodada não trava por causa de um celular sem sinal.
-    this.checkAcks();
-    this.checkVotes();
+    this.game.recheck(this.state.game as never, this.ctx());
     this.changed();
   }
 
@@ -327,89 +287,39 @@ export class RoomEngine {
   dispatch(playerId: PlayerId, command: RoomCommand): void {
     const s = this.state;
     if (!this.has(playerId)) throw new RoomError('not_in_room');
-    if (HOST_COMMANDS.has(command.type) && s.room.hostId !== playerId) throw new RoomError('not_host');
-    const phase = s.room.phase;
-    const now = this.scheduler.now();
+    const hostOnly = ROOM_COMMANDS.has(command.type) || this.game.hostCommands.has(command.type);
+    if (hostOnly && s.room.hostId !== playerId) throw new RoomError('not_host');
+    const ctx = this.ctx();
 
     switch (command.type) {
       case 'startMatch': {
-        if (phase !== 'lobby') throw new RoomError('invalid_phase');
-        if (s.players.filter((p) => p.connected).length < IMPOSTOR_RULES.minPlayers) throw new RoomError('not_enough_players');
+        if (s.room.phase !== 'lobby') throw new RoomError('invalid_phase');
+        if (s.players.filter((p) => p.connected).length < this.game.minPlayers) throw new RoomError('not_enough_players');
         s.matchId = this.newId();
-        s.matchStartedAt = now;
+        s.matchStartedAt = ctx.now;
         s.matchEndedAt = null;
-        s.roleStats = {};
-        this.beginRound(1);
-        break;
-      }
-      case 'ackRole': {
-        if (phase !== 'role_reveal') return;
-        if (!s.ackedIds.includes(playerId)) s.ackedIds.push(playerId);
-        this.checkAcks();
-        break;
-      }
-      case 'setTimerRunning': {
-        if (phase !== 'clues') throw new RoomError('invalid_phase');
-        if (command.running) {
-          if (s.room.paused || s.timer.endsAt !== null || s.timer.remainingMs <= 0) return;
-          s.timer.endsAt = now + s.timer.remainingMs;
-        } else {
-          this.stopTimer();
-        }
-        break;
-      }
-      case 'resetTimer': {
-        if (phase !== 'clues') throw new RoomError('invalid_phase');
-        s.timer = { remainingMs: ROUND_MS, endsAt: null };
-        break;
-      }
-      case 'openVoting': {
-        if (phase !== 'clues') throw new RoomError('invalid_phase');
-        this.stopTimer();
-        s.votes = {};
-        s.allVotedAt = null;
-        s.room.phase = 'voting';
-        s.room.paused = false;
-        break;
-      }
-      case 'castVote': {
-        if (phase !== 'voting') throw new RoomError('invalid_phase');
-        if (s.votes[playerId]) return; // voto é voto
-        if (command.targetId === playerId || !this.has(command.targetId)) throw new RoomError('bad_request');
-        s.votes[playerId] = command.targetId;
-        this.checkVotes();
-        break;
-      }
-      case 'nextRound': {
-        if (phase !== 'revealing' || s.stage !== 2) throw new RoomError('invalid_phase');
-        if (s.room.roundIndex >= s.room.totalRounds) {
-          s.room.phase = 'finished';
-          s.matchEndedAt = now;
-        } else this.beginRound(s.room.roundIndex + 1);
+        this.game.startMatch(s.game as never, ctx);
         break;
       }
       case 'playAgain': {
-        if (phase !== 'finished') throw new RoomError('invalid_phase');
+        if (s.room.phase !== 'finished') throw new RoomError('invalid_phase');
         s.scores = Object.fromEntries(s.players.map((p) => [p.id, newScore(p.id)]));
-        s.usedWords = [];
-        s.impostorsCaught = 0;
         s.matchId = null;
         s.matchStartedAt = null;
         s.matchEndedAt = null;
-        s.roleStats = {};
-        this.clearRound();
+        this.game.reset(s.game as never, ctx);
         s.room.phase = 'lobby';
         s.room.roundIndex = 0;
         s.room.paused = false;
         break;
       }
-      case 'setPaused': {
-        if (phase === 'lobby' || phase === 'finished' || phase === 'closed') throw new RoomError('invalid_phase');
-        if (command.paused) this.stopTimer();
-        s.room.paused = command.paused;
-        break;
+      default: {
+        if (s.room.phase === 'lobby' || s.room.phase === 'closed') throw new RoomError('invalid_phase');
+        this.game.dispatch(s.game as never, ctx, playerId, command);
       }
     }
+    // O jogo pode ter acabado agora: carimba o fim para o boletim.
+    if (s.room.phase === 'finished' && s.matchEndedAt === null) s.matchEndedAt = ctx.now;
     this.changed();
   }
 
@@ -420,84 +330,17 @@ export class RoomEngine {
     this.alarm = null;
   }
 
-  /* --------------------------------------------------------------- transições */
+  /* ------------------------------------------------------------------ interno */
+
+  private ctx(): GameCtx {
+    const s = this.state;
+    return { room: s.room, players: s.players, scores: s.scores, now: this.scheduler.now(), rng: this.rng, config: this.config };
+  }
 
   /** UUID v4 a partir do `rng` injetado: o engine não pode depender de `crypto` (o Hermes não tem). */
   private newId(): string {
     const hex = (n: number) => Array.from({ length: n }, () => Math.floor(this.rng() * 16).toString(16)).join('');
     return `${hex(8)}-${hex(4)}-4${hex(3)}-${'89ab'[Math.floor(this.rng() * 4)]}${hex(3)}-${hex(12)}`;
-  }
-
-  private beginRound(index: number): void {
-    const s = this.state;
-    const round = createImpostorRound(s.players, s.room.category, new Set(s.usedWords), this.rng);
-    s.usedWords.push(round.word.word);
-    this.clearRound();
-    s.round = round;
-    s.deal += 1;
-    s.roundStartedAt = this.scheduler.now();
-    s.room.phase = 'role_reveal';
-    s.room.roundIndex = index;
-    s.room.paused = false;
-  }
-
-  private clearRound(): void {
-    const s = this.state;
-    s.round = null;
-    s.roundStartedAt = null;
-    s.ackedIds = [];
-    s.timer = { remainingMs: ROUND_MS, endsAt: null };
-    s.votes = {};
-    s.allVotedAt = null;
-    s.result = null;
-    s.revealStartedAt = null;
-    s.stage = 0;
-  }
-
-  private stopTimer(): void {
-    const { timer } = this.state;
-    if (timer.endsAt === null) return;
-    timer.remainingMs = Math.max(0, timer.endsAt - this.scheduler.now());
-    timer.endsAt = null;
-  }
-
-  private checkAcks(): void {
-    const s = this.state;
-    if (s.room.phase !== 'role_reveal') return;
-    const waitingFor = s.players.filter((p) => p.connected && !s.ackedIds.includes(p.id));
-    if (waitingFor.length === 0) s.room.phase = 'clues';
-  }
-
-  private checkVotes(): void {
-    const s = this.state;
-    if (s.room.phase !== 'voting' || s.allVotedAt !== null) return;
-    const connected = s.players.filter((p) => p.connected);
-    if (connected.length > 0 && connected.every((p) => s.votes[p.id])) s.allVotedAt = this.scheduler.now();
-  }
-
-  private startReveal(): void {
-    const s = this.state;
-    if (!s.round) return;
-    s.result = resolveImpostorRound(s.round, s.votes, s.players);
-    s.revealStartedAt = this.scheduler.now();
-    s.stage = 0;
-    s.room.phase = 'revealing';
-    s.room.paused = false;
-  }
-
-  /** Os pontos só entram no placar junto com o desfecho, para o placar não entregar o resultado antes. */
-  private applyScores(): void {
-    const s = this.state;
-    if (!s.result) return;
-    if (s.result.caught) s.impostorsCaught += 1;
-    const role = (s.roleStats[s.result.impostorId] ??= { timesImpostor: 0, timesEscaped: 0 });
-    role.timesImpostor += 1;
-    if (!s.result.caught) role.timesEscaped += 1;
-    for (const player of s.players) {
-      const delta = s.result.pointsDelta[player.id] ?? 0;
-      const previous = s.scores[player.id] ?? newScore(player.id);
-      s.scores[player.id] = { playerId: player.id, points: previous.points + delta, lastDelta: delta };
-    }
   }
 
   private removePlayer(playerId: PlayerId): void {
@@ -514,16 +357,13 @@ export class RoomEngine {
     }
 
     const phase = s.room.phase;
-    const midMatch = phase === 'role_reveal' || phase === 'clues' || phase === 'voting' || phase === 'revealing';
-    if (!midMatch) return;
-    if (s.players.length < IMPOSTOR_RULES.minPlayers) return this.close('not_enough_players');
-    // Ordem, impostor e votos referenciam quem saiu: a rodada é sorteada de novo, com o mesmo número.
-    if (phase !== 'revealing') this.beginRound(s.room.roundIndex);
+    if (phase === 'lobby' || phase === 'finished' || phase === 'closed') return;
+    if (s.players.length < this.game.minPlayers) return this.close('not_enough_players');
+    this.game.playerRemoved(s.game as never, this.ctx(), playerId);
   }
 
   private close(reason: ClosedReason): void {
     const s = this.state;
-    this.stopTimer();
     s.room.phase = 'closed';
     s.room.closedReason = reason;
     s.room.paused = false;
@@ -534,56 +374,30 @@ export class RoomEngine {
   /** Aplica tudo que venceu até `now`. Devolve se algo mudou. */
   private runDue(now: number): boolean {
     const s = this.state;
-    const { config } = this;
     let changed = false;
 
     for (let guard = 0; guard < 50; guard++) {
+      const expired = s.players.find((p) => p.disconnectedAt !== null && p.disconnectedAt + this.config.graceMs <= now);
       let fired = false;
-
-      const expired = s.players.find((p) => p.disconnectedAt !== null && p.disconnectedAt + config.graceMs <= now);
       if (expired) {
         this.removePlayer(expired.id);
         fired = true;
-      } else if (s.room.phase === 'role_reveal' && s.roundStartedAt !== null && s.roundStartedAt + config.ackTimeoutMs <= now) {
-        s.room.phase = 'clues';
-        fired = true;
-      } else if (s.room.phase === 'clues' && s.timer.endsAt !== null && s.timer.endsAt <= now) {
-        s.timer = { remainingMs: 0, endsAt: null };
-        fired = true;
-      } else if (s.room.phase === 'voting' && s.allVotedAt !== null && s.allVotedAt + config.allVotedPauseMs <= now) {
-        this.startReveal();
-        fired = true;
-      } else if (s.room.phase === 'revealing' && s.revealStartedAt !== null) {
-        if (s.stage === 0 && s.revealStartedAt + config.revealStage1Ms <= now) {
-          s.stage = 1;
-          fired = true;
-        } else if (s.stage === 1 && s.revealStartedAt + config.revealStage2Ms <= now) {
-          s.stage = 2;
-          this.applyScores();
-          fired = true;
-        }
+      } else {
+        fired = this.game.step(s.game as never, this.ctx());
       }
-
       if (!fired) break;
       changed = true;
-      this.checkAcks();
-      this.checkVotes();
+      if (s.room.phase === 'finished' && s.matchEndedAt === null) s.matchEndedAt = now;
+      this.game.recheck(s.game as never, this.ctx());
     }
     return changed;
   }
 
   private nextDeadline(): number | null {
     const s = this.state;
-    const { config } = this;
     const deadlines: number[] = [];
-    for (const p of s.players) if (p.disconnectedAt !== null) deadlines.push(p.disconnectedAt + config.graceMs);
-    if (s.room.phase === 'role_reveal' && s.roundStartedAt !== null) deadlines.push(s.roundStartedAt + config.ackTimeoutMs);
-    if (s.room.phase === 'clues' && s.timer.endsAt !== null) deadlines.push(s.timer.endsAt);
-    if (s.room.phase === 'voting' && s.allVotedAt !== null) deadlines.push(s.allVotedAt + config.allVotedPauseMs);
-    if (s.room.phase === 'revealing' && s.revealStartedAt !== null) {
-      if (s.stage === 0) deadlines.push(s.revealStartedAt + config.revealStage1Ms);
-      if (s.stage === 1) deadlines.push(s.revealStartedAt + config.revealStage2Ms);
-    }
+    for (const p of s.players) if (p.disconnectedAt !== null) deadlines.push(p.disconnectedAt + this.config.graceMs);
+    deadlines.push(...this.game.deadlines(s.game as never, this.ctx()));
     return deadlines.length ? Math.min(...deadlines) : null;
   }
 
@@ -593,13 +407,16 @@ export class RoomEngine {
     if (this.disposed) return;
     const deadline = this.nextDeadline();
     if (deadline === null) return;
-    this.alarm = this.scheduler.setTimeout(() => {
-      this.alarm = null;
-      if (this.disposed) return;
-      const mutated = this.runDue(this.scheduler.now());
-      this.arm();
-      if (mutated) this.onChange();
-    }, Math.max(0, deadline - this.scheduler.now()));
+    this.alarm = this.scheduler.setTimeout(
+      () => {
+        this.alarm = null;
+        if (this.disposed) return;
+        const mutated = this.runDue(this.scheduler.now());
+        this.arm();
+        if (mutated) this.onChange();
+      },
+      Math.max(0, deadline - this.scheduler.now()),
+    );
   }
 
   private changed(): void {

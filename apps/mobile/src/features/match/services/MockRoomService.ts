@@ -1,10 +1,14 @@
 import {
+  DEFAULT_LIKELY_SETTINGS,
   RoomEngine,
   RoomError,
+  botLikelyVote,
   botVote,
   type ConnectionState,
   type CreateRoomInput,
   type PlayerId,
+  type ImpostorRound,
+  type LikelySettings,
   type PlayerIdentity,
   type RoomCommand,
   type RoomSnapshot,
@@ -132,6 +136,9 @@ export class MockRoomService implements RoomService {
   openVoting = () => this.command({ type: 'openVoting' });
   nextRound = () => this.command({ type: 'nextRound' });
   playAgain = () => this.command({ type: 'playAgain' });
+  endVoting = () => this.command({ type: 'endVoting' });
+  skipQuestion = () => this.command({ type: 'skipQuestion' });
+  endMatch = () => this.command({ type: 'endMatch' });
   ackRole = () => this.command({ type: 'ackRole' });
   setPaused = (paused: boolean) => this.command({ type: 'setPaused', paused });
 
@@ -214,7 +221,7 @@ export class MockRoomService implements RoomService {
 
     // Bots confirmam o papel na hora: quem segura a fase é você.
     if (engine.phase === 'role_reveal') {
-      const acked = new Set(engine.serialize().ackedIds);
+      const acked = new Set((engine.serialize().game as { ackedIds: string[] }).ackedIds);
       engine.playerIds.filter((id) => isBot(id) && !acked.has(id)).forEach((id) => this.tryDispatch(id, { type: 'ackRole' }));
     }
     this.planBotHost();
@@ -226,7 +233,7 @@ export class MockRoomService implements RoomService {
     if (!engine || !isBot(engine.hostId)) return;
     const snap = engine.snapshotFor(engine.hostId);
     const lobbyReady = snap.room.phase === 'lobby' && this.pendingBots.length === 0;
-    const key = `${engine.hostId}|${snap.room.phase}|${snap.room.roundIndex}|${snap.result?.stage ?? '-'}|${lobbyReady}`;
+    const key = `${engine.hostId}|${snap.room.phase}|${snap.room.roundIndex}|${snap.game.result?.stage ?? '-'}|${lobbyReady}`;
     if (key === this.hostPlanKey) return;
     this.hostPlanKey = key;
     this.clearTimer('botHost');
@@ -238,7 +245,7 @@ export class MockRoomService implements RoomService {
     else if (snap.room.phase === 'clues') {
       this.after('botHostTimer', Math.min(1000, botHostOpenVotingMs / 2), () => this.tryDispatch(host, { type: 'setTimerRunning', running: true }));
       this.after('botHost', botHostOpenVotingMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'openVoting' })));
-    } else if (snap.room.phase === 'revealing' && snap.result?.stage === 2) {
+    } else if (snap.room.phase === 'revealing' && snap.game.result?.stage === 2) {
       this.after('botHost', botHostNextRoundMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'nextRound' })));
     }
   }
@@ -247,10 +254,15 @@ export class MockRoomService implements RoomService {
     this.every('botVotes', this.config.botVoteEveryMs, () => {
       const engine = this.engine;
       const state = engine?.serialize();
-      if (!engine || !state?.round || state.room.phase !== 'voting') return this.clearInterval('botVotes');
-      const voter = state.players.find((p) => isBot(p.id) && p.connected && !state.votes[p.id]);
+      if (!engine || !state || state.room.phase !== 'voting') return this.clearInterval('botVotes');
+      const game = state.game as { round?: ImpostorRound | null; votes: Record<string, string>; settings?: LikelySettings };
+      const voter = state.players.find((p) => isBot(p.id) && p.connected && !game.votes[p.id]);
       if (!voter) return this.clearInterval('botVotes');
-      this.tryDispatch(voter.id, { type: 'castVote', targetId: botVote(voter.id, state.round, state.players) });
+      // Cada jogo tem o seu critério: no Impostor o bot tende a acusar o impostor; no outro, escolhe qualquer um.
+      const targetId = game.round
+        ? botVote(voter.id, game.round, state.players)
+        : botLikelyVote(voter.id, state.players, game.settings ?? DEFAULT_LIKELY_SETTINGS);
+      this.tryDispatch(voter.id, { type: 'castVote', targetId });
     });
   }
 
