@@ -250,6 +250,20 @@ Antes só havia saída em duas telas: o lobby e a de pistas do Impostor. Quem es
 
 **Verificado:** a Bomba no navegador (o ✕, o modal, o descartar, e "encerrar" ausente antes da primeira rodada) e a ausência correta do menu no lobby. **Não verificado no navegador:** o menu nas fases de partida dos jogos de sala — elas exigem uma sala com três pessoas, e o servidor de produção ainda recusa o login até a chave ser trocada.
 
+### Som da Bomba-Relógio (2026-09-23)
+
+Os áudios saíram de `audio/` na raiz para `apps/mobile/assets/audio/`, que é de onde o Metro empacota. Ficaram em WAV de propósito: são curtos (o tique tem 90 ms) e sem compressão não há atraso de decodificação — num jogo de ritmo isso se ouve. Juntos pesam menos de 300 KB, e só o que `core/audio/sounds.ts` referencia entra no bundle (a demo de 15 s fica de fora).
+
+**O som segue a mesma regra da animação: não pode dizer quanto falta.** `useBombSound` recebe só a fase e o contador de sustos — nunca `explodeAt` — e sorteia o próprio ritmo em ondas de calmaria e agitação. Um tique-taque que acelerasse junto com o pavio seria um cronômetro sonoro, e o grupo aprenderia a contar as batidas.
+
+**`tempo-acabando.wav` toca apenas no susto falso**, e virou a melhor peça do jogo: o grupo ouve o som de fim, o coração dispara, e nada acontece. Um teste garante que ele só é disparado de dentro do susto, e que nem a animação nem o som encostam no estado da bomba.
+
+Respeita a chave `sound` das configurações, pelo mesmo caminho dos hápticos. Sobraram cinco sons do Impostor (`revelar`, `voto`, `acerto`, `entrou`, `impostor-escapou`) já no lugar, ainda não ligados.
+
+**Verificado:** os quatro WAV carregam, a partida vai até a explosão e o console fica limpo. **Não verificado:** o som saindo de verdade — o navegador sem saída de áudio não prova isso, e o mesmo vale para o háptico.
+
+**De quebra:** havia um `yarn.lock` versionado (entrou no commit anterior sem eu notar) num projeto de npm workspaces. Era ele que fazia `expo install` escolher yarn e falhar. Removido e barrado no `.gitignore`.
+
 ### Passo 6 — Assinatura
 
 - RevenueCat com o id do usuário do Supabase; webhook → `entitlements`.

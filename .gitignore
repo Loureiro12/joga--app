@@ -43,3 +43,6 @@ apps/mobile/android/
 
 # estado das salas do room-server em dev
 .data/
+
+# O projeto usa npm workspaces; um yarn.lock solto faz o `expo install` escolher yarn por engano.
+yarn.lock

@@ -65,15 +65,27 @@ test('todo jogo jogável sabe como começar: ou tem motor de sala, ou é local',
  * e o jogo perderia a graça. Este teste guarda essa fronteira olhando o código: a animação não
  * pode nem ter acesso ao instante da explosão.
  */
-test('a animação de tensão não tem como saber quando a bomba estoura', async () => {
+test('nem a animação nem o som têm como saber quando a bomba estoura', async () => {
   const { readFile } = await import('node:fs/promises');
-  const animacao = await readFile(new URL('../src/features/bomb/components/BurningFuse.tsx', import.meta.url), 'utf8');
+  const ler = (caminho: string) => readFile(new URL(caminho, import.meta.url), 'utf8');
 
-  for (const proibido of ['explodeAt', 'useBombMatch', 'bombStore', 'pendingAlarms', 'heldSince']) {
-    assert.ok(!animacao.includes(proibido), `a animação toca em "${proibido}" — daria para ler o tempo restante na tela`);
+  for (const arquivo of ['../src/features/bomb/components/BurningFuse.tsx', '../src/features/bomb/useBombSound.ts']) {
+    const fonte = await ler(arquivo);
+    for (const proibido of ['explodeAt', 'useBombMatch', 'bombStore', 'pendingAlarms', 'heldSince']) {
+      assert.ok(!fonte.includes(proibido), `${arquivo} toca em "${proibido}" — daria para ler o tempo restante`);
+    }
+    // Sorteia o próprio ritmo; é isso que o mantém descolado da bomba.
+    assert.ok(fonte.includes('Math.random()'), `${arquivo}: sem sorteio próprio, o ritmo vira previsível`);
   }
-  // Ela sorteia o próprio ritmo; é isso que a mantém descolada da bomba.
-  assert.ok(animacao.includes('Math.random()'), 'sem sorteio próprio, o ritmo viraria constante e previsível');
+
+  // O som de "tempo acabando" só pode tocar no susto falso. Tocá-lo de verdade perto do fim
+  // seria um aviso — e o jogo vive de ninguém saber quando acaba.
+  const som = await ler('../src/features/bomb/useBombSound.ts');
+  const toques = som.match(/playSound\('tempoAcabando'/g) ?? [];
+  assert.equal(toques.length, 1, 'o som de fim é tocado em mais de um lugar; só o susto pode dispará-lo');
+  // E o único toque tem de estar dentro do efeito que observa os sustos.
+  const efeitoDoSusto = som.slice(som.indexOf('sustos.current = alarmCount'));
+  assert.ok(efeitoDoSusto.includes("playSound('tempoAcabando')"), 'o som de fim saiu de dentro do susto');
 });
 
 /**

@@ -10,6 +10,7 @@ import { Avatar, Button, Display, IconButton, ModalCard, Overline, Screen, Txt, 
 import { haptics } from '@/core/utils/haptics';
 
 import { BurningFuse, useBombPulse } from '../components/BurningFuse';
+import { useBombSound } from '../useBombSound';
 import { bombActions, useBombMatch } from '../bombStore';
 
 /** De quanto em quanto o app confere o relógio. O pavio é um instante absoluto; isto é só a checagem. */
@@ -29,6 +30,8 @@ export function BombRoundScreen() {
   const shake = useSharedValue(0);
   // O pulso é teatro: sorteia o próprio ritmo e nunca olha o relógio da bomba.
   const pulso = useBombPulse();
+  // O som segue a mesma regra, e recebe só o que não denuncia o tempo.
+  useBombSound(match?.phase ?? 'handoff', match?.alarmCount ?? 0);
 
   // O relógio roda enquanto a bomba está acesa. Ao voltar do segundo plano, confere na hora:
   // o pavio é um instante absoluto, então minimizar o app não segura a explosão (§45).
