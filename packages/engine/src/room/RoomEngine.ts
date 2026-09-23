@@ -16,6 +16,7 @@ import {
 import type { GameCtx, GameRules } from './GameRules';
 import { impostorGame, type ImpostorState } from './impostorGame';
 import { likelyGame, type LikelyState } from './likelyGame';
+import { perfectGame, type PerfectState } from './perfectGame';
 import { secretGame, type SecretState } from './secretGame';
 import type { RoomCommand } from './protocol';
 
@@ -68,7 +69,7 @@ export const realScheduler: Scheduler = {
 type EnginePlayer = Player & { disconnectedAt: number | null };
 
 /** Estado de um jogo, discriminado pelo `gameId` da sala. */
-export type GameState = ImpostorState | LikelyState | SecretState;
+export type GameState = ImpostorState | LikelyState | SecretState | PerfectState;
 
 /** Tudo que é preciso para recriar a sala em outro processo. JSON puro. */
 export type EngineState = {
@@ -97,6 +98,7 @@ const GAMES: Record<GameId, GameRules<never>> = {
   impostor: impostorGame as GameRules<never>,
   likely: likelyGame as GameRules<never>,
   secret: secretGame as GameRules<never>,
+  perfect: perfectGame as GameRules<never>,
 };
 
 export const rulesFor = (gameId: GameId): GameRules<never> => GAMES[gameId] ?? GAMES.impostor;

@@ -178,6 +178,10 @@ export class RemoteRoomService implements RoomService {
   swapMission = () => this.command({ type: 'swapMission' });
   nextReveal = () => this.command({ type: 'nextReveal' });
   voteReveal = (valid: boolean) => this.command({ type: 'voteReveal', valid });
+  pairWith = (targetId: PlayerId) => this.command({ type: 'pairWith', targetId });
+  unpair = () => this.command({ type: 'unpair' });
+  beginQuestions = () => this.command({ type: 'beginQuestions' });
+  submitAnswer = (value: string) => this.command({ type: 'submitAnswer', value });
   ackRole = () => this.command({ type: 'ackRole' });
   castVote = (targetId: PlayerId) => this.command({ type: 'castVote', targetId });
   setPaused = (paused: boolean) => this.command({ type: 'setPaused', paused });

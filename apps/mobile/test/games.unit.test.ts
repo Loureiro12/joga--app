@@ -6,7 +6,19 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { IMPOSTOR_CATEGORIES, SECRET_CONTEXTS, categoryWords, countMissions, type RoomPhase, type SecretContext } from '@jogae/engine';
+import {
+  IMPOSTOR_CATEGORIES,
+  PERFECT_CATEGORIES,
+  PERFECT_LENGTHS,
+  SECRET_CONTEXTS,
+  SPICY_CATEGORY,
+  categoryWords,
+  countMissions,
+  countPerfectQuestions,
+  sanitizePerfectSettings,
+  type RoomPhase,
+  type SecretContext,
+} from '@jogae/engine';
 
 import { GAMES, getGame } from '../src/features/catalog/data/games';
 
@@ -110,7 +122,7 @@ test('toda fase de partida tem saída — inclusive as dos jogos novos', async (
   const { hasMatchToLeave } = await import('../src/features/match/matchPhase');
 
   // Se um jogo novo trouxer uma fase, ela cai aqui e precisa de uma decisão consciente.
-  const emJogo: RoomPhase[] = ['role_reveal', 'clues', 'question', 'voting', 'revealing', 'briefing', 'mission', 'verdict'];
+  const emJogo: RoomPhase[] = ['role_reveal', 'clues', 'question', 'voting', 'revealing', 'briefing', 'mission', 'verdict', 'pairing', 'answering'];
   for (const fase of emJogo) assert.equal(hasMatchToLeave(fase), true, `a fase "${fase}" ficou sem saída`);
 
   // Nestas não há partida para abandonar: o lobby tem o próprio "Fechar" e o resto já acabou.
@@ -233,4 +245,46 @@ test('nenhuma tela de partida escreve por baixo do botão de sair', async () => 
       `${arquivo} abre com uma linha de canto a canto sem MatchTopRow: o ✕ cai em cima do texto da direita`,
     );
   }
+});
+
+/**
+ * Como no Impostor, as categorias da tela e as do banco moram em arquivos diferentes. Se saírem
+ * de sincronia, o host marca "Comida" e o motor sorteia de outro baralho, sem nenhum aviso.
+ */
+test('as categorias do Casal Perfeito na tela são as que o motor conhece', () => {
+  const jogo = getGame('casal-perfeito')!;
+  assert.equal(jogo.playable, true);
+  assert.equal(jogo.engineId, 'perfect', 'cada um responde no próprio celular: o jogo precisa de sala');
+  assert.equal(jogo.device, undefined);
+
+  const oferecidas = jogo.wordCategories.map((c) => c.id);
+  assert.deepEqual(oferecidas.filter((id) => !(PERFECT_CATEGORIES as readonly string[]).includes(id)), [], 'categoria na tela que o motor não conhece');
+  assert.deepEqual(PERFECT_CATEGORIES.filter((c) => !oferecidas.includes(c)), [], 'categoria com perguntas que ninguém consegue escolher');
+
+  // A picante precisa estar na tela para poder ser marcada — é assim que ela entra (§21).
+  assert.ok(oferecidas.includes(SPICY_CATEGORY), 'sem o chip, a categoria opt-in seria inacessível');
+  assert.equal(jogo.wordCategories[jogo.wordCategories.length - 1].id, SPICY_CATEGORY, 'a mais provocativa deveria ser a última da lista');
+
+  // A partida padrão precisa de baralho para não repetir pergunta.
+  const padrao = countPerfectQuestions(sanitizePerfectSettings({ categories: [] }));
+  assert.ok(padrao >= jogo.defaults.rounds, `o padrão pede ${jogo.defaults.rounds} perguntas e a seleção tem ${padrao}`);
+  for (const n of jogo.roundOptions) assert.ok((PERFECT_LENGTHS as readonly number[]).includes(n), `${n} não é uma duração que o motor conhece`);
+});
+
+/**
+ * A resposta de um não pode aparecer no celular do outro antes da revelação — é o jogo inteiro.
+ * O motor já garante isso no snapshot; aqui o alvo é a tela, que não pode ler o estado por outro
+ * caminho nem mostrar tendência de voto enquanto todo mundo responde (§32, §69).
+ */
+test('a tela de responder não tem como mostrar a resposta de mais ninguém', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL('../src/features/match/screens/perfect/AnswerScreen.tsx', import.meta.url), 'utf8');
+
+  // Só a própria resposta vem no snapshot; qualquer outra leitura seria por fora do contrato.
+  assert.ok(src.includes('myAnswer'), 'a tela precisa saber se EU já respondi');
+  for (const proibido of ['votedIds.map', 'answers[', 'result?.couples', 'useMatchStore.getState']) {
+    assert.ok(!src.includes(proibido), `a tela de responder toca em "${proibido}"`);
+  }
+  // "8 de 10 responderam" pode; "3 votos na praia" não.
+  assert.ok(src.includes('votes?.total'), 'faltou o quantos já responderam');
 });

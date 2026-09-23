@@ -30,6 +30,13 @@ type SecretPeek = {
   revealIndex: number;
 };
 
+/** O pedaço do estado do Casal Perfeito que a simulação precisa ler para os bots jogarem. */
+type PerfectPeek = {
+  couples: { id: string; aId: PlayerId; bId: PlayerId }[];
+  invites: Record<PlayerId, PlayerId>;
+  answers: Record<PlayerId, string>;
+};
+
 /** Timings da simulação (README do handoff, "Fase 1"). Ajustáveis para testes. */
 export type MockRoomConfig = {
   latencyMs: number;
@@ -47,6 +54,9 @@ export type MockRoomConfig = {
   /** Desafio Secreto: quanto os bots "levam" para cumprir a missão e para validar a história. */
   botSecretActMs: number;
   botSecretVoteMs: number;
+  /** Casal Perfeito: quanto os bots levam para escolher par e para responder. */
+  botPairMs: number;
+  botAnswerMs: number;
 };
 
 export const DEFAULT_MOCK_CONFIG: MockRoomConfig = {
@@ -63,6 +73,8 @@ export const DEFAULT_MOCK_CONFIG: MockRoomConfig = {
   botHostNextRoundMs: 9000,
   botSecretActMs: 4000,
   botSecretVoteMs: 1400,
+  botPairMs: 1200,
+  botAnswerMs: 1800,
 };
 
 /** Única sala "existente" no mock; qualquer outro código dá "Sala não encontrada". */
@@ -163,6 +175,10 @@ export class MockRoomService implements RoomService {
   swapMission = () => this.command({ type: 'swapMission' });
   nextReveal = () => this.command({ type: 'nextReveal' });
   voteReveal = (valid: boolean) => this.command({ type: 'voteReveal', valid });
+  pairWith = (targetId: PlayerId) => this.command({ type: 'pairWith', targetId });
+  unpair = () => this.command({ type: 'unpair' });
+  beginQuestions = () => this.command({ type: 'beginQuestions' });
+  submitAnswer = (value: string) => this.command({ type: 'submitAnswer', value });
   ackRole = () => this.command({ type: 'ackRole' });
   setPaused = (paused: boolean) => this.command({ type: 'setPaused', paused });
 
@@ -212,6 +228,8 @@ export class MockRoomService implements RoomService {
       else if (engine.phase === 'revealing') asHost({ type: 'nextRound' });
       else if (engine.phase === 'mission') asHost({ type: 'endMatch' });
       else if (engine.phase === 'verdict') asHost({ type: 'nextReveal' });
+      else if (engine.phase === 'pairing') asHost({ type: 'beginQuestions' });
+      else if (engine.phase === 'answering') asHost({ type: 'endMatch' });
     },
   };
 
@@ -251,6 +269,7 @@ export class MockRoomService implements RoomService {
       engine.playerIds.filter((id) => isBot(id) && !acked.has(id)).forEach((id) => this.tryDispatch(id, { type: 'ackRole' }));
     }
     if (engine.phase === 'briefing' || engine.phase === 'mission' || engine.phase === 'verdict') this.planBotSecret();
+    if (engine.phase === 'pairing' || engine.phase === 'answering') this.planBotPerfect();
     this.planBotHost();
   }
 
@@ -301,6 +320,46 @@ export class MockRoomService implements RoomService {
     });
   }
 
+  /**
+   * Os bots jogando o Casal Perfeito. Sem eles o pareamento nunca fecharia — ele espera TODA a
+   * sala ter dupla — e a rodada nunca sairia da primeira pergunta.
+   */
+  private planBotPerfect() {
+    const engine = this.engine;
+    if (!engine) return;
+    const bots = engine.playerIds.filter(isBot);
+
+    if (engine.phase === 'pairing') {
+      // Cada bot livre aceita quem o convidou; sem convite, chama outro bot livre. Assim o humano
+      // sempre encontra alguém disponível para escolher.
+      this.after('botPair', this.config.botPairMs, () => {
+        // Relê o estado a cada bot: o convite do anterior já mudou quem está livre, e agir sobre
+        // uma foto velha faria os bots se convidarem em cadeia sem nunca fechar uma dupla.
+        for (const id of bots) {
+          if (this.engine?.phase !== 'pairing') return;
+          const atual = this.engine.serialize().game as unknown as PerfectPeek;
+          const livre = (quem: PlayerId) => !atual.couples.some((c) => c.aId === quem || c.bId === quem);
+          if (!livre(id)) continue;
+          const convidou = Object.entries(atual.invites).find(([de, para]) => para === id && livre(de))?.[0];
+          const alvo = convidou ?? bots.find((outro) => outro !== id && livre(outro) && !atual.invites[outro] && atual.invites[id] !== outro);
+          if (alvo) this.tryDispatch(id, { type: 'pairWith', targetId: alvo });
+        }
+      });
+      return;
+    }
+
+    this.after('botAnswer', this.config.botAnswerMs, () => {
+      const atual = this.engine;
+      if (atual?.phase !== 'answering') return;
+      for (const id of bots) {
+        const view = atual.snapshotFor(id).game;
+        if (view.kind !== 'perfect' || !view.round || view.myAnswer) continue;
+        const opcoes = view.round.options;
+        this.tryDispatch(id, { type: 'submitAnswer', value: opcoes[Math.floor(Math.random() * opcoes.length)].id });
+      }
+    });
+  }
+
   /** Quando o host é um bot, ele conduz a partida sozinho (com calma, respeitando a pausa). */
   private planBotHost() {
     const engine = this.engine;
@@ -327,6 +386,10 @@ export class MockRoomService implements RoomService {
       this.after('botHost', this.config.botSecretActMs + botHostNextRoundMs, () => this.tryDispatch(host, { type: 'endMatch' }));
     } else if (snap.room.phase === 'verdict') {
       this.after('botHost', botHostNextRoundMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'nextReveal' })));
+    } else if (snap.room.phase === 'pairing' && snap.game.kind === 'perfect' && !snap.game.pairing?.waiting.length) {
+      this.after('botHost', botHostStartMs, () => this.tryDispatch(host, { type: 'beginQuestions' }));
+    } else if (snap.room.phase === 'revealing' && snap.game.kind === 'perfect' && snap.game.result?.stage === 2) {
+      this.after('botHost', botHostNextRoundMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'nextRound' })));
     }
   }
 

@@ -13,6 +13,8 @@ export * from './games/bomb';
 export * from './games/couple';
 export * from './games/impostor';
 export * from './games/likely';
+export * from './games/perfect';
 export * from './room/protocol';
 export * from './room/RoomEngine';
+export * from './room/perfectGame';
 export * from './room/secretGame';

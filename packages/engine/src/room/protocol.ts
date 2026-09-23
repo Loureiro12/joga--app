@@ -43,7 +43,16 @@ export type RoomCommand =
   /** Hora da verdade: host passa para o próximo. */
   | { type: 'nextReveal' }
   /** Hora da verdade: o grupo diz se a história valeu. */
-  | { type: 'voteReveal'; valid: boolean };
+  | { type: 'voteReveal'; valid: boolean }
+  /* Casal Perfeito */
+  /** Convida alguém para formar dupla — ou aceita, quando a pessoa já tinha convidado você (§7). */
+  | { type: 'pairWith'; targetId: PlayerId }
+  /** Desfaz o convite, ou a dupla já formada. */
+  | { type: 'unpair' }
+  /** Host: todo mundo tem par, podem começar as perguntas. */
+  | { type: 'beginQuestions' }
+  /** Responde a pergunta da rodada. Depois de enviada, não muda (§33). */
+  | { type: 'submitAnswer'; value: string };
 
 /** Nome e cor vêm do perfil do app; o id do jogador vem SEMPRE do token, nunca da mensagem. */
 export type PlayerAppearance = { name: string; color: string };

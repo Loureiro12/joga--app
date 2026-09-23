@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Seis jogos jogáveis: Impostor, Quem é Mais Provável e Desafio Secreto (em sala), Bomba-Relógio, Bomba: Alfabeto e Entre Nós (num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Sete jogos jogáveis: Impostor, Quem é Mais Provável, Desafio Secreto e Casal Perfeito (em sala), Bomba-Relógio, Bomba: Alfabeto e Entre Nós (num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -321,6 +321,30 @@ Essa diferença de duração é o que mais mexeu no código:
 **Dois bugs de servidor apareceram nesse passo** e foram corrigidos: `totalRounds: 0` era recusado na criação da sala (o Desafio Secreto não tem rodadas, dura o rolê), e a dificuldade escolhida pelo host era descartada na validação — o grupo jogaria com uma configuração que ninguém pediu.
 
 **Fica de fora:** missões em dupla, missões criadas pelo grupo, foto como prova e a segunda rodada de missões na mesma noite.
+
+### Jogo 7 — Casal Perfeito (2026-09-23)
+
+Os dois respondem em segredo, no próprio celular, e a graça é a espera entre apertar a resposta e descobrir se o outro apertou a mesma. Primeiro jogo em que **a unidade não é o jogador, é a dupla**: placar, sequência, título e estatística são do par.
+
+Isso encostou numa suposição que estava em todo o resto do código — o `RoomEngine` só conhece jogadores. A saída foi não mexer nele: os dois do casal carregam a mesma pontuação no placar da sala, e o jogo guarda o placar de verdade no próprio histórico. Assim o ranking e o boletim do histórico continuam funcionando sem saber o que é um casal.
+
+**O pareamento é de mão dupla** (§7–8): escolher não basta, o outro precisa aceitar. Um toque errado não forma dupla nenhuma, e ninguém é colocado num casal sem saber. A partida só começa quando **toda a sala** tem par — quem ficasse de fora travaria a rodada esperando uma resposta que nunca vem.
+
+**As quatro mecânicas** (§24–31) existem para a partida não virar a mesma pergunta vinte vezes: `who` (quem dos dois), `same` (a mesma pergunta para os dois), `know` (um responde sobre si, o outro prevê, alternando a vez) e `scale` (1 a 5). Só a escala tem meio-termo: errar por um ponto vale metade, porque é a diferença entre "não combinamos" e "chegamos perto" (§42).
+
+**"Quem é mais" compara a pessoa, não a palavra** (§25). Ana marca "Carol" e Carol marca "Eu": são respostas diferentes na tela e a mesma pessoa no servidor. O id da pessoa escolhida viaja junto com o texto para a revelação, porque só o celular de quem está olhando sabe se aquela pessoa é "você" ou um nome.
+
+**A tensão vem de esconder e de contar** — o placar aparece de cinco em cinco perguntas e **some nas três últimas** (§45–46). Terminar sem saber quem está na frente é o que faz a contagem do fim valer alguma coisa. Empate no topo abre desempate: uma pergunta de escala, e vence a menor diferença interna (§48–49).
+
+**Sequência não multiplica ponto** (§41), por recomendação da própria spec: multiplicador decidiria a partida na terceira pergunta e tiraria a graça de quem começou torto. Ela é conquista visual.
+
+**Conteúdo:** 140 perguntas em 9 categorias, e a mais provocativa (`🔥 Casal`) fica fora do "Misturado" — só entra se o host marcar (§21). A régua de segurança seguiu a §59: nada de traição, término, ex, fertilidade, gravidez, sexo explícito, dívida, saúde, trauma, aparência, segredo ou comparação com outro parceiro, e nenhuma pergunta cujo caminho honesto termine em briga. O jogo é jogado na frente dos outros casais, e ninguém escolheu terapia em grupo.
+
+**O fim não dá nota** (§52). Ele mostra quem teve mais respostas iguais *nesta partida*, e diz isso com essas palavras. Nenhuma porcentagem de compatibilidade, nenhum "esse casal se conhece de verdade". O título do casal que menos combinou existe, mas é piada, e um teste reprova qualquer texto de título que soe a veredito.
+
+**Verificado no navegador:** partida de 10 perguntas do começo ao fim com cinco bots — pareamento, as quatro mecânicas, cronômetro, resposta enviada, revelação casal a casal, placar entre rodadas, match final e o resultado com títulos e estatísticas. Sem erro de console.
+
+**Fica de fora:** rodada de aposta (§44), perguntas criadas pelo host (§56), packs premium (§57), IA (§58) e o nome de equipe editável (§10 — cor e emoji são automáticos). A revelação é sempre simultânea, casal a casal na mesma tela; a variante de abrir um casal por vez nas perguntas especiais (§37/§39) não entrou.
 
 ### Passo 6 — Assinatura
 

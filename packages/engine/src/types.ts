@@ -6,12 +6,13 @@
 
 // Só tipo: o `import type` é apagado na compilação, então o ciclo types ↔ likely-types não existe em runtime.
 import type { LikelyIntensity, LikelySettings } from './games/likely-types';
+import type { PerfectCouple, PerfectPairingView, PerfectResultView, PerfectRoundPublic, PerfectSettings, PerfectSummary } from './games/perfect-types';
 import type { SecretContext, SecretHighlight, SecretMission, SecretReveal, SecretSettings, SecretStatus } from './games/secret-types';
 
 export type PlayerId = string;
 
 /** Jogos com fluxo de partida implementado. O catálogo do app tem outros, ainda "em breve". */
-export type GameId = 'impostor' | 'likely' | 'secret';
+export type GameId = 'impostor' | 'likely' | 'secret' | 'perfect';
 
 export type Player = {
   id: PlayerId;
@@ -47,7 +48,11 @@ export type RoomPhase =
   /** Desafio Secreto: a noite correndo. O app praticamente some. */
   | 'mission'
   /** Desafio Secreto: a hora da verdade, um jogador por vez. */
-  | 'verdict';
+  | 'verdict'
+  /** Casal Perfeito: formando as duplas, antes de a primeira pergunta entrar. */
+  | 'pairing'
+  /** Casal Perfeito: todos respondendo em segredo, cada um no seu celular. */
+  | 'answering';
 
 export type ClosedReason = 'host_left' | 'not_enough_players';
 
@@ -153,6 +158,19 @@ export type GameView =
       round: LikelyRoundPublic | null;
       result: LikelyResultView | null;
       summary: LikelySummary | null;
+    }
+  | {
+      kind: 'perfect';
+      /** Os casais da sala. Toda tela precisa: é por eles que o jogo fala, não por jogador. */
+      couples: PerfectCouple[];
+      myCoupleId: string | null;
+      /** Só enquanto as duplas se formam. */
+      pairing: PerfectPairingView | null;
+      round: PerfectRoundPublic | null;
+      /** A resposta deste jogador nesta rodada — nunca a do parceiro (§32). */
+      myAnswer: string | null;
+      result: PerfectResultView | null;
+      summary: PerfectSummary | null;
     };
 
 /** Foto completa do que ESTE cliente pode ver. É o único formato que as telas consomem. */
@@ -267,6 +285,7 @@ export type SecretSummary = {
 export type PlayerIdentity = { id: PlayerId; name: string; color: string };
 
 export type { LikelyIntensity, LikelySettings };
+export * from './games/perfect-types';
 export * from './games/secret-types';
 
 /**
@@ -278,7 +297,7 @@ export type CreateRoomInput = {
   category: string;
   totalRounds: number;
   maxPlayers: number;
-  settings?: Partial<LikelySettings> & Partial<SecretSettings>;
+  settings?: Partial<LikelySettings> & Partial<SecretSettings> & Partial<PerfectSettings>;
 };
 
 export type RoomErrorCode =

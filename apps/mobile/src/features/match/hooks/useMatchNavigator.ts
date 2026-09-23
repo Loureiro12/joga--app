@@ -13,6 +13,7 @@ import { useSnapshot } from '../store/matchStore';
 export function routeForSnapshot(s: RoomSnapshot): string {
   const likely = s.game.kind === 'likely';
   const secret = s.game.kind === 'secret';
+  const perfect = s.game.kind === 'perfect';
   switch (s.room.phase) {
     case 'lobby':
       return routes.match.lobby;
@@ -28,13 +29,19 @@ export function routeForSnapshot(s: RoomSnapshot): string {
       return routes.match.mission;
     case 'verdict':
       return routes.match.verdict;
+    case 'pairing':
+      return routes.match.pairing;
+    case 'answering':
+      return routes.match.answer;
     case 'voting':
       if (!s.votes?.myVote) return likely ? routes.match.likelyVote : routes.match.vote;
       return likely ? routes.match.likelyWaiting : routes.match.waitingVotes;
     case 'revealing':
+      if (perfect) return routes.match.matchReveal;
       return likely ? routes.match.likelyResult : routes.match.result;
     case 'finished':
       if (secret) return routes.match.secretEnd;
+      if (perfect) return routes.match.perfectEnd;
       return likely ? routes.match.likelyEnd : routes.match.end;
     case 'closed':
       return routes.match.aborted;

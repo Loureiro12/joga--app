@@ -10,8 +10,8 @@ import { getGame } from '@/features/catalog/data/games';
 import { usePremiumStore } from '@/features/premium/premiumStore';
 import { services } from '@/services';
 
-import type { LikelyIntensity, LikelySettings, SecretContext, SecretDifficulty, SecretSettings } from '@jogae/engine';
-import { SECRET_LIMITS } from '@jogae/engine';
+import type { LikelyIntensity, LikelySettings, PerfectSettings, SecretContext, SecretDifficulty, SecretSettings } from '@jogae/engine';
+import { PERFECT_TIMERS, SECRET_LIMITS, countPerfectQuestions, sanitizePerfectSettings } from '@jogae/engine';
 import { roomErrorMessage } from '../hooks/roomActions';
 import { getIdentity } from '../hooks/useIdentity';
 
@@ -58,6 +58,9 @@ export function CreateMatchScreen() {
   const game = getGame(gameId) ?? getGame('impostor')!;
   const isLikely = game.engineId === 'likely';
   const isSecret = game.engineId === 'secret';
+  const isPerfect = game.engineId === 'perfect';
+  /** Jogos em que a categoria não é uma só: marcar várias (ou nenhuma) é o normal. */
+  const multiCategoria = isLikely || isPerfect;
   const isPremium = usePremiumStore((s) => s.isPremium);
   const [players, setPlayers] = useState(game.defaults.players);
   const [category, setCategory] = useState(game.defaults.category);
@@ -67,6 +70,7 @@ export function CreateMatchScreen() {
   const [intensities, setIntensities] = useState<LikelyIntensity[]>(['leve', 'moderado']);
   const [difficulties, setDifficulties] = useState<SecretDifficulty[]>(['facil', 'media']);
   const [accusations, setAccusations] = useState(2);
+  const [timerSec, setTimerSec] = useState(20);
   const [allowSelfVote, setAllowSelfVote] = useState(true);
   const [openVotes, setOpenVotes] = useState(true);
   const [competitive, setCompetitive] = useState(false);
@@ -85,11 +89,13 @@ export function CreateMatchScreen() {
     setIntensities((current) => (current.includes(level) ? (current.length > 1 ? current.filter((i) => i !== level) : current) : [...current, level]));
   };
 
-  const settings: Partial<LikelySettings> & Partial<SecretSettings> | undefined = isLikely
+  const settings: (Partial<LikelySettings> & Partial<SecretSettings> & Partial<PerfectSettings>) | undefined = isLikely
     ? { categories, intensities, allowSelfVote, openVotes, competitive }
     : isSecret
       ? { context: category as SecretContext, difficulties, accusations, swaps: 1, competitive }
-      : undefined;
+      : isPerfect
+        ? { categories, timerSec }
+        : undefined;
 
   const create = async () => {
     setLoading(true);
@@ -104,7 +110,7 @@ export function CreateMatchScreen() {
     }
   };
 
-  const categoryResumo = isLikely
+  const categoryResumo = multiCategoria
     ? categories.length === 0
       ? 'todas as categorias'
       : `${categories.length} categoria${categories.length > 1 ? 's' : ''}`
@@ -132,8 +138,13 @@ export function CreateMatchScreen() {
 
       <View>
         <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
-          {isLikely ? 'Categorias' : isSecret ? 'Onde vai ser?' : 'Categoria'}
+          {multiCategoria ? 'Categorias' : isSecret ? 'Onde vai ser?' : 'Categoria'}
         </Txt>
+        {isPerfect && (
+          <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: -6, marginBottom: 10 }}>
+            Sem marcar nada, vem de tudo — menos 🔥 Casal, que só entra se vocês escolherem.
+          </Txt>
+        )}
         {isSecret && (
           <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: -6, marginBottom: 10 }}>
             Cada lugar tem missões próprias: no churrasco tem carne e fogo; na viagem, mala e roteiro.
@@ -144,14 +155,14 @@ export function CreateMatchScreen() {
             .filter((c) => features.premium || !c.premium)
             .map((c) => {
               const locked = !!c.premium && !isPremium;
-              const selected = isLikely ? (c.id === ANY ? categories.length === 0 : categories.includes(c.id)) : c.id === category;
+              const selected = multiCategoria ? (c.id === ANY ? categories.length === 0 : categories.includes(c.id)) : c.id === category;
               return (
                 <Chip
                   key={c.id}
                   emoji={c.emoji}
                   label={c.label}
                   state={locked ? 'locked' : selected ? 'selected' : 'default'}
-                  onPress={() => (isLikely ? toggleCategory(c.id) : setCategory(c.id))}
+                  onPress={() => (multiCategoria ? toggleCategory(c.id) : setCategory(c.id))}
                 />
               );
             })}
@@ -234,10 +245,29 @@ export function CreateMatchScreen() {
         </>
       )}
 
+      {isPerfect && (
+        <View>
+          <Txt font="body600" size={16} style={{ marginBottom: 4 }}>
+            Tempo por pergunta
+          </Txt>
+          <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginBottom: 10 }}>
+            O relógio dá ritmo e corta a tentação de combinar resposta.
+          </Txt>
+          <Segmented
+            value={timerSec}
+            onChange={setTimerSec}
+            itemHeight={48}
+            fontSize={20}
+            font="display800"
+            options={PERFECT_TIMERS.map((n) => ({ value: n, label: n === 0 ? '∞' : `${n}s` }))}
+          />
+        </View>
+      )}
+
       {!isSecret && (
       <View>
         <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
-          {isLikely ? 'Perguntas' : 'Rodadas'}
+          {isLikely || isPerfect ? 'Perguntas' : 'Rodadas'}
         </Txt>
         <Segmented
           value={rounds}
@@ -278,6 +308,12 @@ export function CreateMatchScreen() {
       <Txt font="body400" size={13} color={colors.muted} center>
         {game.name} · {categoryResumo} · {roundsResumo} · até {players} jogadores
       </Txt>
+      {/* Pedir 30 perguntas de uma categoria que só tem 14 faria o baralho recomeçar no meio. */}
+      {isPerfect && rounds > 0 && countPerfectQuestions(sanitizePerfectSettings({ categories })) < rounds && (
+        <Txt font="body400" size={12} lh={1.35} color={colors.accent} center>
+          Essa seleção tem {countPerfectQuestions(sanitizePerfectSettings({ categories }))} perguntas. Marque mais categorias para não repetir.
+        </Txt>
+      )}
       {players < game.recommendedPlayers && (
         <Txt font="body400" size={12} lh={1.35} color={colors.muted} center>
           Com menos de {game.recommendedPlayers} o jogo fica previsível — mas a sala abre do mesmo jeito.

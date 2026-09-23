@@ -1,10 +1,13 @@
 import {
+  PERFECT_CATEGORIES,
+  PERFECT_TIMERS,
   PROTOCOL_VERSION,
   SECRET_CONTEXTS,
   SECRET_DIFFICULTIES,
   SECRET_LIMITS,
   type ClientMessage,
   type CreateRoomInput,
+  type GameId,
   type LikelyIntensity,
   type PlayerAppearance,
   type RoomCommand,
@@ -42,7 +45,10 @@ function gameSettings(v: unknown): CreateRoomInput['settings'] {
     difficulties: list(v.difficulties, SECRET_DIFFICULTIES.length)?.filter((d): d is SecretDifficulty => (SECRET_DIFFICULTIES as readonly string[]).includes(d)),
     accusations: num(v.accusations, accusations.min, accusations.max),
     swaps: num(v.swaps, swaps.min, swaps.max),
-    categories: list(v.categories, 12),
+    // Do Casal Perfeito. As categorias dele e as do outro jogo dividem o mesmo campo; cada motor
+    // fica com o que reconhece e descarta o resto.
+    timerSec: (PERFECT_TIMERS as readonly number[]).includes(v.timerSec as number) ? (v.timerSec as number) : undefined,
+    categories: list(v.categories, Math.max(12, PERFECT_CATEGORIES.length)),
     intensities: list(v.intensities, 3)?.filter((i): i is LikelyIntensity => INTENSITIES.has(i)),
     allowSelfVote: bool(v.allowSelfVote),
     openVotes: bool(v.openVotes),
@@ -52,14 +58,17 @@ function gameSettings(v: unknown): CreateRoomInput['settings'] {
 
 function roomInput(v: unknown): CreateRoomInput | null {
   if (!isObject(v)) return null;
-  if (v.gameId !== 'impostor' && v.gameId !== 'likely' && v.gameId !== 'secret') return null; // jogos com regras no engine
+  // Jogos com regras no engine. Sem isto, uma sala nasceria sem motor e morreria no primeiro comando.
+  const jogos: GameId[] = ['impostor', 'likely', 'secret', 'perfect'];
+  if (typeof v.gameId !== 'string' || !jogos.includes(v.gameId as GameId)) return null;
+  const gameId = v.gameId as GameId;
   if (typeof v.category !== 'string' || v.category.length < 1 || v.category.length > 30) return null;
   // `totalRounds: 0` é a partida sem limite do "Quem é Mais Provável?" e a ausência de rodada no
   // Desafio Secreto, que dura o rolê inteiro. Só o Impostor exige pelo menos uma.
-  const minRounds = v.gameId === 'impostor' ? 1 : 0;
+  const minRounds = gameId === 'impostor' ? 1 : 0;
   // O teto da sala pode ser 2: o mínimo é técnico, não recomendação — quem decide o tamanho é o host.
   if (!isInt(v.totalRounds, minRounds, 30) || !isInt(v.maxPlayers, 2, 20)) return null;
-  return { gameId: v.gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers, settings: gameSettings(v.settings) };
+  return { gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers, settings: gameSettings(v.settings) };
 }
 
 function command(v: unknown): RoomCommand | null {

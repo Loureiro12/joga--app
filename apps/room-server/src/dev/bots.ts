@@ -45,7 +45,14 @@ function bot(index: number, onCode?: (code: string) => void) {
     const iAmHost = s.room.hostId === s.meId;
     const game = s.game;
     // Chave do "já reagi a isto": muda quando a situação muda, e cada jogo diz o que é situação.
-    const deal = game.kind === 'impostor' ? (game.round?.deal ?? 0) : game.kind === 'likely' ? (game.round?.questionId ?? '-') : (game.mine?.status ?? '-');
+    const deal =
+      game.kind === 'impostor'
+        ? (game.round?.deal ?? 0)
+        : game.kind === 'likely'
+          ? (game.round?.questionId ?? '-')
+          : game.kind === 'secret'
+            ? (game.mine?.status ?? '-')
+            : `${game.round?.questionId ?? '-'}|${game.couples.length}`;
     const stage = game.kind === 'secret' ? '-' : (game.result?.stage ?? '-');
     const key = `${s.room.phase}|${deal}|${stage}|${iAmHost}|${s.players.filter((p) => p.connected).length}`;
     if (key === acted) return;
@@ -61,6 +68,20 @@ function bot(index: number, onCode?: (code: string) => void) {
       const alvos = game.kind === 'likely' ? game.round!.targets : s.players.filter((p) => p.id !== s.meId).map((p) => p.id);
       later(rand(1500, 5000), () => cmd({ type: 'castVote', targetId: pick(alvos) }));
     }
+    // Casal Perfeito: o bot procura um par livre e responde qualquer coisa. Sem isso, a fase de
+    // pareamento não fecharia — ela espera TODO mundo da sala ter dupla.
+    if (game.kind === 'perfect') {
+      if (s.room.phase === 'pairing' && !game.myCoupleId) {
+        const convidou = game.pairing?.invitedBy[0];
+        const livre = convidou ?? pick(game.pairing?.waiting.filter((id) => id !== s.meId) ?? []);
+        if (livre) later(rand(800, 2500), () => cmd({ type: 'pairWith', targetId: livre }));
+      }
+      if (s.room.phase === 'answering' && !game.myAnswer && game.round) {
+        const opcoes = game.round.options;
+        later(rand(1500, 4000), () => cmd({ type: 'submitAnswer', value: pick(opcoes).id }));
+      }
+    }
+
     if (!iAmHost) return;
     // Bot que é (ou virou) host conduz a partida.
     if (s.room.phase === 'lobby' && s.players.filter((p) => p.connected).length >= 3) later(4000, () => cmd({ type: 'startMatch' }));
@@ -69,6 +90,8 @@ function bot(index: number, onCode?: (code: string) => void) {
       later(15_000, () => cmd({ type: 'openVoting' }));
     }
     if (s.room.phase === 'question') later(rand(4000, 7000), () => cmd({ type: 'openVoting' }));
+    // O host bot só abre as perguntas quando todo mundo já tem par.
+    if (game.kind === 'perfect' && s.room.phase === 'pairing' && !game.pairing?.waiting.length) later(3000, () => cmd({ type: 'beginQuestions' }));
     if (s.room.phase === 'revealing' && game.kind !== 'secret' && game.result?.stage === 2) later(9000, () => cmd({ type: 'nextRound' }));
 
     // Desafio Secreto: o bot confirma a missão para a noite poder começar, e não faz mais nada —

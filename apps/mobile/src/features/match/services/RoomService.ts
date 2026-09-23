@@ -38,6 +38,11 @@ export interface RoomService {
   swapMission(): Promise<void>;
   nextReveal(): Promise<void>;
   voteReveal(valid: boolean): Promise<void>;
+  /* Casal Perfeito */
+  pairWith(targetId: PlayerId): Promise<void>;
+  unpair(): Promise<void>;
+  beginQuestions(): Promise<void>;
+  submitAnswer(value: string): Promise<void>;
 
   /* Quem é Mais Provável */
   endVoting(): Promise<void>;

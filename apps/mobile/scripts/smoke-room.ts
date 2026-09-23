@@ -166,4 +166,73 @@ async function secret() {
   await svc.leaveRoom();
 }
 
-host().then(guest).then(likely).then(secret).then(() => { console.log('SMOKE OK'); process.exit(0); }).catch((e) => { console.error('SMOKE FAIL', e); process.exit(1); });
+/**
+ * Casal Perfeito: o jogo em que a unidade é a dupla, não o jogador. Confere o pareamento de mão
+ * dupla, o segredo da resposta até a revelação e o placar por casal.
+ */
+async function perfect() {
+  const perfectView = (x: RoomSnapshot) => x.game as Extract<RoomSnapshot['game'], { kind: 'perfect' }>;
+  const svc = new MockRoomService(fast);
+  await svc.createRoom({ gameId: 'perfect', category: 'Misturado', totalRounds: 3, maxPlayers: 4, settings: { categories: [], timerSec: 20 } }, me);
+  await until(svc, (x) => x.players.length >= 4, 'lobby');
+  await svc.startMatch();
+
+  let s = await until(svc, (x) => x.room.phase === 'pairing', 'pareamento');
+  // Convite de mão dupla: escolher não basta, o outro precisa aceitar (§8).
+  const alvo = s.players.find((p) => p.id !== 'me' && !perfectView(s).couples.some((c) => c.aId === p.id || c.bId === p.id))!;
+  await svc.pairWith(alvo.id);
+  s = await until(svc, (x) => perfectView(x).myCoupleId !== null, 'minha dupla');
+  console.log('perfect dupla:', s.players.find((p) => p.id === alvo.id)?.name, '· casais:', perfectView(s).couples.length);
+
+  // Ninguém fica de fora: o host só consegue começar quando toda a sala tem dupla (§9).
+  s = await until(svc, (x) => perfectView(x).pairing!.waiting.length === 0, 'todos pareados');
+  await svc.beginQuestions();
+  s = await until(svc, (x) => x.room.phase === 'answering', 'primeira pergunta');
+  const primeira = perfectView(s).round!;
+  console.log('perfect pergunta 1:', primeira.prompt, '·', primeira.category, '·', primeira.type);
+  if (!primeira.options.length) throw new Error('a pergunta veio sem opções');
+  if (primeira.type === 'who' && primeira.options.length !== 2) throw new Error('"quem é mais" tem de ter duas opções');
+
+  await svc.submitAnswer(primeira.options[0].id);
+  s = await until(svc, (x) => perfectView(x).myAnswer !== null, 'resposta enviada');
+  // O que eu marquei não pode estar no snapshot de mais ninguém: é o coração do jogo (§32).
+  const fio = JSON.stringify(s);
+  for (const campo of ['"answers"', '"invites"', '"aboutOf"']) {
+    if (fio.includes(campo)) throw new Error('o snapshot carrega o campo interno ' + campo);
+  }
+  if (s.votes?.myVote) throw new Error('a resposta vazou pelo progresso da votação');
+
+  s = await until(svc, (x) => perfectView(x).result?.stage === 2, 'revelação');
+  const r = perfectView(s).result!;
+  console.log('perfect rodada 1:', r.couples.map((c) => `${c.coupleId}:${c.outcome}+${c.points}`).join(' '));
+  if (r.couples.length !== perfectView(s).couples.length) throw new Error('faltou casal na revelação');
+
+  for (let i = 2; i <= 3; i++) {
+    await svc.nextRound();
+    s = await until(svc, (x) => x.room.phase === 'answering' && x.room.roundIndex === i, 'pergunta ' + i);
+    if (perfectView(s).round!.questionId === primeira.questionId) throw new Error('a pergunta repetiu na mesma partida');
+    await svc.submitAnswer(perfectView(s).round!.options[0].id);
+    await until(svc, (x) => perfectView(x).result?.stage === 2, 'revelação ' + i);
+  }
+  // A última vale dobro (§47).
+  if (perfectView(s).round!.points !== 200) throw new Error('o match final não valeu dobro');
+
+  await svc.nextRound();
+  s = await until(svc, (x) => x.room.phase === 'finished' || perfectView(x).round?.tieBreak === true, 'fim ou desempate');
+  if (perfectView(s).round?.tieBreak) {
+    // Empate no topo: a partida não acaba sem desempate (§48).
+    console.log('perfect desempate entre', perfectView(s).couples.length, 'casais');
+    await svc.submitAnswer(perfectView(s).round!.options[0].id);
+    await until(svc, (x) => perfectView(x).result?.stage === 2, 'revelação do desempate');
+    await svc.nextRound();
+    s = await until(svc, (x) => x.room.phase === 'finished', 'fim depois do desempate');
+  }
+
+  const resumo = perfectView(s).summary!;
+  console.log('perfect fim:', resumo.standings.map((l) => `${l.matches}/${l.rounds}`).join(' '), '·', resumo.percent + '% coincidiram ·', resumo.titles.length, 'títulos');
+  if (!resumo.mine) throw new Error('o resumo não trouxe o casal de quem está olhando');
+  if (resumo.mine.rounds !== 3 && resumo.mine.rounds !== 4) throw new Error('o resumo perdeu rodadas: ' + resumo.mine.rounds);
+  await svc.leaveRoom();
+}
+
+host().then(guest).then(likely).then(secret).then(perfect).then(() => { console.log('SMOKE OK'); process.exit(0); }).catch((e) => { console.error('SMOKE FAIL', e); process.exit(1); });
