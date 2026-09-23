@@ -221,6 +221,10 @@ O catálogo ganhou `device: 'sala' | 'local'`, e é ele que decide o destino do 
 
 **Verificado:** 72 testes no engine, incluindo o viés do sorteio, o piso de segurança, o pavio que não reinicia, a explosão depois do app voltar do segundo plano, ordem caos sem repetição, os três modos até o fim, desafio sem repetir e os destaques. **Não verificado:** as telas num aparelho de verdade, e o háptico (não roda no navegador).
 
+**Tensão na tela (2026-09-23).** A rodada ganhou pulso, brasa e tremor enquanto a bomba está acesa. O desenho é ditado por uma restrição: **nada visual pode acompanhar o pavio**. Se a agitação crescesse junto com o tempo, o grupo aprenderia a ler a tela em duas partidas e a incerteza — que é o jogo inteiro — acabaria.
+
+Por isso a animação (`features/bomb/components/BurningFuse.tsx`) **não recebe nem consulta `explodeAt`**: ela sorteia o próprio ritmo, em ondas de calmaria e agitação de 2,5 a 5 s. Às vezes a tela se acalma um segundo antes de estourar; às vezes fica frenética e não acontece nada. Um teste em `games.unit.test.ts` lê o arquivo e falha se ele encostar no estado da bomba — é uma fronteira que só se sustenta se alguém a vigiar.
+
 **Fica de fora por ora:** sons (o projeto não tem assets de áudio), botão de contestação (§27 — a própria spec sugere deixar verbal no MVP), modificadores de rodada (§39), desafios personalizados (§42), IA (§43) e card de compartilhamento (§52). Nada disso está no caminho do resto.
 
 ### Log de desenvolvimento (2026-09-23)

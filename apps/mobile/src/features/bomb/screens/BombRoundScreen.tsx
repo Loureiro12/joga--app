@@ -9,6 +9,7 @@ import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Display, Overline, Screen, Txt } from '@/core/ui';
 import { haptics } from '@/core/utils/haptics';
 
+import { BurningFuse, useBombPulse } from '../components/BurningFuse';
 import { bombActions, useBombMatch } from '../bombStore';
 
 /** De quanto em quanto o app confere o relógio. O pavio é um instante absoluto; isto é só a checagem. */
@@ -24,6 +25,8 @@ export function BombRoundScreen() {
   const match = useBombMatch();
   const alarmes = useRef(0);
   const shake = useSharedValue(0);
+  // O pulso é teatro: sorteia o próprio ritmo e nunca olha o relógio da bomba.
+  const pulso = useBombPulse();
 
   // O relógio roda enquanto a bomba está acesa. Ao voltar do segundo plano, confere na hora:
   // o pavio é um instante absoluto, então minimizar o app não segura a explosão (§45).
@@ -136,12 +139,14 @@ export function BombRoundScreen() {
           </Txt>
         </View>
 
-        <View style={{ flex: 1, justifyContent: 'center', gap: 22 }}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: radii.card, padding: 24 }}>
+        <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
+          <Animated.View style={[{ backgroundColor: colors.surface, borderRadius: radii.card, padding: 24 }, pulso]}>
             <Display size={34} lh={1.15} center>
               {match.challenge?.text}
             </Display>
-          </View>
+          </Animated.View>
+
+          <BurningFuse />
 
           <View style={{ alignItems: 'center', gap: 6 }}>
             <Txt font="body600" size={14} color={colors.muted}>
@@ -150,9 +155,6 @@ export function BombRoundScreen() {
             <Display size={44} center adjustsFontSizeToFit numberOfLines={1}>
               {active?.name}
             </Display>
-            <Txt font="body400" size={13} color={colors.muted}>
-              🔥 o pavio está queimando…
-            </Txt>
           </View>
         </View>
 

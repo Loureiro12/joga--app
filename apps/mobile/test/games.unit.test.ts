@@ -58,3 +58,20 @@ test('todo jogo jogável sabe como começar: ou tem motor de sala, ou é local',
     assert.ok(game.recommendedPlayers <= game.maxPlayers, `${game.id}: o recomendado não cabe no teto`);
   }
 });
+
+/**
+ * A Bomba-Relógio inteira depende de ninguém saber quanto falta. A tensão na tela é teatro —
+ * se algum efeito visual acompanhasse o pavio, o grupo aprenderia a ler a tela em duas partidas
+ * e o jogo perderia a graça. Este teste guarda essa fronteira olhando o código: a animação não
+ * pode nem ter acesso ao instante da explosão.
+ */
+test('a animação de tensão não tem como saber quando a bomba estoura', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const animacao = await readFile(new URL('../src/features/bomb/components/BurningFuse.tsx', import.meta.url), 'utf8');
+
+  for (const proibido of ['explodeAt', 'useBombMatch', 'bombStore', 'pendingAlarms', 'heldSince']) {
+    assert.ok(!animacao.includes(proibido), `a animação toca em "${proibido}" — daria para ler o tempo restante na tela`);
+  }
+  // Ela sorteia o próprio ritmo; é isso que a mantém descolada da bomba.
+  assert.ok(animacao.includes('Math.random()'), 'sem sorteio próprio, o ritmo viraria constante e previsível');
+});
