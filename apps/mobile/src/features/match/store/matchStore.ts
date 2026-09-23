@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { toast } from '@/core/ui/toast';
 import { services } from '@/services';
 
-import type { ConnectionState, Player, PlayerId, RoomSnapshot } from '@jogae/engine';
+import type { ConnectionState, GameView, Player, PlayerId, RoomSnapshot } from '@jogae/engine';
 
 type MatchState = {
   snapshot: RoomSnapshot | null;
@@ -29,8 +29,10 @@ services.room.subscribe((snapshot) => {
     const host = snapshot.players.find((p) => p.id === snapshot.room.hostId);
     toast(snapshot.room.hostId === snapshot.meId ? 'O host saiu. Agora você conduz a partida.' : `O host saiu. ${host?.name ?? 'Outro jogador'} assumiu.`, 'neutral', '👑');
   }
-  // Mesma rodada sorteada de novo: alguém saiu no meio.
-  if (previous.round && snapshot.round && previous.round.index === snapshot.round.index && previous.round.deal !== snapshot.round.deal) {
+  // Mesma rodada sorteada de novo: alguém saiu no meio. Só o Impostor faz isso.
+  const before = previous.game.kind === 'impostor' ? previous.game.round : null;
+  const now = snapshot.game.kind === 'impostor' ? snapshot.game.round : null;
+  if (before && now && before.index === now.index && before.deal !== now.deal) {
     toast('Alguém saiu: a rodada foi sorteada de novo.', 'neutral', '🎲');
   }
 });
@@ -73,4 +75,22 @@ export function useMatch(): MatchView | null {
     player: (id) => byId.get(id),
     displayName: (id) => (id === snapshot.meId ? 'Você' : (byId.get(id)?.name ?? '—')),
   };
+}
+
+type ImpostorView = Extract<GameView, { kind: 'impostor' }>;
+type LikelyView = Extract<GameView, { kind: 'likely' }>;
+
+/**
+ * As telas de um jogo pedem a view dele, já achatada no snapshot — `match.round`, `match.result`.
+ * Devolve `null` quando a sala é de outro jogo, o que também cobre o instante entre trocar de sala
+ * e o primeiro snapshot chegar.
+ */
+export function useImpostorMatch(): (MatchView & ImpostorView) | null {
+  const match = useMatch();
+  return match && match.game.kind === 'impostor' ? { ...match, ...match.game } : null;
+}
+
+export function useLikelyMatch(): (MatchView & LikelyView) | null {
+  const match = useMatch();
+  return match && match.game.kind === 'likely' ? { ...match, ...match.game } : null;
 }

@@ -1,4 +1,4 @@
-import type { Player, PlayerId, RoundResult, TallyEntry } from '../types';
+import type { ImpostorRoundResult, Player, PlayerId, TallyEntry } from '../types';
 
 /**
  * Regras puras do Impostor (sem I/O, sem timers) — reutilizáveis pelo mock hoje
@@ -248,7 +248,14 @@ export const IMPOSTOR_CATEGORIES = Object.keys(WORD_BANK);
 export const categoryWords = (category: string): string[] => (WORD_BANK[category] ?? []).map((w) => w.word);
 
 export const IMPOSTOR_RULES = {
-  minPlayers: 3,
+  /**
+   * Piso técnico, não recomendação: com um jogador só não há em quem votar (ninguém vota em si
+   * no Impostor) e a votação nunca fecharia. Com dois o jogo fica bobo — o inocente sabe quem é
+   * o impostor e o empate sempre o inocenta — mas roda, e quem decide se vale a pena é o grupo.
+   */
+  minPlayers: 2,
+  /** O que a tela sugere. Abaixo disso ela avisa, mas não impede. */
+  recommendedPlayers: 3,
   roundSeconds: 60,
   points: { groupCatches: 200, impostorEscapes: 300, correctVoteBonus: 50 },
 } as const;
@@ -289,7 +296,7 @@ export function resolveImpostorRound(
   round: ImpostorRound,
   votes: Record<PlayerId, PlayerId>,
   players: Player[],
-): Omit<RoundResult, 'stage'> {
+): Omit<ImpostorRoundResult, 'stage'> {
   const counts = new Map<PlayerId, number>();
   Object.values(votes).forEach((target) => counts.set(target, (counts.get(target) ?? 0) + 1));
   const tally: TallyEntry[] = [...counts.entries()]

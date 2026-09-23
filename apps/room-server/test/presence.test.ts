@@ -36,8 +36,9 @@ test('"jogando agora" acompanha a sala: lobby aberto → em partida → some qua
     await host.cmd({ type: 'startMatch' });
     assert.equal(presence.rooms.get(code)?.status, 'playing');
 
-    // Quem sai deixa de aparecer como "jogando"; com menos de 3 a sala fecha e some da lista.
+    // Quem sai deixa de aparecer como "jogando"; sobrando uma pessoa a sala fecha e some da lista.
     await guests[1].ok({ t: 'leave' });
+    await guests[0].ok({ t: 'leave' });
     await host.untilSnapshot((s) => s.room.phase === 'closed', 'sala fechada');
     await sleep(20);
     assert.equal(presence.rooms.has(code), false);

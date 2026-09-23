@@ -6,10 +6,9 @@ import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Chip, Display, Overline, Screen, Spacer, Txt, WaitingButton, toast } from '@/core/ui';
 import { plural } from '@/core/utils/format';
 import { siteLinks } from '@/core/utils/site';
-import { getGame } from '@/features/catalog/data/games';
+import { getGameByEngine } from '@/features/catalog/data/games';
 
 import { PlayerCard, WaitingSlot } from '../components/cards';
-import { IMPOSTOR_RULES } from '@jogae/engine';
 import { leaveMatch } from '../hooks/leaveMatch';
 import { roomActions } from '../hooks/roomActions';
 import { useMatch } from '../store/matchStore';
@@ -21,9 +20,13 @@ export function LobbyScreen() {
   const match = useMatch();
   if (!match) return null;
   const { room, players, me, host, isHost, connectedPlayers } = match;
-  const game = getGame(room.gameId);
+  const game = getGameByEngine(room.gameId);
   const connected = connectedPlayers.length;
-  const canStart = connected >= IMPOSTOR_RULES.minPlayers;
+  // O mínimo é técnico (abaixo dele a votação travaria); o recomendado é sugestão, e não trava nada.
+  const minimo = game?.minPlayers ?? 2;
+  const recomendado = game?.recommendedPlayers ?? 3;
+  const canStart = connected >= minimo;
+  const poucos = connected < recomendado;
   const others = players.filter((p) => p.id !== me.id);
 
   const copy = async () => {
@@ -101,12 +104,12 @@ export function LobbyScreen() {
       {isHost ? (
         <>
           <Button
-            label={canStart ? 'Começar partida' : `Mínimo ${IMPOSTOR_RULES.minPlayers} jogadores`}
+            label={canStart ? 'Começar partida' : `Chame mais ${minimo - connected}`}
             disabled={!canStart}
             onPress={() => roomActions.startMatch()}
           />
           <Txt font="body400" size={12} color={colors.muted} center>
-            Só o host pode iniciar
+            {canStart && poucos ? `Dá para começar, mas ${game?.name ?? 'o jogo'} rende mais com ${recomendado}+` : 'Só o host pode iniciar'}
           </Txt>
         </>
       ) : (

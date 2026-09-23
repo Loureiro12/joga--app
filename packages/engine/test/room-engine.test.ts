@@ -1,7 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { DEFAULT_ENGINE_CONFIG, RoomEngine, RoomError, type PlayerId, type RoomCommand, type Scheduler } from '../src/index';
+import { DEFAULT_ENGINE_CONFIG, RoomEngine, RoomError, type GameView, type PlayerId, type RoomCommand, type Scheduler } from '../src/index';
+import type { ImpostorState } from '../src/room/impostorGame';
+
+type ImpostorView = Extract<GameView, { kind: 'impostor' }>;
+
+/**
+ * Este arquivo testa a SALA usando o Impostor. Os dois helpers achatam a parte do jogo
+ * (`snapshot.game` / `state.game`) para as asserções ficarem diretas.
+ */
+const snapshotFor = (engine: RoomEngine, id: PlayerId) => {
+  const snapshot = engine.snapshotFor(id);
+  return { ...snapshot, ...(snapshot.game as ImpostorView) };
+};
+const stateOf = (engine: RoomEngine) => engine.serialize().game as ImpostorState;
 
 /** Relógio falso: o tempo só anda quando o teste manda, e os alarmes disparam na ordem certa. */
 function fakeClock(start = 1_000_000) {
@@ -27,7 +40,7 @@ function fakeClock(start = 1_000_000) {
   return { scheduler, advance, pending: () => timers.size };
 }
 
-const INPUT = { gameId: 'impostor', category: 'Comidas', totalRounds: 2, maxPlayers: 6 };
+const INPUT = { gameId: 'impostor' as const, category: 'Comidas', totalRounds: 2, maxPlayers: 6 };
 const who = (id: string) => ({ id, name: id.toUpperCase(), color: '#7C3AED' });
 const C = DEFAULT_ENGINE_CONFIG;
 
@@ -37,7 +50,7 @@ function room(ids = ['a', 'b', 'c', 'd'], input = INPUT) {
   const engine = RoomEngine.create('4827', input, who(ids[0]), { scheduler: clock.scheduler, onChange: () => changes++ });
   ids.slice(1).forEach((id, i) => (clock.advance(10 + i), engine.join(who(id))));
   const all = (cmd: RoomCommand, from = engine.playerIds) => from.forEach((id) => engine.dispatch(id, cmd));
-  const impostor = () => engine.serialize().round!.impostorId;
+  const impostor = () => stateOf(engine).round!.impostorId;
   /** Leva a sala até a votação. */
   const toVoting = () => {
     if (engine.phase === 'lobby') engine.dispatch(engine.hostId, { type: 'startMatch' });
@@ -71,26 +84,30 @@ test('lobby: entra, enche, e não aceita gente com a partida em andamento', () =
   assert.equal(code(() => engine.join(who('b'))), 'ok', 'quem já é da sala sempre pode voltar');
 });
 
-test('só o host comanda, e precisa de 3 conectados para começar', () => {
+test('só o host comanda; o piso para começar é técnico (2), não o recomendado', () => {
   const { engine } = room(['a', 'b']);
   assert.equal(code(() => engine.dispatch('b', { type: 'startMatch' })), 'not_host');
-  assert.equal(code(() => engine.dispatch('a', { type: 'startMatch' })), 'not_enough_players');
   assert.equal(code(() => engine.dispatch('x', { type: 'ackRole' })), 'not_in_room');
-  engine.join(who('c'));
-  engine.setConnected('c', false);
+
+  // Com um sozinho não há em quem votar: aí sim é recusado.
+  engine.setConnected('b', false);
   assert.equal(code(() => engine.dispatch('a', { type: 'startMatch' })), 'not_enough_players', 'desconectado não conta');
+
+  engine.setConnected('b', true);
+  engine.dispatch('a', { type: 'startMatch' });
+  assert.equal(engine.phase, 'role_reveal', 'dois bastam: o 3 é recomendação, não regra');
 });
 
 test('segredo: cada snapshot só traz o papel de quem pediu, e exatamente um é impostor', () => {
   const { engine, impostor } = room();
   engine.dispatch('a', { type: 'startMatch' });
-  const roles = engine.playerIds.map((id) => engine.snapshotFor(id).secret!);
+  const roles = engine.playerIds.map((id) => snapshotFor(engine, id).secret!);
   assert.equal(roles.filter((r) => r.role === 'impostor').length, 1);
-  assert.deepEqual(engine.snapshotFor(impostor()).secret, { role: 'impostor' });
+  assert.deepEqual(snapshotFor(engine, impostor()).secret, { role: 'impostor' });
   for (const id of engine.playerIds) {
-    const wire = JSON.stringify(engine.snapshotFor(id));
+    const wire = JSON.stringify(snapshotFor(engine, id));
     assert.ok(!wire.includes('impostorId'), 'o id do impostor não pode ir no snapshot durante a rodada');
-    if (id === impostor()) assert.ok(!wire.includes(engine.serialize().round!.word.word), 'o impostor não pode receber a palavra');
+    if (id === impostor()) assert.ok(!wire.includes(stateOf(engine).round!.word.word), 'o impostor não pode receber a palavra');
   }
 });
 
@@ -99,7 +116,7 @@ test('papel: a fase só avança quando todos os conectados confirmam', () => {
   engine.dispatch('a', { type: 'startMatch' });
   for (const id of ['a', 'b', 'c']) engine.dispatch(id, { type: 'ackRole' });
   assert.equal(engine.phase, 'role_reveal');
-  assert.deepEqual(engine.snapshotFor('a').round!.ackedIds, ['a', 'b', 'c']);
+  assert.deepEqual(snapshotFor(engine, 'a').round!.ackedIds, ['a', 'b', 'c']);
   engine.dispatch('d', { type: 'ackRole' });
   assert.equal(engine.phase, 'clues');
 });
@@ -127,19 +144,19 @@ test('cronômetro: conta pelo horário de término, sem um snapshot por segundo'
   const before = changes();
   clock.advance(20_000);
   assert.equal(changes(), before, '20 s de cronômetro rodando não podem gerar nenhuma emissão');
-  assert.deepEqual(engine.snapshotFor('b').round!.timer, { durationSec: 60, remainingSec: 40, running: true });
+  assert.deepEqual(snapshotFor(engine, 'b').round!.timer, { durationSec: 60, remainingSec: 40, running: true });
 
   engine.dispatch('a', { type: 'setTimerRunning', running: false });
   clock.advance(5_000);
-  assert.deepEqual(engine.snapshotFor('b').round!.timer, { durationSec: 60, remainingSec: 40, running: false });
+  assert.deepEqual(snapshotFor(engine, 'b').round!.timer, { durationSec: 60, remainingSec: 40, running: false });
 
   engine.dispatch('a', { type: 'setTimerRunning', running: true });
   clock.advance(40_000);
-  assert.deepEqual(engine.snapshotFor('b').round!.timer, { durationSec: 60, remainingSec: 0, running: false });
+  assert.deepEqual(snapshotFor(engine, 'b').round!.timer, { durationSec: 60, remainingSec: 0, running: false });
   assert.equal(changes(), before + 3, 'pausar, retomar e zerar: uma emissão cada');
 
   engine.dispatch('a', { type: 'resetTimer' });
-  assert.equal(engine.snapshotFor('b').round!.timer.remainingSec, 60);
+  assert.equal(snapshotFor(engine, 'b').round!.timer.remainingSec, 60);
 });
 
 test('pausa: qualquer jogador pausa, e pausar para o cronômetro', () => {
@@ -150,11 +167,11 @@ test('pausa: qualquer jogador pausa, e pausar para o cronômetro', () => {
   clock.advance(10_000);
   engine.dispatch('c', { type: 'setPaused', paused: true });
   clock.advance(30_000);
-  const snap = engine.snapshotFor('a');
+  const snap = snapshotFor(engine, 'a');
   assert.equal(snap.room.paused, true);
   assert.deepEqual(snap.round!.timer, { durationSec: 60, remainingSec: 50, running: false });
   engine.dispatch('a', { type: 'setTimerRunning', running: true });
-  assert.equal(engine.snapshotFor('a').round!.timer.running, false, 'pausado não roda');
+  assert.equal(snapshotFor(engine, 'a').round!.timer.running, false, 'pausado não roda');
 });
 
 test('votação: votos ficam ocultos, voto é voto, e não vale votar em si nem em quem não existe', () => {
@@ -162,14 +179,14 @@ test('votação: votos ficam ocultos, voto é voto, e não vale votar em si nem 
   toVoting();
   engine.dispatch('a', { type: 'castVote', targetId: 'b' });
   engine.dispatch('a', { type: 'castVote', targetId: 'c' });
-  assert.equal(engine.serialize().votes.a, 'b', 'o segundo voto é ignorado');
+  assert.equal(stateOf(engine).votes.a, 'b', 'o segundo voto é ignorado');
   assert.equal(code(() => engine.dispatch('b', { type: 'castVote', targetId: 'b' })), 'bad_request');
   assert.equal(code(() => engine.dispatch('b', { type: 'castVote', targetId: 'zz' })), 'bad_request');
 
-  const seenByB = engine.snapshotFor('b');
+  const seenByB = snapshotFor(engine, 'b');
   assert.deepEqual(seenByB.votes, { votedIds: ['a'], total: 4, myVote: null });
   assert.ok(!JSON.stringify(seenByB).includes('"a":"b"'), 'o alvo do voto alheio não vai no snapshot');
-  assert.equal(engine.snapshotFor('a').votes!.myVote, 'b');
+  assert.equal(snapshotFor(engine, 'a').votes!.myVote, 'b');
 });
 
 test('revelação em 3 tempos: nada do desfecho (nem os pontos) sai antes do último', () => {
@@ -181,18 +198,18 @@ test('revelação em 3 tempos: nada do desfecho (nem os pontos) sai antes do úl
   assert.equal(engine.phase, 'voting', 'há um respiro antes de revelar');
   clock.advance(C.allVotedPauseMs);
 
-  const s0 = engine.snapshotFor('a');
+  const s0 = snapshotFor(engine, 'a');
   assert.equal(engine.phase, 'revealing');
   assert.deepEqual([s0.result!.stage, s0.result!.chosenId, s0.result!.impostorId, s0.result!.word], [0, '', '', '']);
   assert.ok(s0.scores.every((x) => x.points === 0), 'placar ainda zerado');
 
   clock.advance(C.revealStage1Ms);
-  const s1 = engine.snapshotFor('a');
+  const s1 = snapshotFor(engine, 'a');
   assert.deepEqual([s1.result!.stage, s1.result!.chosenId, s1.result!.impostorId], [1, target, '']);
   assert.equal(code(() => engine.dispatch('a', { type: 'nextRound' })), 'invalid_phase', 'não dá para pular a revelação');
 
   clock.advance(C.revealStage2Ms - C.revealStage1Ms);
-  const s2 = engine.snapshotFor('a');
+  const s2 = snapshotFor(engine, 'a');
   assert.equal(s2.result!.stage, 2);
   assert.equal(s2.result!.caught, true);
   assert.equal(s2.result!.impostorId, target);
@@ -205,21 +222,21 @@ test('partida inteira: rodadas, fim com campeão e "jogar novamente" zera o plac
   toVoting();
   voteAndReveal(impostor());
   engine.dispatch('a', { type: 'nextRound' });
-  assert.deepEqual([engine.phase, engine.snapshotFor('a').room.roundIndex], ['role_reveal', 2]);
-  const words = engine.serialize().usedWords;
+  assert.deepEqual([engine.phase, snapshotFor(engine, 'a').room.roundIndex], ['role_reveal', 2]);
+  const words = stateOf(engine).usedWords;
   assert.equal(new Set(words).size, words.length, 'palavra não repete');
 
   toVoting();
   voteAndReveal(impostor());
   engine.dispatch('a', { type: 'nextRound' });
-  const end = engine.snapshotFor('b');
+  const end = snapshotFor(engine, 'b');
   assert.equal(end.room.phase, 'finished');
   assert.equal(end.summary!.impostorsCaught, 2);
   assert.equal(end.summary!.winnerId, end.scores[0].playerId);
 
   assert.equal(code(() => engine.dispatch('b', { type: 'playAgain' })), 'not_host');
   engine.dispatch('a', { type: 'playAgain' });
-  const again = engine.snapshotFor('a');
+  const again = snapshotFor(engine, 'a');
   assert.equal(again.room.phase, 'lobby');
   assert.ok(again.scores.every((x) => x.points === 0));
   assert.equal(again.players.length, 4, 'os jogadores continuam na sala');
@@ -278,6 +295,7 @@ test('boletim: quem saiu no meio não entra; sala fechada por falta de gente nã
   const closed = room(['a', 'b', 'c']);
   closed.engine.dispatch('a', { type: 'startMatch' });
   closed.engine.leave('c');
+  closed.engine.leave('b');
   assert.equal(closed.engine.phase, 'closed');
   assert.equal(closed.engine.matchRecord(), null);
 });
@@ -286,12 +304,12 @@ test('reconexão: quem cai mantém vaga e pontos por 30 s, e voltando nada muda'
   const { engine, clock } = room();
   engine.dispatch('a', { type: 'startMatch' });
   engine.setConnected('c', false);
-  assert.equal(engine.snapshotFor('a').players.find((p) => p.id === 'c')!.connected, false);
+  assert.equal(snapshotFor(engine, 'a').players.find((p) => p.id === 'c')!.connected, false);
   clock.advance(C.graceMs - 1);
   engine.setConnected('c', true);
   clock.advance(60_000 - C.graceMs);
   assert.ok(engine.has('c'));
-  assert.equal(engine.snapshotFor('c').room.roundIndex, 1, 'a rodada não foi refeita');
+  assert.equal(snapshotFor(engine, 'c').room.roundIndex, 1, 'a rodada não foi refeita');
 });
 
 test('host migra: ao sair (ou não voltar em 30 s) assume quem está há mais tempo e conectado', () => {
@@ -299,7 +317,7 @@ test('host migra: ao sair (ou não voltar em 30 s) assume quem está há mais te
   left.engine.dispatch('a', { type: 'startMatch' });
   left.engine.leave('a');
   assert.equal(left.engine.hostId, 'b');
-  assert.deepEqual(left.engine.snapshotFor('c').players.map((p) => [p.id, p.isHost]), [['b', true], ['c', false], ['d', false]]);
+  assert.deepEqual(snapshotFor(left.engine, 'c').players.map((p) => [p.id, p.isHost]), [['b', true], ['c', false], ['d', false]]);
   assert.equal(code(() => left.engine.dispatch('a', { type: 'openVoting' })), 'not_in_room');
 
   const dropped = room();
@@ -312,20 +330,22 @@ test('host migra: ao sair (ou não voltar em 30 s) assume quem está há mais te
   assert.deepEqual(dropped.engine.playerIds, ['c', 'd']);
 });
 
-test('saída no meio da rodada: sorteia de novo com o mesmo número; abaixo de 3 a sala fecha', () => {
+test('saída no meio da rodada: sorteia de novo com o mesmo número; com um só a sala fecha', () => {
   const { engine, all } = room();
   engine.dispatch('a', { type: 'startMatch' });
   all({ type: 'ackRole' });
   engine.dispatch('a', { type: 'openVoting' });
   engine.dispatch('b', { type: 'castVote', targetId: 'c' });
   engine.leave('d');
-  const redealt = engine.snapshotFor('a');
+  const redealt = snapshotFor(engine, 'a');
   assert.deepEqual([redealt.room.phase, redealt.room.roundIndex, redealt.round!.order.length], ['role_reveal', 1, 3]);
-  assert.deepEqual(engine.serialize().votes, {}, 'votos da rodada anulada somem');
+  assert.deepEqual(stateOf(engine).votes, {}, 'votos da rodada anulada somem');
   assert.equal(redealt.round!.deal, 2, 'o cliente percebe o novo sorteio pelo `deal`');
 
   engine.leave('c');
-  const closed = engine.snapshotFor('a');
+  assert.equal(engine.phase, 'role_reveal', 'com dois a partida continua');
+  engine.leave('b');
+  const closed = snapshotFor(engine, 'a');
   assert.deepEqual([closed.room.phase, closed.room.closedReason], ['closed', 'not_enough_players']);
   assert.equal(code(() => engine.join(who('z'))), 'room_not_found');
 });
@@ -338,7 +358,7 @@ test('votação não espera quem caiu', () => {
   engine.setConnected('d', false);
   clock.advance(C.allVotedPauseMs);
   assert.equal(engine.phase, 'revealing');
-  assert.equal(engine.snapshotFor('a').votes!.total, 3);
+  assert.equal(snapshotFor(engine, 'a').votes!.total, 3);
 });
 
 test('salvar e restaurar: a sala continua de onde parou, e prazos vencidos durante a parada disparam na volta', () => {
@@ -356,12 +376,12 @@ test('salvar e restaurar: a sala continua de onde parou, e prazos vencidos duran
   assert.equal(revived.phase, 'voting');
   clock.advance(0);
   assert.equal(revived.phase, 'revealing', 'o respiro pós-votação venceu durante a parada');
-  assert.equal(revived.snapshotFor('a').result!.stage, 0, 'a revelação começa agora: ninguém perde os 3 tempos');
+  assert.equal(snapshotFor(revived, 'a').result!.stage, 0, 'a revelação começa agora: ninguém perde os 3 tempos');
   clock.advance(C.revealStage2Ms);
-  assert.equal(revived.snapshotFor('a').result!.stage, 2);
-  assert.equal(revived.snapshotFor(other).scores.find((x) => x.playerId === other)!.points, 250);
+  assert.equal(snapshotFor(revived, 'a').result!.stage, 2);
+  assert.equal(snapshotFor(revived, other).scores.find((x) => x.playerId === other)!.points, 250);
   assert.ok(emitted >= 1);
-  assert.deepEqual(revived.snapshotFor('a').secret, engine.snapshotFor('a').secret);
+  assert.deepEqual(snapshotFor(revived, 'a').secret, snapshotFor(engine, 'a').secret);
 });
 
 test('dispose cancela o alarme', () => {
@@ -370,4 +390,39 @@ test('dispose cancela o alarme', () => {
   assert.equal(clock.pending(), 1);
   engine.dispose();
   assert.equal(clock.pending(), 0);
+});
+
+test('Impostor sem mínimo de produto: dois jogadores começam e a partida anda', () => {
+  const clock = fakeClock();
+  const engine = RoomEngine.create('4827', { gameId: 'impostor' as const, category: 'Comidas', totalRounds: 1, maxPlayers: 12 }, { id: 'a', name: 'A', color: '#7C3AED' }, { scheduler: clock.scheduler, rng: () => 0.5 });
+  engine.join({ id: 'b', name: 'B', color: '#FACC15' });
+
+  engine.dispatch('a', { type: 'startMatch' });
+  assert.equal(engine.phase, 'role_reveal', 'o motor não barra uma sala de dois');
+
+  for (const id of ['a', 'b']) engine.dispatch(id, { type: 'ackRole' });
+  engine.dispatch('a', { type: 'openVoting' });
+  // Cada um só pode acusar o outro: o empate resultante sempre inocenta o impostor.
+  engine.dispatch('a', { type: 'castVote', targetId: 'b' });
+  engine.dispatch('b', { type: 'castVote', targetId: 'a' });
+  clock.advance(DEFAULT_ENGINE_CONFIG.allVotedPauseMs + DEFAULT_ENGINE_CONFIG.revealStage2Ms + 10);
+
+  const result = snapshotFor(engine, 'a').result!;
+  assert.equal(result.stage, 2);
+  assert.equal(result.caught, false, 'com dois, o empate sempre deixa o impostor escapar');
+
+  engine.dispatch('a', { type: 'nextRound' });
+  assert.equal(engine.phase, 'finished');
+});
+
+test('sobrando uma pessoa a sala fecha: ninguém teria em quem votar', () => {
+  const clock = fakeClock();
+  const engine = RoomEngine.create('4827', { gameId: 'impostor' as const, category: 'Comidas', totalRounds: 2, maxPlayers: 12 }, { id: 'a', name: 'A', color: '#7C3AED' }, { scheduler: clock.scheduler, rng: () => 0.5 });
+  for (const id of ['b', 'c']) engine.join({ id, name: id, color: '#FACC15' });
+  engine.dispatch('a', { type: 'startMatch' });
+
+  engine.leave('c');
+  assert.equal(engine.phase, 'role_reveal', 'com dois a partida continua (rodada re-sorteada)');
+  engine.leave('b');
+  assert.equal(engine.phase, 'closed');
 });

@@ -12,11 +12,11 @@ import { plural } from '@/core/utils/format';
 import { haptics } from '@/core/utils/haptics';
 
 import { VoteBar } from '../components/cards';
-import { useMatch } from '../store/matchStore';
+import { useImpostorMatch } from '../store/matchStore';
 
 /** Tela 16: Resultado em 3 tempos (o `stage` vem do servidor, então todos veem juntos). */
 export function ResultScreen() {
-  const match = useMatch();
+  const match = useImpostorMatch();
   const pad = useScreenPadding();
   const result = match?.result;
   const stage = result?.stage ?? 0;

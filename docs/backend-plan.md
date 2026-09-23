@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Dois jogos jogáveis: Impostor e Quem é Mais Provável. Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -181,6 +181,30 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 - **As palavras moram no código, então mudá-las exige `fly deploy`** — numa partida real quem sorteia é o servidor. Quando o jogo estiver no ar e você quiser ajustar conteúdo sem publicar versão, o passo é mover o banco para uma tabela no Supabase, que o servidor carrega na subida. Gerar com IA é o passo 7, e o caminho seguro é gerar em lote, revisar e gravar no banco — não na hora da rodada.
 
 **Premium escondido (2026-09-21).** `apps/mobile/src/core/config/features.ts` (`premium: false`) tira da navegação a assinatura e o que depende dela (criar jogo com IA, categorias exclusivas); o site faz o mesmo com `premiumEnabled` em `src/data/content.ts`. Motivo: a compra ainda é simulada, e a App Store rejeita isso. Religar no passo 6.
+
+### Jogo 2 — Quem é Mais Provável? (2026-09-22)
+
+Segundo jogo com partida de verdade. A spec (42 seções) foi entregue em duas etapas; **esta é o núcleo jogável**.
+
+**O motor deixou de ser do Impostor.** `RoomEngine` agora cuida só de SALA — quem entrou, quem caiu, tolerância de 30 s, migração de host, alarme único, salvar/restaurar — e delega a partida a um `GameRules` por jogo (`room/GameRules.ts`). Consequência no protocolo: `RoomSnapshot.round/secret/result/summary` viraram `RoomSnapshot.game`, discriminado por `kind`. No app, `useImpostorMatch()` e `useLikelyMatch()` entregam a view já achatada, então as telas de cada jogo continuam lendo `match.round`.
+
+- **Fases:** `lobby → question → voting → revealing → (question | finished)`. `question` existe para o grupo ler junto: quem abre a votação é o host, que também pode trocar a pergunta — mas só antes do primeiro voto, senão pular seria escolher o resultado.
+- **Empate é resultado**, nunca erro: todos com a maior contagem vencem, sem desempate automático. Unanimidade exige que todos os elegíveis tenham votado na mesma pessoa; se o escolhido votou em si, vira "nem ele conseguiu negar".
+- **Quem podia votar congela** quando a votação abre. Quem chega depois entra na próxima pergunta; quem sai não leva embora os votos que recebeu (ao contrário do Impostor, que re-sorteia a rodada).
+- **Opções do host:** categorias (várias), intensidade (pesado é opt-in), voto em si mesmo, identidade dos votos, pontos. Padrão é casual — sem placar, porque a experiência é social.
+- **Conteúdo:** 200 perguntas, 25 por categoria, em `games/likely-questions.ts`. `Família` é toda leve e `Trabalho` não tem pesado — as duas promessas estão travadas por teste. O prefixo "Quem é mais provável de…" fica na tela, nunca no texto.
+
+**Verificado:** 53 testes no engine (regras, banco de perguntas, e a sala jogando o jogo novo de ponta a ponta, incluindo empate, unanimidade, desconexão, saída no meio, partida sem limite e restaurar no meio da votação); smoke do `RoomService` jogando uma partida completa. **Não verificado:** as telas num aparelho de verdade e a gravação no Supabase (o boletim vai com `impostorsCaught: 0`).
+
+**Sem mínimo de produto (2026-09-22).** Nos dois jogos o número de jogadores virou *recomendação*, não regra. O motor guarda só um **piso técnico de 2**, que existe porque abaixo dele a partida trava de verdade: com uma pessoa sozinha não há em quem votar e a votação nunca fecharia. O lobby libera o "Começar" a partir de 2 e, abaixo do recomendado, avisa em vez de bloquear; a sala em andamento só fecha quando sobra uma pessoa.
+
+- No Impostor com 2, o empate 1×1 sempre inocenta o impostor — o jogo fica bobo, mas roda, e quem decide se vale a pena é o grupo.
+- `GameRules` passou a ter `minPlayers` (piso) e `recommendedPlayers` (sugestão); o catálogo do app espelha os dois.
+- De quebra: `getGame(room.gameId)` não achava o jogo novo, porque o snapshot traz o id do MOTOR (`likely`) e o catálogo usa o seu (`mais-provavel`). Agora existe `getGameByEngine`.
+
+**Fica para a etapa 2:** modo Um Celular (§4, o usuário pediu junto), cronômetro configurável, rodada de desempate, opção "Ninguém", estatísticas sociais (§22), perguntas personalizadas, card de compartilhamento, denunciar pergunta e geração por IA.
+
+**Dívida conhecida:** `MatchRecord` ainda carrega `impostorsCaught` / `timesImpostor` / `timesEscaped`, que são do Impostor — o jogo novo grava zeros. Generalizar isso pede uma migration e mexe nas conquistas.
 
 ### Passo 6 — Assinatura
 

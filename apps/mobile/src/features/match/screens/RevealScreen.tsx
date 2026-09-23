@@ -9,11 +9,11 @@ import { Button, Display, Overline, Screen, Txt, WaitingButton } from '@/core/ui
 
 import { HoldToRevealButton, SecretCard } from '../components/SecretReveal';
 import { roomActions } from '../hooks/roomActions';
-import { useMatch } from '../store/matchStore';
+import { useImpostorMatch } from '../store/matchStore';
 
 /** Tela 12: Revelação do papel (secret card → palavra | impostor). */
 export function RevealScreen() {
-  const match = useMatch();
+  const match = useImpostorMatch();
   const [revealed, setRevealed] = useState(false);
   // O CTA nasce onde o dedo está segurando: só aceita toque 600 ms depois de revelar.
   const [armed, setArmed] = useState(false);

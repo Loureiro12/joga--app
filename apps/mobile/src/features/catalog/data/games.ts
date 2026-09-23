@@ -1,5 +1,7 @@
 // De `tokens` e não do barrel `@/core/theme`: o barrel carrega os arquivos de fonte, e este módulo
 // é só dado — assim ele roda em teste, no servidor ou em qualquer lugar sem o ambiente do app.
+import type { GameId } from '@jogae/engine';
+
 import { colors } from '@/core/theme/tokens';
 
 export type IllustrationKey = 'eyes' | 'pillArrow' | 'mask' | 'bomb' | 'dice' | 'trophy';
@@ -21,7 +23,10 @@ export type GameDefinition = {
   emoji: string;
   color: string;
   illustration: IllustrationKey;
+  /** Piso do motor: abaixo disso a partida travaria. Não é sugestão. */
   minPlayers: number;
+  /** Quantos o jogo pede para ficar bom. A tela sugere; o host decide. */
+  recommendedPlayers: number;
   maxPlayers: number;
   playersLabel: string;
   /** Home/Detalhes: "10–20 min" · Explorar: "15 min" */
@@ -37,6 +42,8 @@ export type GameDefinition = {
   trending?: boolean;
   /** Tem fluxo de partida implementado? Os demais aparecem como "Em breve". */
   playable: boolean;
+  /** Qual motor conduz a partida. Só os jogáveis têm — é o que vai em `createRoom`. */
+  engineId?: GameId;
 };
 
 const comingSoon = {
@@ -51,6 +58,7 @@ const comingSoon = {
 export const GAMES: GameDefinition[] = [
   {
     id: 'impostor',
+    engineId: 'impostor',
     name: 'Impostor',
     category: 'Dedução',
     tagline: 'Todo mundo sabe a palavra. Menos um.',
@@ -59,13 +67,14 @@ export const GAMES: GameDefinition[] = [
     emoji: '👀',
     color: colors.primary,
     illustration: 'eyes',
-    minPlayers: 3,
+    minPlayers: 2,
+    recommendedPlayers: 3,
     maxPlayers: 12,
     playersLabel: '3–12 jogadores',
     durationLabel: '10–20 min',
     durationShort: '15 min',
     infoChips: [
-      { emoji: '👥', label: '3–12 jogadores' },
+      { emoji: '👥', label: 'Melhor com 3 a 12' },
       { emoji: '⏱', label: '10–20 minutos' },
       { emoji: '🎯', label: 'Fácil de aprender' },
     ],
@@ -92,8 +101,8 @@ export const GAMES: GameDefinition[] = [
     playable: true,
   },
   {
-    ...comingSoon,
     id: 'mais-provavel',
+    engineId: 'likely',
     name: 'Quem é mais provável?',
     category: 'Polêmico',
     tagline: 'Descubra o que seus amigos pensam.',
@@ -101,12 +110,40 @@ export const GAMES: GameDefinition[] = [
     emoji: '👉',
     color: colors.accent,
     illustration: 'pillArrow',
-    minPlayers: 3,
-    maxPlayers: 12,
-    playersLabel: '3+ jogadores',
-    durationLabel: '10 min',
-    durationShort: '10 min',
+    minPlayers: 2,
+    recommendedPlayers: 3,
+    maxPlayers: 20,
+    playersLabel: '3–20 jogadores',
+    durationLabel: '10–30 min',
+    durationShort: '20 min',
+    infoChips: [
+      { emoji: '👥', label: 'Melhor com 3 a 20' },
+      { emoji: '⏱', label: '10–30 minutos' },
+      { emoji: '🗳', label: 'Voto secreto' },
+    ],
+    howToPlay: [
+      'Uma pergunta aparece para todos: "quem é mais provável de…".',
+      'Cada um vota em silêncio na pessoa que mais combina. Ninguém vê os votos parciais.',
+      'Os votos são revelados juntos. Empate vale: não existe resposta certa, só o que o grupo acha.',
+    ],
+    // As categorias do banco de perguntas, na mesma ordem em que aparecem na tela.
+    wordCategories: [
+      { id: 'Engraçado', label: 'Engraçado', emoji: '😂' },
+      { id: 'Exposed', label: 'Exposed', emoji: '👀' },
+      { id: 'Caos', label: 'Caos', emoji: '🔥' },
+      { id: 'Relacionamentos', label: 'Relacionamentos', emoji: '❤️' },
+      { id: 'Festa', label: 'Festa', emoji: '🎉' },
+      { id: 'Trabalho', label: 'Trabalho', emoji: '💼' },
+      { id: 'Família', label: 'Família', emoji: '👨‍👩‍👧' },
+      { id: 'Futebol', label: 'Futebol', emoji: '⚽' },
+      { id: 'Aleatório', label: 'Aleatório', emoji: '🎲' },
+    ],
+    // "Sem limite" é o 0: a partida vai até o host encerrar.
+    roundOptions: [10, 20, 30, 0],
+    defaults: { players: 8, category: 'Aleatório', rounds: 10 },
     tags: ['Em alta', 'Engraçados', 'Festa'],
+    trending: true,
+    playable: true,
   },
   {
     ...comingSoon,
@@ -119,6 +156,7 @@ export const GAMES: GameDefinition[] = [
     color: colors.success,
     illustration: 'mask',
     minPlayers: 3,
+    recommendedPlayers: 3,
     maxPlayers: 12,
     playersLabel: '3+ jogadores',
     durationLabel: '20 min',
@@ -136,6 +174,7 @@ export const GAMES: GameDefinition[] = [
     color: colors.danger,
     illustration: 'bomb',
     minPlayers: 4,
+    recommendedPlayers: 4,
     maxPlayers: 12,
     playersLabel: '4+ jogadores',
     durationLabel: '15 min',
@@ -153,6 +192,7 @@ export const GAMES: GameDefinition[] = [
     color: colors.primaryLight,
     illustration: 'dice',
     minPlayers: 2,
+    recommendedPlayers: 2,
     maxPlayers: 12,
     playersLabel: '2+ jogadores',
     durationLabel: '5 min',
@@ -170,6 +210,7 @@ export const GAMES: GameDefinition[] = [
     color: colors.surface,
     illustration: 'trophy',
     minPlayers: 2,
+    recommendedPlayers: 2,
     maxPlayers: 8,
     playersLabel: '2–8 jogadores',
     durationLabel: '20 min',
@@ -179,6 +220,9 @@ export const GAMES: GameDefinition[] = [
 ];
 
 export const getGame = (id: string | undefined) => GAMES.find((g) => g.id === id);
+
+/** O snapshot traz o id do MOTOR (`impostor`, `likely`), que nem sempre é o id do catálogo. */
+export const getGameByEngine = (engineId: string | undefined) => GAMES.find((g) => g.engineId === engineId);
 
 /** "3–12 jogadores" → "3–12" (meta compacta do Explorar). */
 export const playersShort = (g: GameDefinition) => g.playersLabel.replace(' jogadores', '');

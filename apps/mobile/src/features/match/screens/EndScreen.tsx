@@ -10,11 +10,11 @@ import { getGame } from '@/features/catalog/data/games';
 
 import { leaveMatch } from '../hooks/leaveMatch';
 import { roomActions } from '../hooks/roomActions';
-import { useMatch } from '../store/matchStore';
+import { useImpostorMatch } from '../store/matchStore';
 
 /** Tela 18: Fim da partida. */
 export function EndScreen() {
-  const match = useMatch();
+  const match = useImpostorMatch();
   if (!match || !match.summary) return null;
   const { room, scores, summary, isHost, displayName } = match;
   const winner = scores[0];

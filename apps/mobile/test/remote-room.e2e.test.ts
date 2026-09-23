@@ -7,6 +7,9 @@ import type { AddressInfo } from 'node:net';
 import { after, before, test } from 'node:test';
 
 import { RoomError, type ConnectionState, type RoomSnapshot } from '@jogae/engine';
+
+/** Este teste joga Impostor: estreita a parte do jogo no snapshot. */
+const view = (s: RoomSnapshot | null | undefined) => s?.game as Extract<RoomSnapshot['game'], { kind: 'impostor' }>;
 import WebSocket from 'ws';
 
 import { loadConfig } from '../../room-server/src/config';
@@ -92,7 +95,7 @@ test('três celulares jogam uma partida inteira pela interface RoomService', asy
   await ana.service.startMatch();
   const all = [ana, bia, caio];
   await until(() => all.every((p) => p.state.snapshot?.room.phase === 'role_reveal'), 'todos veem o papel');
-  assert.equal(all.filter((p) => p.state.snapshot!.secret!.role === 'impostor').length, 1);
+  assert.equal(all.filter((p) => view(p.state.snapshot).secret!.role === 'impostor').length, 1);
 
   await ana.service.ackRole();
   await bia.service.ackRole();
@@ -101,22 +104,22 @@ test('três celulares jogam uma partida inteira pela interface RoomService', asy
   await until(() => all.every((p) => p.state.snapshot?.room.phase === 'clues'), 'pistas');
 
   await ana.service.setTimerRunning(true);
-  await until(() => caio.state.snapshot?.round?.timer.running === true, 'cronômetro rodando para o convidado');
+  await until(() => view(caio.state.snapshot)?.round?.timer.running === true, 'cronômetro rodando para o convidado');
   await bia.service.setPaused(true);
   await until(() => ana.state.snapshot?.room.paused === true, 'pausa chega ao host');
   await ana.service.setPaused(false);
   await ana.service.openVoting();
   await until(() => all.every((p) => p.state.snapshot?.room.phase === 'voting'), 'votação');
 
-  const impostor = all.find((p) => p.state.snapshot!.secret!.role === 'impostor')!;
+  const impostor = all.find((p) => view(p.state.snapshot).secret!.role === 'impostor')!;
   const innocent = all.find((p) => p !== impostor)!;
   for (const p of all) await p.service.castVote(p === impostor ? innocent.id : impostor.id);
-  await until(() => all.every((p) => p.state.snapshot?.result?.stage === 2), 'desfecho');
-  assert.equal(bia.state.snapshot!.result!.caught, true);
+  await until(() => all.every((p) => view(p.state.snapshot)?.result?.stage === 2), 'desfecho');
+  assert.equal(view(bia.state.snapshot).result!.caught, true);
 
   await ana.service.nextRound();
   await until(() => all.every((p) => p.state.snapshot?.room.phase === 'finished'), 'fim');
-  assert.equal(caio.state.snapshot!.summary!.impostorsCaught, 1);
+  assert.equal(view(caio.state.snapshot).summary!.impostorsCaught, 1);
 
   await bia.service.leaveRoom();
   assert.equal(bia.state.snapshot, null);
@@ -141,13 +144,13 @@ test('rede caiu e voltou: reconecta sozinho, retoma a sala e mantém o papel', a
   await caio.service.joinRoom(room.code, caio.me);
   await ana.service.startMatch();
   await until(() => bia.state.snapshot?.room.phase === 'role_reveal', 'papel');
-  const secret = bia.state.snapshot!.secret;
+  const secret = view(bia.state.snapshot).secret;
 
   bia.dropNetwork();
   // Não exigimos que o host a veja "desconectada": se a volta for rápida, a conexão nova substitui a velha sem piscar.
   await until(() => bia.state.connection.at(-1) === 'online' && bia.state.connection.includes('reconnecting'), 'bia reconectou');
   await until(() => ana.state.snapshot!.players.every((p) => p.connected), 'host vê todos de volta');
-  assert.deepEqual(bia.state.snapshot!.secret, secret);
+  assert.deepEqual(view(bia.state.snapshot).secret, secret);
   assert.deepEqual(bia.state.connection, ['online', 'reconnecting', 'online']);
 
   await bia.service.ackRole(); // o serviço continua utilizável depois de reconectar

@@ -10,13 +10,13 @@ import { haptics } from '@/core/utils/haptics';
 import { PauseModal } from '../components/PauseModal';
 import { roomActions } from '../hooks/roomActions';
 import { useRoundTimer } from '../hooks/useRoundTimer';
-import { useMatch } from '../store/matchStore';
+import { useImpostorMatch } from '../store/matchStore';
 
 const timerColor = (sec: number) => (sec <= 10 ? colors.danger : sec <= 20 ? colors.accent : colors.primary);
 
 /** Tela 13: Rodada + cronômetro (e o modal de pausa, tela 19). */
 export function RoundScreen() {
-  const match = useMatch();
+  const match = useImpostorMatch();
   const remaining = useRoundTimer(match?.round?.timer);
   const prev = useRef(remaining);
 

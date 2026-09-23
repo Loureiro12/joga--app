@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { createTokenVerifier } from '../src/auth';
 import { loadConfig } from '../src/config';
 import { parseClientMessage } from '../src/messages';
-import { FAST, INPUT, ME, TestClient, roomWith, sleep, startServer } from './helpers';
+import { FAST, INPUT, ME, TestClient, roomWith, sleep, startServer , type ImpostorView } from './helpers';
 
 test('config: valida ambiente e proíbe token de dev em produção', () => {
   assert.throws(() => loadConfig({ PORT: 'abc' }), /PORT inválida/);
@@ -106,11 +106,11 @@ test('partida pelo fio: 4 celulares, cada um só recebe o próprio segredo, e o 
     await host.cmd({ type: 'startMatch' });
     await Promise.all(clients.map((c) => c.untilSnapshot((s) => s.room.phase === 'role_reveal', 'papel')));
 
-    const impostor = clients.filter((c) => c.snapshot!.secret!.role === 'impostor');
+    const impostor = clients.filter((c) => c.game.secret!.role === 'impostor');
     assert.equal(impostor.length, 1);
     const innocents = clients.filter((c) => c !== impostor[0]);
-    const word = (innocents[0].snapshot!.secret as { word: string }).word;
-    assert.ok(innocents.every((c) => (c.snapshot!.secret as { word: string }).word === word));
+    const word = (innocents[0].game.secret as { word: string }).word;
+    assert.ok(innocents.every((c) => (c.game.secret as { word: string }).word === word));
     assert.ok(!impostor[0].frames.join('').includes(word), 'a palavra nunca passou pelo fio do impostor');
 
     for (const c of clients) await c.cmd({ type: 'ackRole' });
@@ -121,17 +121,17 @@ test('partida pelo fio: 4 celulares, cada um só recebe o próprio segredo, e o 
 
     const framesBeforeVerdict = clients.map((c) => c.frames.length);
     for (const c of clients) await c.cmd({ type: 'castVote', targetId: c === impostor[0] ? innocents[0].id : impostor[0].id });
-    await Promise.all(clients.map((c) => c.untilSnapshot((s) => s.result?.stage === 2, 'desfecho')));
+    await Promise.all(clients.map((c) => c.untilSnapshot((s) => (s.game as ImpostorView).result?.stage === 2, 'desfecho')));
 
     clients.forEach((c, i) => {
       const early = c.frames.slice(framesBeforeVerdict[i], -1).join('');
       if (c !== impostor[0]) assert.ok(!early.includes(`"impostorId":"${impostor[0].id}"`), `${c.name} soube do impostor antes da hora`);
       assert.ok(!early.includes(`"${impostor[0].id}":"`), 'nenhum voto individual passou pelo fio');
     });
-    const stages = host.messages.flatMap((m) => (m.t === 'snapshot' && m.snapshot?.result ? [m.snapshot.result.stage] : []));
+    const stages = host.messages.flatMap((m) => (m.t === 'snapshot' && (m.snapshot?.game as ImpostorView | undefined)?.result ? [(m.snapshot!.game as ImpostorView).result!.stage] : []));
     assert.deepEqual([...new Set(stages)], [0, 1, 2], 'os três tempos chegaram, em ordem');
-    assert.equal(host.snapshot!.result!.caught, true);
-    assert.equal(host.snapshot!.result!.word, word);
+    assert.equal(host.game.result!.caught, true);
+    assert.equal(host.game.result!.word, word);
 
     await host.cmd({ type: 'nextRound' });
     await guests[2].untilSnapshot((s) => s.room.roundIndex === 2 && s.room.phase === 'role_reveal', 'rodada 2');
@@ -187,7 +187,7 @@ test('reconexão: quem cai aparece desconectado, volta com resume e recebe o mes
     const { host, guests, code } = await roomWith(server.url, ['ana', 'bia', 'caio']);
     await host.cmd({ type: 'startMatch' });
     await guests[0].untilSnapshot((s) => s.room.phase === 'role_reveal', 'papel');
-    const secretBefore = guests[0].snapshot!.secret;
+    const secretBefore = guests[0].game.secret;
 
     guests[0].drop();
     await host.untilSnapshot((s) => s.players.find((p) => p.id === guests[0].id)?.connected === false, 'bia desconectada');
@@ -195,7 +195,7 @@ test('reconexão: quem cai aparece desconectado, volta com resume e recebe o mes
     const back = await TestClient.open(server.url, 'bia');
     await back.ok({ t: 'resume', code });
     await back.untilSnapshot(() => true, 'snapshot ao voltar');
-    assert.deepEqual(back.snapshot!.secret, secretBefore);
+    assert.deepEqual(back.game.secret, secretBefore);
     await host.untilSnapshot((s) => s.players.every((p) => p.connected), 'todos conectados de novo');
     assert.equal(((await (await TestClient.open(server.url, 'estranho')).request({ t: 'resume', code })) as { error: string }).error, 'not_in_room');
   } finally {
@@ -263,7 +263,7 @@ test('reinício do servidor: a sala volta do disco e os jogadores retomam com re
     const { host, guests, code } = await roomWith(first.url, ['ana', 'bia', 'caio']);
     await host.cmd({ type: 'startMatch' });
     await guests[1].untilSnapshot((s) => s.room.phase === 'role_reveal', 'papel');
-    const secrets = [host, ...guests].map((c) => c.snapshot!.secret);
+    const secrets = [host, ...guests].map((c) => c.game.secret);
     await first.close();
     assert.deepEqual(readdirSync(dir), [`${code}.json`]);
 
@@ -277,7 +277,7 @@ test('reinício do servidor: a sala volta do disco e os jogadores retomam com re
         await c.untilSnapshot(() => true, 'snapshot');
         revived.push(c);
       }
-      assert.deepEqual(revived.map((c) => c.snapshot!.secret), secrets, 'mesmos papéis depois do reinício');
+      assert.deepEqual(revived.map((c) => c.game.secret), secrets, 'mesmos papéis depois do reinício');
       await revived[2].untilSnapshot((s) => s.players.every((p) => p.connected), 'todos de volta');
       assert.equal(revived[0].snapshot!.room.hostId, host.id);
       for (const c of revived) await c.ok({ t: 'leave' });
@@ -321,6 +321,7 @@ test('API pública da sala: só o que cabe num convite, nada secreto, 404 para s
     assert.equal((await fetch(`${server.base}/api/room/12345`)).status, 404, 'código malformado nem chega a consultar');
 
     await guests[1].ok({ t: 'leave' });
+    await guests[0].ok({ t: 'leave' });
     await host.untilSnapshot((s) => s.room.phase === 'closed', 'sala fechada');
     assert.equal((await get(code)).status, 404, 'sala fechada some do convite');
 

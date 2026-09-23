@@ -40,18 +40,24 @@ function bot(index: number, onCode?: (code: string) => void) {
   const send = (message: ClientMessage) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(message));
   const cmd = (c: Extract<ClientMessage, { t: 'cmd' }>['cmd']) => send({ t: 'cmd', id: nextId++, cmd: c });
 
-  /** Reage uma vez a cada situação nova, com um atraso humano. */
+  /** Reage uma vez a cada situação nova, com um atraso humano. Serve aos dois jogos. */
   function react(s: RoomSnapshot) {
     const iAmHost = s.room.hostId === s.meId;
-    const key = `${s.room.phase}|${s.round?.deal ?? 0}|${s.result?.stage ?? '-'}|${iAmHost}|${s.players.filter((p) => p.connected).length}`;
+    const game = s.game;
+    const deal = game.kind === 'impostor' ? (game.round?.deal ?? 0) : (game.round?.questionId ?? '-');
+    const key = `${s.room.phase}|${deal}|${game.result?.stage ?? '-'}|${iAmHost}|${s.players.filter((p) => p.connected).length}`;
     if (key === acted) return;
     acted = key;
     const later = (ms: number, fn: () => void) => setTimeout(fn, ms);
+    const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
 
-    if (s.room.phase === 'role_reveal' && !s.round!.ackedIds.includes(s.meId)) later(rand(800, 2500), () => cmd({ type: 'ackRole' }));
+    if (game.kind === 'impostor' && s.room.phase === 'role_reveal' && !game.round!.ackedIds.includes(s.meId)) {
+      later(rand(800, 2500), () => cmd({ type: 'ackRole' }));
+    }
     if (s.room.phase === 'voting' && !s.votes?.myVote) {
-      const others = s.players.filter((p) => p.id !== s.meId);
-      later(rand(1500, 5000), () => cmd({ type: 'castVote', targetId: others[Math.floor(Math.random() * others.length)].id }));
+      // No Impostor ninguém vota em si; no outro jogo os alvos vêm prontos no snapshot.
+      const alvos = game.kind === 'likely' ? game.round!.targets : s.players.filter((p) => p.id !== s.meId).map((p) => p.id);
+      later(rand(1500, 5000), () => cmd({ type: 'castVote', targetId: pick(alvos) }));
     }
     if (!iAmHost) return;
     // Bot que é (ou virou) host conduz a partida.
@@ -60,7 +66,8 @@ function bot(index: number, onCode?: (code: string) => void) {
       later(1000, () => cmd({ type: 'setTimerRunning', running: true }));
       later(15_000, () => cmd({ type: 'openVoting' }));
     }
-    if (s.room.phase === 'revealing' && s.result?.stage === 2) later(9000, () => cmd({ type: 'nextRound' }));
+    if (s.room.phase === 'question') later(rand(4000, 7000), () => cmd({ type: 'openVoting' }));
+    if (s.room.phase === 'revealing' && game.result?.stage === 2) later(9000, () => cmd({ type: 'nextRound' }));
   }
 
   function connect() {

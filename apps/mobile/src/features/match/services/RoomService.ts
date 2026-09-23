@@ -31,6 +31,10 @@ export interface RoomService {
   openVoting(): Promise<void>;
   nextRound(): Promise<void>;
   playAgain(): Promise<void>;
+  /* Quem é Mais Provável */
+  endVoting(): Promise<void>;
+  skipQuestion(): Promise<void>;
+  endMatch(): Promise<void>;
 
   /* comandos de qualquer jogador */
   ackRole(): Promise<void>;
