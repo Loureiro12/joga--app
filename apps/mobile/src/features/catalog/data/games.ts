@@ -23,7 +23,10 @@ export type GameDefinition = {
   emoji: string;
   color: string;
   illustration: IllustrationKey;
+  /** Piso do motor: abaixo disso a partida travaria. Não é sugestão. */
   minPlayers: number;
+  /** Quantos o jogo pede para ficar bom. A tela sugere; o host decide. */
+  recommendedPlayers: number;
   maxPlayers: number;
   playersLabel: string;
   /** Home/Detalhes: "10–20 min" · Explorar: "15 min" */
@@ -64,13 +67,14 @@ export const GAMES: GameDefinition[] = [
     emoji: '👀',
     color: colors.primary,
     illustration: 'eyes',
-    minPlayers: 3,
+    minPlayers: 2,
+    recommendedPlayers: 3,
     maxPlayers: 12,
     playersLabel: '3–12 jogadores',
     durationLabel: '10–20 min',
     durationShort: '15 min',
     infoChips: [
-      { emoji: '👥', label: '3–12 jogadores' },
+      { emoji: '👥', label: 'Melhor com 3 a 12' },
       { emoji: '⏱', label: '10–20 minutos' },
       { emoji: '🎯', label: 'Fácil de aprender' },
     ],
@@ -106,13 +110,14 @@ export const GAMES: GameDefinition[] = [
     emoji: '👉',
     color: colors.accent,
     illustration: 'pillArrow',
-    minPlayers: 3,
+    minPlayers: 2,
+    recommendedPlayers: 3,
     maxPlayers: 20,
     playersLabel: '3–20 jogadores',
     durationLabel: '10–30 min',
     durationShort: '20 min',
     infoChips: [
-      { emoji: '👥', label: '3–20 jogadores' },
+      { emoji: '👥', label: 'Melhor com 3 a 20' },
       { emoji: '⏱', label: '10–30 minutos' },
       { emoji: '🗳', label: 'Voto secreto' },
     ],
@@ -151,6 +156,7 @@ export const GAMES: GameDefinition[] = [
     color: colors.success,
     illustration: 'mask',
     minPlayers: 3,
+    recommendedPlayers: 3,
     maxPlayers: 12,
     playersLabel: '3+ jogadores',
     durationLabel: '20 min',
@@ -168,6 +174,7 @@ export const GAMES: GameDefinition[] = [
     color: colors.danger,
     illustration: 'bomb',
     minPlayers: 4,
+    recommendedPlayers: 4,
     maxPlayers: 12,
     playersLabel: '4+ jogadores',
     durationLabel: '15 min',
@@ -185,6 +192,7 @@ export const GAMES: GameDefinition[] = [
     color: colors.primaryLight,
     illustration: 'dice',
     minPlayers: 2,
+    recommendedPlayers: 2,
     maxPlayers: 12,
     playersLabel: '2+ jogadores',
     durationLabel: '5 min',
@@ -202,6 +210,7 @@ export const GAMES: GameDefinition[] = [
     color: colors.surface,
     illustration: 'trophy',
     minPlayers: 2,
+    recommendedPlayers: 2,
     maxPlayers: 8,
     playersLabel: '2–8 jogadores',
     durationLabel: '20 min',
@@ -211,6 +220,9 @@ export const GAMES: GameDefinition[] = [
 ];
 
 export const getGame = (id: string | undefined) => GAMES.find((g) => g.id === id);
+
+/** O snapshot traz o id do MOTOR (`impostor`, `likely`), que nem sempre é o id do catálogo. */
+export const getGameByEngine = (engineId: string | undefined) => GAMES.find((g) => g.engineId === engineId);
 
 /** "3–12 jogadores" → "3–12" (meta compacta do Explorar). */
 export const playersShort = (g: GameDefinition) => g.playersLabel.replace(' jogadores', '');

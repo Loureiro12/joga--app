@@ -321,6 +321,7 @@ test('API pública da sala: só o que cabe num convite, nada secreto, 404 para s
     assert.equal((await fetch(`${server.base}/api/room/12345`)).status, 404, 'código malformado nem chega a consultar');
 
     await guests[1].ok({ t: 'leave' });
+    await guests[0].ok({ t: 'leave' });
     await host.untilSnapshot((s) => s.room.phase === 'closed', 'sala fechada');
     assert.equal((await get(code)).status, 404, 'sala fechada some do convite');
 

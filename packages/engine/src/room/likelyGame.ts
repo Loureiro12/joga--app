@@ -56,6 +56,7 @@ const emptyRound = () => ({
 export const likelyGame: GameRules<LikelyState> = {
   id: 'likely',
   minPlayers: LIKELY_RULES.minPlayers,
+  recommendedPlayers: LIKELY_RULES.recommendedPlayers,
   maxPlayers: LIKELY_RULES.maxPlayers,
   hostCommands: new Set(['startMatch', 'openVoting', 'endVoting', 'skipQuestion', 'nextRound', 'playAgain']),
 

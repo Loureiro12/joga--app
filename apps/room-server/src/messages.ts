@@ -38,7 +38,8 @@ function roomInput(v: unknown): CreateRoomInput | null {
   if (typeof v.category !== 'string' || v.category.length < 1 || v.category.length > 30) return null;
   // `totalRounds: 0` no "Quem é Mais Provável?" é a partida sem limite; o Impostor exige pelo menos 1.
   const minRounds = v.gameId === 'likely' ? 0 : 1;
-  if (!isInt(v.totalRounds, minRounds, 30) || !isInt(v.maxPlayers, 3, 20)) return null;
+  // O teto da sala pode ser 2: o mínimo é técnico, não recomendação — quem decide o tamanho é o host.
+  if (!isInt(v.totalRounds, minRounds, 30) || !isInt(v.maxPlayers, 2, 20)) return null;
   return { gameId: v.gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers, settings: likelySettings(v.settings) };
 }
 

@@ -196,6 +196,12 @@ Segundo jogo com partida de verdade. A spec (42 seções) foi entregue em duas e
 
 **Verificado:** 53 testes no engine (regras, banco de perguntas, e a sala jogando o jogo novo de ponta a ponta, incluindo empate, unanimidade, desconexão, saída no meio, partida sem limite e restaurar no meio da votação); smoke do `RoomService` jogando uma partida completa. **Não verificado:** as telas num aparelho de verdade e a gravação no Supabase (o boletim vai com `impostorsCaught: 0`).
 
+**Sem mínimo de produto (2026-09-22).** Nos dois jogos o número de jogadores virou *recomendação*, não regra. O motor guarda só um **piso técnico de 2**, que existe porque abaixo dele a partida trava de verdade: com uma pessoa sozinha não há em quem votar e a votação nunca fecharia. O lobby libera o "Começar" a partir de 2 e, abaixo do recomendado, avisa em vez de bloquear; a sala em andamento só fecha quando sobra uma pessoa.
+
+- No Impostor com 2, o empate 1×1 sempre inocenta o impostor — o jogo fica bobo, mas roda, e quem decide se vale a pena é o grupo.
+- `GameRules` passou a ter `minPlayers` (piso) e `recommendedPlayers` (sugestão); o catálogo do app espelha os dois.
+- De quebra: `getGame(room.gameId)` não achava o jogo novo, porque o snapshot traz o id do MOTOR (`likely`) e o catálogo usa o seu (`mais-provavel`). Agora existe `getGameByEngine`.
+
 **Fica para a etapa 2:** modo Um Celular (§4, o usuário pediu junto), cronômetro configurável, rodada de desempate, opção "Ninguém", estatísticas sociais (§22), perguntas personalizadas, card de compartilhamento, denunciar pergunta e geração por IA.
 
 **Dívida conhecida:** `MatchRecord` ainda carrega `impostorsCaught` / `timesImpostor` / `timesEscaped`, que são do Impostor — o jogo novo grava zeros. Generalizar isso pede uma migration e mexe nas conquistas.

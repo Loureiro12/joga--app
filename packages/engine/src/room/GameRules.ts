@@ -30,7 +30,10 @@ export type GameCtx = {
 
 export interface GameRules<S> {
   readonly id: GameId;
+  /** Abaixo disso a partida trava de verdade (ninguém em quem votar). É o único número obrigatório. */
   readonly minPlayers: number;
+  /** Quantos o jogo pede para ficar bom. A tela sugere; o host decide. */
+  readonly recommendedPlayers: number;
   readonly maxPlayers: number;
   /** Comandos que só o host pode mandar; os demais são recusados com `not_host`. */
   readonly hostCommands: ReadonlySet<RoomCommand['type']>;

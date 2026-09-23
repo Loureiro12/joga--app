@@ -236,8 +236,10 @@ test('sair no meio não re-sorteia a pergunta (ao contrário do Impostor)', () =
   assert.equal(r.view('ana').round!.questionId, pergunta, 'a pergunta continua a mesma');
   assert.equal(r.engine.phase, 'voting');
 
-  // Com menos de 3 a sala fecha, como em qualquer jogo.
+  // Sobrando uma pessoa só a sala fecha — não há em quem votar.
   r.engine.leave('caio');
+  assert.equal(r.engine.phase, 'voting', 'com dois a votação segue');
+  r.engine.leave('bia');
   assert.equal(r.engine.phase, 'closed');
 });
 
@@ -311,4 +313,26 @@ test('a sala sobrevive a salvar e restaurar no meio da votação', () => {
   revived.dispatch('caio', { type: 'castVote', targetId: 'caio' });
   clock.advance(DEFAULT_ENGINE_CONFIG.allVotedPauseMs + DEFAULT_ENGINE_CONFIG.revealStage2Ms + 10);
   assert.deepEqual([view('ana').result!.winnerIds, view('ana').result!.unanimous], [['caio'], true]);
+});
+
+test('não existe mínimo de produto: dois jogadores jogam até o fim', () => {
+  const r = room(['ana', 'bia'], {}, 1);
+  r.engine.dispatch('ana', { type: 'startMatch' });
+  assert.equal(r.engine.phase, 'question', 'o motor não barra uma sala de dois');
+
+  playRound(r, { ana: 'bia', bia: 'bia' });
+  const result = r.view('ana').result!;
+  assert.deepEqual([result.winnerIds, result.unanimous, result.selfConfirmed], [['bia'], true, true]);
+
+  r.engine.dispatch('ana', { type: 'nextRound' });
+  assert.equal(r.engine.phase, 'finished');
+});
+
+test('sobrando uma pessoa a sala fecha: não há em quem votar', () => {
+  const r = room(['ana', 'bia', 'caio']);
+  r.engine.dispatch('ana', { type: 'startMatch' });
+  r.engine.leave('caio');
+  assert.equal(r.engine.phase, 'question', 'com dois a partida continua');
+  r.engine.leave('bia');
+  assert.equal(r.engine.phase, 'closed');
 });

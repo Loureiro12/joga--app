@@ -5,7 +5,7 @@ import { routes } from '@/core/navigation/routes';
 import { Eyes } from '@/core/illustrations';
 import { colors } from '@/core/theme';
 import { Avatar, Button, Display, Screen, Txt } from '@/core/ui';
-import { getGame } from '@/features/catalog/data/games';
+import { getGameByEngine } from '@/features/catalog/data/games';
 
 import { leaveMatch } from '../hooks/leaveMatch';
 import { useMatch } from '../store/matchStore';
@@ -15,7 +15,7 @@ export function AbortedScreen() {
   const match = useMatch();
   if (!match) return null;
   const { room, host, others, connectedPlayers } = match;
-  const game = getGame(room.gameId);
+  const game = getGameByEngine(room.gameId);
   const hostLeft = room.closedReason !== 'not_enough_players';
   const remaining = hostLeft ? others : connectedPlayers;
 
@@ -29,7 +29,7 @@ export function AbortedScreen() {
         <Txt size={15} lh={1.45} color={colors.muted} center style={{ maxWidth: 290 }}>
           {hostLeft
             ? `${host?.name ?? 'O host'} encerrou a partida. Vocês podem continuar juntos em uma sala nova — o placar desta noite fica salvo.`
-            : `O ${game?.name ?? 'jogo'} precisa de pelo menos ${game?.minPlayers ?? 3} jogadores. Chame mais alguém ou escolha um jogo para 2.`}
+            : `Ficou gente de menos para continuar a partida. Chamem alguém e criem uma sala nova.`}
         </Txt>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 8 }}>
           {remaining.slice(0, 5).map((p) => (

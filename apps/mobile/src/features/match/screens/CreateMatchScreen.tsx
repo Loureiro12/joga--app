@@ -193,8 +193,13 @@ export function CreateMatchScreen() {
       <Spacer />
 
       <Txt font="body400" size={13} color={colors.muted} center>
-        {game.name} · {categoryResumo} · {roundsResumo} · {players} jogadores
+        {game.name} · {categoryResumo} · {roundsResumo} · até {players} jogadores
       </Txt>
+      {players < game.recommendedPlayers && (
+        <Txt font="body400" size={12} lh={1.35} color={colors.muted} center>
+          Com menos de {game.recommendedPlayers} o jogo fica previsível — mas a sala abre do mesmo jeito.
+        </Txt>
+      )}
       <Button label="Criar sala" loading={loading} onPress={create} />
     </Screen>
   );

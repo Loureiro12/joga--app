@@ -66,7 +66,9 @@ test('partida abandonada (fechou por falta de gente) não entra no histórico', 
   try {
     const { host, guests } = await roomWith(server.url, ['ana', 'bia', 'caio']);
     await host.cmd({ type: 'startMatch' });
+    // Sai gente até sobrar uma pessoa só: aí a sala fecha, porque não há em quem votar.
     await guests[1].ok({ t: 'leave' });
+    await guests[0].ok({ t: 'leave' });
     await host.untilSnapshot((s) => s.room.phase === 'closed', 'sala fechada');
     await sleep(30);
     assert.equal(recorder.records.length, 0);

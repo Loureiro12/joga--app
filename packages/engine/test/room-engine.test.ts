@@ -84,14 +84,18 @@ test('lobby: entra, enche, e não aceita gente com a partida em andamento', () =
   assert.equal(code(() => engine.join(who('b'))), 'ok', 'quem já é da sala sempre pode voltar');
 });
 
-test('só o host comanda, e precisa de 3 conectados para começar', () => {
+test('só o host comanda; o piso para começar é técnico (2), não o recomendado', () => {
   const { engine } = room(['a', 'b']);
   assert.equal(code(() => engine.dispatch('b', { type: 'startMatch' })), 'not_host');
-  assert.equal(code(() => engine.dispatch('a', { type: 'startMatch' })), 'not_enough_players');
   assert.equal(code(() => engine.dispatch('x', { type: 'ackRole' })), 'not_in_room');
-  engine.join(who('c'));
-  engine.setConnected('c', false);
+
+  // Com um sozinho não há em quem votar: aí sim é recusado.
+  engine.setConnected('b', false);
   assert.equal(code(() => engine.dispatch('a', { type: 'startMatch' })), 'not_enough_players', 'desconectado não conta');
+
+  engine.setConnected('b', true);
+  engine.dispatch('a', { type: 'startMatch' });
+  assert.equal(engine.phase, 'role_reveal', 'dois bastam: o 3 é recomendação, não regra');
 });
 
 test('segredo: cada snapshot só traz o papel de quem pediu, e exatamente um é impostor', () => {
@@ -291,6 +295,7 @@ test('boletim: quem saiu no meio não entra; sala fechada por falta de gente nã
   const closed = room(['a', 'b', 'c']);
   closed.engine.dispatch('a', { type: 'startMatch' });
   closed.engine.leave('c');
+  closed.engine.leave('b');
   assert.equal(closed.engine.phase, 'closed');
   assert.equal(closed.engine.matchRecord(), null);
 });
@@ -325,7 +330,7 @@ test('host migra: ao sair (ou não voltar em 30 s) assume quem está há mais te
   assert.deepEqual(dropped.engine.playerIds, ['c', 'd']);
 });
 
-test('saída no meio da rodada: sorteia de novo com o mesmo número; abaixo de 3 a sala fecha', () => {
+test('saída no meio da rodada: sorteia de novo com o mesmo número; com um só a sala fecha', () => {
   const { engine, all } = room();
   engine.dispatch('a', { type: 'startMatch' });
   all({ type: 'ackRole' });
@@ -338,6 +343,8 @@ test('saída no meio da rodada: sorteia de novo com o mesmo número; abaixo de 3
   assert.equal(redealt.round!.deal, 2, 'o cliente percebe o novo sorteio pelo `deal`');
 
   engine.leave('c');
+  assert.equal(engine.phase, 'role_reveal', 'com dois a partida continua');
+  engine.leave('b');
   const closed = snapshotFor(engine, 'a');
   assert.deepEqual([closed.room.phase, closed.room.closedReason], ['closed', 'not_enough_players']);
   assert.equal(code(() => engine.join(who('z'))), 'room_not_found');
@@ -383,4 +390,39 @@ test('dispose cancela o alarme', () => {
   assert.equal(clock.pending(), 1);
   engine.dispose();
   assert.equal(clock.pending(), 0);
+});
+
+test('Impostor sem mínimo de produto: dois jogadores começam e a partida anda', () => {
+  const clock = fakeClock();
+  const engine = RoomEngine.create('4827', { gameId: 'impostor' as const, category: 'Comidas', totalRounds: 1, maxPlayers: 12 }, { id: 'a', name: 'A', color: '#7C3AED' }, { scheduler: clock.scheduler, rng: () => 0.5 });
+  engine.join({ id: 'b', name: 'B', color: '#FACC15' });
+
+  engine.dispatch('a', { type: 'startMatch' });
+  assert.equal(engine.phase, 'role_reveal', 'o motor não barra uma sala de dois');
+
+  for (const id of ['a', 'b']) engine.dispatch(id, { type: 'ackRole' });
+  engine.dispatch('a', { type: 'openVoting' });
+  // Cada um só pode acusar o outro: o empate resultante sempre inocenta o impostor.
+  engine.dispatch('a', { type: 'castVote', targetId: 'b' });
+  engine.dispatch('b', { type: 'castVote', targetId: 'a' });
+  clock.advance(DEFAULT_ENGINE_CONFIG.allVotedPauseMs + DEFAULT_ENGINE_CONFIG.revealStage2Ms + 10);
+
+  const result = snapshotFor(engine, 'a').result!;
+  assert.equal(result.stage, 2);
+  assert.equal(result.caught, false, 'com dois, o empate sempre deixa o impostor escapar');
+
+  engine.dispatch('a', { type: 'nextRound' });
+  assert.equal(engine.phase, 'finished');
+});
+
+test('sobrando uma pessoa a sala fecha: ninguém teria em quem votar', () => {
+  const clock = fakeClock();
+  const engine = RoomEngine.create('4827', { gameId: 'impostor' as const, category: 'Comidas', totalRounds: 2, maxPlayers: 12 }, { id: 'a', name: 'A', color: '#7C3AED' }, { scheduler: clock.scheduler, rng: () => 0.5 });
+  for (const id of ['b', 'c']) engine.join({ id, name: id, color: '#FACC15' });
+  engine.dispatch('a', { type: 'startMatch' });
+
+  engine.leave('c');
+  assert.equal(engine.phase, 'role_reveal', 'com dois a partida continua (rodada re-sorteada)');
+  engine.leave('b');
+  assert.equal(engine.phase, 'closed');
 });

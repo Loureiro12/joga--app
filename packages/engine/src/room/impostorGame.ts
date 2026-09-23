@@ -39,6 +39,7 @@ const emptyRound = () => ({
 export const impostorGame: GameRules<ImpostorState> = {
   id: 'impostor',
   minPlayers: IMPOSTOR_RULES.minPlayers,
+  recommendedPlayers: IMPOSTOR_RULES.recommendedPlayers,
   maxPlayers: 12,
   hostCommands: new Set(['startMatch', 'setTimerRunning', 'resetTimer', 'openVoting', 'nextRound', 'playAgain']),
 

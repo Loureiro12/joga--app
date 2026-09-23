@@ -13,7 +13,12 @@ export * from './likely-types';
  */
 
 export const LIKELY_RULES = {
-  minPlayers: 3,
+  /**
+   * Piso técnico: "quem é mais provável" precisa de um grupo, e com o voto em si mesmo desligado
+   * um jogador sozinho não teria em quem votar. A tela recomenda mais, mas não bloqueia.
+   */
+  minPlayers: 2,
+  recommendedPlayers: 3,
   /** Acima disso a votação e a discussão ficam lentas demais (spec §3). */
   maxPlayers: 20,
   points: {
