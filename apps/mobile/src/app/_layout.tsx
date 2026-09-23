@@ -37,6 +37,9 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="(tabs)" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
+          {/* Bomba-Relógio: a rodada é tela cheia e sem gesto de voltar — sair no meio explodiria a brincadeira. */}
+          <Stack.Screen name="bomb/round" options={{ presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
+          <Stack.Screen name="bomb/end" options={{ presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
           {/* Fluxo de partida: modal em tela cheia, sem gesto de voltar (sair só pela pausa). */}
           <Stack.Screen name="match" options={{ presentation: 'fullScreenModal', gestureEnabled: false, animation: 'fade' }} />
         </Stack>

@@ -8,6 +8,7 @@
  *  - É consumido como fonte (`main` aponta para `src/`), sem etapa de build.
  */
 export * from './types';
+export * from './games/bomb';
 export * from './games/impostor';
 export * from './games/likely';
 export * from './room/protocol';

@@ -74,10 +74,13 @@ export function LikelyEndScreen() {
       {competitivo && (
         <View style={{ backgroundColor: colors.background, borderRadius: radii.card, padding: 18, gap: 10 }}>
           <Overline>Quem leu melhor o grupo</Overline>
-          {scores.slice(0, 5).map((s, i) => (
+          {scores.slice(0, 5).map((s) => {
+            // Colocação pelos pontos, não pela linha: quem empata recebe a mesma medalha.
+            const posicao = 1 + scores.filter((o) => o.points > s.points).length;
+            return (
             <View key={s.playerId} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Txt font="body600" size={14} color={colors.muted}>
-                {['🥇', '🥈', '🥉'][i] ?? `${i + 1}º`}
+                {['🥇', '🥈', '🥉'][posicao - 1] ?? `${posicao}º`}
               </Txt>
               <Txt font="body600" size={15} style={{ flex: 1 }}>
                 {displayName(s.playerId)}
@@ -86,7 +89,8 @@ export function LikelyEndScreen() {
                 {formatPoints(s.points)}
               </Display>
             </View>
-          ))}
+            );
+          })}
         </View>
       )}
 

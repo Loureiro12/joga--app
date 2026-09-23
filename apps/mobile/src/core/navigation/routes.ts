@@ -37,4 +37,11 @@ export const routes = {
     likelyResult: '/match/likely-result',
     likelyEnd: '/match/likely-end',
   },
+  /** Bomba-Relógio: um celular só, sem sala — por isso fora de `match`. */
+  bomb: {
+    setup: '/bomb/setup',
+    settings: '/bomb/settings',
+    round: '/bomb/round',
+    end: '/bomb/end',
+  },
 } as const;

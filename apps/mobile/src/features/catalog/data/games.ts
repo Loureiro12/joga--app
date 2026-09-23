@@ -42,8 +42,13 @@ export type GameDefinition = {
   trending?: boolean;
   /** Tem fluxo de partida implementado? Os demais aparecem como "Em breve". */
   playable: boolean;
-  /** Qual motor conduz a partida. Só os jogáveis têm — é o que vai em `createRoom`. */
+  /** Qual motor de SALA conduz a partida. Só os jogáveis em rede têm — é o que vai em `createRoom`. */
   engineId?: GameId;
+  /**
+   * `sala`: cada um no seu celular, com conta e servidor.
+   * `local`: um aparelho só, passando de mão em mão — não cria sala nem precisa de conta.
+   */
+  device?: 'sala' | 'local';
 };
 
 const comingSoon = {
@@ -164,8 +169,8 @@ export const GAMES: GameDefinition[] = [
     tags: ['Em alta', 'Festa', 'Família'],
   },
   {
-    ...comingSoon,
     id: 'bomba-relogio',
+    device: 'local',
     name: 'Bomba-relógio',
     category: 'Caótico',
     tagline: 'Responda antes que estoure na sua mão.',
@@ -173,13 +178,28 @@ export const GAMES: GameDefinition[] = [
     emoji: '💣',
     color: colors.danger,
     illustration: 'bomb',
-    minPlayers: 4,
+    minPlayers: 2,
     recommendedPlayers: 4,
-    maxPlayers: 12,
-    playersLabel: '4+ jogadores',
-    durationLabel: '15 min',
+    maxPlayers: 16,
+    playersLabel: 'Um celular só',
+    durationLabel: '10–15 min',
     durationShort: '15 min',
+    infoChips: [
+      { emoji: '📱', label: 'Um celular só' },
+      { emoji: '👥', label: 'Melhor com 4 a 8' },
+      { emoji: '💣', label: 'Tempo secreto' },
+    ],
+    howToPlay: [
+      'Leia o desafio em voz alta e responda. Não vale repetir o que já falaram.',
+      'Toque em PASSAR BOMBA e entregue o celular na hora — a bomba já é de quem recebeu.',
+      'Ninguém sabe quando ela estoura. Quem estiver com o celular perde a rodada.',
+    ],
+    wordCategories: [],
+    roundOptions: [5, 10, 15, 0],
+    defaults: { players: 5, category: '', rounds: 10 },
     tags: ['Em alta', 'Festa', 'Rápidos'],
+    trending: true,
+    playable: true,
   },
   {
     ...comingSoon,
