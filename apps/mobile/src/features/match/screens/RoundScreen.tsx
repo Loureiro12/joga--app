@@ -3,11 +3,10 @@ import { View } from 'react-native';
 
 import { Dice } from '@/core/illustrations';
 import { colors, radii } from '@/core/theme';
-import { Avatar, Button, Display, IconButton, Overline, ProgressRing, RoundProgress, Screen, Spacer, Txt, WaitingButton } from '@/core/ui';
+import { Avatar, Button, Display, Overline, ProgressRing, RoundProgress, Screen, Spacer, Txt, WaitingButton } from '@/core/ui';
 import { formatClock } from '@/core/utils/format';
 import { haptics } from '@/core/utils/haptics';
 
-import { PauseModal } from '../components/PauseModal';
 import { roomActions } from '../hooks/roomActions';
 import { useRoundTimer } from '../hooks/useRoundTimer';
 import { useImpostorMatch } from '../store/matchStore';
@@ -41,16 +40,9 @@ export function RoundScreen() {
                 /{room.totalRounds}
               </Display>
             </Display>
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-              <View style={{ backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 10 }}>
-                <Overline>{round.category}</Overline>
-              </View>
-              <IconButton label="Pausar partida" size={40} onPress={() => roomActions.setPaused(true)}>
-                <View style={{ flexDirection: 'row', gap: 4 }}>
-                  <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: colors.text }} />
-                  <View style={{ width: 4, height: 14, borderRadius: 2, backgroundColor: colors.text }} />
-                </View>
-              </IconButton>
+            {/* O menu da partida ocupa o canto direito; a categoria recua para não colidir. */}
+            <View style={{ backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 10, marginRight: 48 }}>
+              <Overline>{round.category}</Overline>
             </View>
           </View>
           <RoundProgress total={room.totalRounds} current={round.index} />
@@ -132,7 +124,6 @@ export function RoundScreen() {
         <WaitingButton label="Aguardando o host abrir a votação" />
       )}
 
-      <PauseModal match={match} />
     </Screen>
   );
 }

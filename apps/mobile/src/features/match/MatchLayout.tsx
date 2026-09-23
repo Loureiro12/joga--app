@@ -7,6 +7,7 @@ import { colors } from '@/core/theme';
 import { useSettingsStore } from '@/features/settings/settingsStore';
 
 import { ConnectionOverlay } from './components/ConnectionOverlay';
+import { MatchMenu, openMatchMenu } from './components/MatchMenu';
 import { DevMenu } from './components/DevMenu';
 import { useMatchNavigator } from './hooks/useMatchNavigator';
 
@@ -24,9 +25,10 @@ export function MatchLayout() {
   const keepAwake = useSettingsStore((s) => s.keepAwake);
 
   // Botão físico de voltar só existe no Android; no iOS o gesto já está desligado no Stack.
+  // Ele não navega (sair da partida no reflexo seria cruel), mas abre o menu — que é onde se sai.
   useEffect(() => {
     if (Platform.OS !== 'android') return;
-    const sub = BackHandler.addEventListener('hardwareBackPress', () => true);
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => (openMatchMenu(), true));
     return () => sub.remove();
   }, []);
 
@@ -34,6 +36,7 @@ export function MatchLayout() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {keepAwake && <KeepAwake />}
       <Stack screenOptions={{ headerShown: false, gestureEnabled: false, animation: 'fade', contentStyle: { backgroundColor: colors.background } }} />
+      <MatchMenu />
       <ConnectionOverlay />
       <DevMenu />
     </View>

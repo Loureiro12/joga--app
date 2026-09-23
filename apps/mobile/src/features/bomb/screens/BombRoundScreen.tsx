@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 import { Enter } from '@/core/animation/Enter';
 import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
-import { Avatar, Button, Display, Overline, Screen, Txt } from '@/core/ui';
+import { Avatar, Button, Display, IconButton, ModalCard, Overline, Screen, Txt, useScreenPadding } from '@/core/ui';
 import { haptics } from '@/core/utils/haptics';
 
 import { BurningFuse, useBombPulse } from '../components/BurningFuse';
@@ -23,6 +23,8 @@ const TICK_MS = 100;
  */
 export function BombRoundScreen() {
   const match = useBombMatch();
+  const [saindo, setSaindo] = useState(false);
+  const pad = useScreenPadding();
   const alarmes = useRef(0);
   const shake = useSharedValue(0);
   // O pulso é teatro: sorteia o próprio ritmo e nunca olha o relógio da bomba.
@@ -60,11 +62,71 @@ export function BombRoundScreen() {
   if (!match) return null;
   const player = (id: string) => match.players.find((p) => p.id === id);
   const active = player(match.activeId);
+  const jogou = match.history.length > 0;
+
+  /**
+   * A saída. Diferente dos outros jogos, aqui não há sala para deixar: o aparelho é do grupo.
+   * Então há duas saídas de verdade — encerrar (vai para o resultado com o que já rolou) e
+   * descartar. Encerrar só aparece quando já houve rodada; sem isso, não há resultado nenhum.
+   */
+  const menu = (
+    <>
+      <View style={{ position: 'absolute', top: pad.paddingTop, right: pad.paddingHorizontal, zIndex: 10 }} pointerEvents="box-none">
+        <IconButton label="Sair da partida" size={40} bg={colors.overlayDarkSoft} onPress={() => setSaindo(true)}>
+          <Txt font="body700" size={17} color={colors.muted}>
+            ✕
+          </Txt>
+        </IconButton>
+      </View>
+
+      <ModalCard visible={saindo} onRequestClose={() => setSaindo(false)}>
+        <Txt size={40}>💣</Txt>
+        <Display size={32} center>
+          Parar por aqui?
+        </Display>
+        <Txt font="body400" size={14} lh={1.4} color={colors.muted} center>
+          {jogou
+            ? `Vocês jogaram ${match.history.length} ${match.history.length === 1 ? 'rodada' : 'rodadas'}. Dá para ver o resultado do que já rolou ou largar tudo.`
+            : 'A partida nem começou de verdade — ainda não há resultado para mostrar.'}
+        </Txt>
+        <Button label="Voltar ao jogo" height={56} onPress={() => setSaindo(false)} style={{ alignSelf: 'stretch', marginTop: 6 }} />
+        {jogou && (
+          <Button
+            label="Encerrar e ver o resultado"
+            variant="tertiary"
+            height={50}
+            radius={16}
+            fontSize={18}
+            onPress={() => {
+              setSaindo(false);
+              bombActions.endMatch();
+            }}
+            style={{ alignSelf: 'stretch' }}
+          />
+        )}
+        <Button
+          label="Descartar partida"
+          variant="tertiary"
+          height={50}
+          radius={16}
+          fontSize={18}
+          textColor={colors.danger}
+          onPress={() => {
+            setSaindo(false);
+            bombActions.leave();
+            router.replace(routes.explore);
+          }}
+          style={{ alignSelf: 'stretch' }}
+        />
+      </ModalCard>
+    </>
+  );
 
   /* ------------------------------------------------ passe o celular para… */
   if (match.phase === 'handoff') {
     return (
       <Screen scroll={false}>
+        {menu}
         <Overline>
           {match.settings.totalRounds ? `Rodada ${match.roundIndex} de ${match.settings.totalRounds}` : `Rodada ${match.roundIndex}`}
         </Overline>
@@ -99,6 +161,7 @@ export function BombRoundScreen() {
     const eliminado = match.eliminated.includes(match.loserId ?? '');
     return (
       <Screen bg={colors.danger} scroll={false}>
+        {menu}
         <Enter kind="pop" duration={500} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 }}>
           <Txt size={80}>💥</Txt>
           <Display size={64} center>
@@ -132,9 +195,11 @@ export function BombRoundScreen() {
   return (
     <Animated.View style={[{ flex: 1 }, shakeStyle]}>
       <Screen scroll={false}>
+        {menu}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Overline color={colors.danger}>💣 Bomba ativa</Overline>
-          <Txt font="body600" size={12} color={colors.muted}>
+          {/* O ✕ ocupa o canto direito; a categoria recua para não ficar embaixo dele. */}
+          <Txt font="body600" size={12} color={colors.muted} style={{ marginRight: 48 }}>
             {match.challenge?.category}
           </Txt>
         </View>

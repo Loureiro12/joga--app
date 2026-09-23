@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { IMPOSTOR_CATEGORIES, categoryWords } from '@jogae/engine';
+import { IMPOSTOR_CATEGORIES, categoryWords, type RoomPhase } from '@jogae/engine';
 
 import { GAMES, getGame } from '../src/features/catalog/data/games';
 
@@ -74,4 +74,33 @@ test('a animação de tensão não tem como saber quando a bomba estoura', async
   }
   // Ela sorteia o próprio ritmo; é isso que a mantém descolada da bomba.
   assert.ok(animacao.includes('Math.random()'), 'sem sorteio próprio, o ritmo viraria constante e previsível');
+});
+
+/**
+ * Sair no meio precisa existir em toda tela de partida, não só nas que alguém lembrou de cobrir.
+ * O menu mora no layout do fluxo (`MatchLayout`), então é ele que garante a cobertura — se
+ * alguém o tirar de lá para pôr numa tela só, este teste avisa.
+ */
+test('a saída da partida fica no layout, não espalhada pelas telas', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const layout = await readFile(new URL('../src/features/match/MatchLayout.tsx', import.meta.url), 'utf8');
+  assert.ok(layout.includes('<MatchMenu />'), 'sem o menu no layout, telas novas nascem sem saída');
+  // No Android, o botão físico de voltar tem de levar ao menu em vez de não fazer nada.
+  assert.ok(layout.includes('openMatchMenu'), 'o botão físico de voltar deixou de abrir o menu');
+
+  const bomba = await readFile(new URL('../src/features/bomb/screens/BombRoundScreen.tsx', import.meta.url), 'utf8');
+  // A Bomba-Relógio não tem sala para deixar: a saída dela é encerrar ou descartar.
+  assert.ok(bomba.includes('bombActions.endMatch'), 'falta encerrar e ver o resultado');
+  assert.ok(bomba.includes('bombActions.leave'), 'falta descartar a partida');
+});
+
+test('toda fase de partida tem saída — inclusive as dos jogos novos', async () => {
+  const { hasMatchToLeave } = await import('../src/features/match/matchPhase');
+
+  // Se um jogo novo trouxer uma fase, ela cai aqui e precisa de uma decisão consciente.
+  const emJogo: RoomPhase[] = ['role_reveal', 'clues', 'question', 'voting', 'revealing'];
+  for (const fase of emJogo) assert.equal(hasMatchToLeave(fase), true, `a fase "${fase}" ficou sem saída`);
+
+  // Nestas não há partida para abandonar: o lobby tem o próprio "Fechar" e o resto já acabou.
+  for (const fase of ['lobby', 'finished', 'closed'] as RoomPhase[]) assert.equal(hasMatchToLeave(fase), false, `"${fase}" não deveria oferecer saída`);
 });

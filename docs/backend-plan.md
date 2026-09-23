@@ -239,6 +239,17 @@ O app passou a imprimir no Metro cada requisição e cada troca de tela, em `app
 1. **O `PROTOCOL_VERSION` não tinha subido** quando o snapshot mudou de forma (`round/secret/result` → `game`). App novo contra servidor velho se entenderiam mal em silêncio. Agora é **2**, e o servidor recusa quem não bate com `bye protocol`. O helper de teste tinha o número escrito na mão — corrigido para usar a constante.
 2. **O servidor no Fly recusa o login do app** (`bye unauthenticated`), e roda código anterior a tudo isto (`minPlayers: 3`, sem `/api/room`). O `createTokenVerifier` engolia o motivo; agora registra status e corpo da resposta do Auth, para separar "token inválido" de "a chave do servidor está errada".
 
+### Sair da partida (2026-09-23)
+
+Antes só havia saída em duas telas: o lobby e a de pistas do Impostor. Quem estivesse revelando o papel, votando ou vendo o resultado ficava preso até a partida acabar — e a Bomba-Relógio, que eu tinha feito como modal sem gesto de voltar, não tinha saída nenhuma.
+
+- **Jogos de sala:** o menu mora em `MatchLayout`, não nas telas. É o que garante que tela nova nasça com saída. O botão fica sempre no mesmo canto, porque quem está no meio de uma votação não deveria procurar onde se sai. Ele reúne pausar, regras e sair — o antigo `PauseModal`, que só existia nas pistas, foi absorvido.
+- **Android:** o botão físico de voltar deixou de ser inerte e passa a abrir esse menu. Ele não sai direto: abandonar a partida no reflexo seria cruel.
+- **Bomba-Relógio:** não há sala para deixar, o aparelho é do grupo. Então são duas saídas — *encerrar* (vai para o resultado com o que já rolou) e *descartar*. Encerrar só aparece depois da primeira rodada, senão não há resultado nenhum.
+- A regra de quais fases têm saída virou `matchPhase.ts`, sem nada de React, e um teste percorre todas as fases. A lista cresce a cada jogo, e uma fase esquecida é exatamente uma tela sem saída.
+
+**Verificado:** a Bomba no navegador (o ✕, o modal, o descartar, e "encerrar" ausente antes da primeira rodada) e a ausência correta do menu no lobby. **Não verificado no navegador:** o menu nas fases de partida dos jogos de sala — elas exigem uma sala com três pessoas, e o servidor de produção ainda recusa o login até a chave ser trocada.
+
 ### Passo 6 — Assinatura
 
 - RevenueCat com o id do usuário do Supabase; webhook → `entitlements`.
