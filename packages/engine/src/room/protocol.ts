@@ -5,7 +5,14 @@ import type { CreateRoomInput, PlayerId, RoomErrorCode, RoomSnapshot } from '../
  * Toda requisição do cliente leva um `id`; o servidor responde com `ack` do mesmo `id`.
  * O estado nunca vem na resposta: chega sempre como `snapshot`, já filtrado para quem recebe.
  */
-export const PROTOCOL_VERSION = 1;
+/**
+ * Sobe quando o formato das mensagens muda de um jeito que as pontas não conseguem conversar.
+ * O servidor recusa quem não bate com um `bye protocol`, e é isso que evita o pior caso:
+ * app novo contra servidor velho trocando snapshots que o outro lado interpreta errado em silêncio.
+ *
+ * 2 — `RoomSnapshot.round/secret/result/summary` viraram `RoomSnapshot.game`, por jogo (2026-09-22).
+ */
+export const PROTOCOL_VERSION = 2;
 
 /** O que um jogador pode pedir à sala. O engine decide se pode (host, fase). */
 export type RoomCommand =

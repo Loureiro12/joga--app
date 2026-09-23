@@ -76,5 +76,21 @@ As regras do Impostor (sorteio, apuração, pontos) e os tipos do domínio moram
 - **`ackRole`**: o mock avança para as pistas assim que o jogador local confirma; o servidor real deve esperar todos (ou um timeout).
 - **Deep link**: `src/app/j/[code].tsx` já abre Entrar na sala com o código. Falta configurar universal links (`associatedDomains` no iOS, `intentFilters` no Android) para `jogaeapp.com.br`.
 - **Sons**: a configuração existe, mas não há assets de áudio no handoff — nada toca ainda.
+
+## Log no terminal (só em dev)
+
+Com `npx expo start`, o Metro mostra o que o app faz:
+
+```
+🧭 tela   /match/vote {"code":"4827"}
+🌐 GET    /rest/v1/matches?select=id,game_id… → 200 (131ms)
+🔴 POST   /auth/v1/token → 400 · Invalid login credentials
+🔌 → cmd castVote #7
+🔌 ← snapshot voting · 5 jogadores
+```
+
+Um ponto de instrumentação por canal, em `src/core/logging/`: o `fetch` do cliente Supabase (pega toda chamada de uma vez), o WebSocket em `RemoteRoomService` e o `pathname` do expo-router. Nenhuma tela ou serviço precisa se instrumentar.
+
+**Em produção sai desligado**, e nem em dev imprime token, senha ou chave — `EXPO_PUBLIC_LOG=off` silencia (útil ao gravar a tela). Ping e pong do WebSocket ficam de fora: são dezenas por partida.
 - **Username, amigos, histórico, conquistas**: reais com o Supabase configurado; simulados sem ele.
 - **Premium e criar jogo com IA**: escondidos por `src/core/config/features.ts` até o passo 6 (a compra ainda é simulada).

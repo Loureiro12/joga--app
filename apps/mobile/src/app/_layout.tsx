@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useScreenLogger } from '@/core/logging/useScreenLogger';
 import { colors, fontAssets } from '@/core/theme';
 import { ToastHost } from '@/core/ui';
 import { useAuthSync } from '@/features/auth/useAuthSync';
@@ -18,6 +19,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts(fontAssets);
+  useScreenLogger();
   useAuthSync();
   useFriendInviteSync();
 

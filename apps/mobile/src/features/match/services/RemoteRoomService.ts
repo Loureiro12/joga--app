@@ -11,7 +11,42 @@ import {
   type ServerMessage,
 } from '@jogae/engine';
 
+import { logWs } from '@/core/logging/logger';
+
 import type { RoomService, Unsubscribe } from './RoomService';
+
+/**
+ * Resumo de uma linha para o log. Ping e pong ficam de fora: são dezenas por partida e
+ * afogariam justamente as mensagens que interessam.
+ */
+function describe(message: ClientMessage | ServerMessage): string | null {
+  switch (message.t) {
+    case 'ping':
+    case 'pong':
+      return null;
+    // O token do `hello` nunca entra: é a sessão inteira de quem está jogando.
+    case 'hello':
+      return `hello v${message.v}`;
+    case 'create':
+      return `create ${message.input.gameId} · ${message.input.totalRounds} rodadas`;
+    case 'join':
+      return `join ${message.code}`;
+    case 'resume':
+      return `resume ${message.code}`;
+    case 'leave':
+      return 'leave';
+    case 'cmd':
+      return `cmd ${message.cmd.type}`;
+    case 'welcome':
+      return 'welcome';
+    case 'ack':
+      return message.ok ? `ack #${message.id} ok` : `ack #${message.id} ✗ ${message.error}`;
+    case 'snapshot':
+      return message.snapshot ? `snapshot ${message.snapshot.room.phase} · ${message.snapshot.players.length} jogadores` : 'snapshot (fora da sala)';
+    case 'bye':
+      return `bye ${message.reason}`;
+  }
+}
 
 /** O mínimo de WebSocket que usamos — o global do React Native/navegador, ou o pacote `ws` nos testes em Node. */
 type SocketLike = {
@@ -186,11 +221,16 @@ export class RemoteRoomService implements RoomService {
           if (this.socket === socket) this.socket = null;
           reject(e);
         };
-        socket.onopen = () => socket.send(JSON.stringify({ t: 'hello', v: PROTOCOL_VERSION, token } satisfies ClientMessage));
+        socket.onopen = () => {
+          const hello = { t: 'hello', v: PROTOCOL_VERSION, token } satisfies ClientMessage;
+          logWs('envia', describe(hello)!);
+          socket.send(JSON.stringify(hello));
+        };
         socket.onerror = () => fail(new RoomError('timeout'));
         socket.onclose = () => fail(new RoomError('timeout'));
         socket.onmessage = (event) => {
           const message = this.parse(event.data);
+          if (message) logWs('recebe', describe(message) ?? '');
           if (message?.t === 'bye') return fail(new RoomError(message.reason === 'unauthenticated' ? 'unauthenticated' : 'timeout'));
           if (message?.t !== 'welcome') return;
           clearTimeout(timer);
@@ -211,6 +251,8 @@ export class RemoteRoomService implements RoomService {
     const message = this.parse(data);
     if (!message) return;
     this.lastMessageAt = Date.now();
+    const resumo = describe(message);
+    if (resumo) logWs('recebe', resumo);
 
     if (message.t === 'snapshot') {
       // `null` = não faço mais parte da sala (saí, ou minha tolerância venceu).
@@ -300,6 +342,8 @@ export class RemoteRoomService implements RoomService {
         reject(new RoomError('timeout'));
       }, this.requestTimeoutMs);
       this.pending.set(id, { resolve, reject, timer });
+      const resumo = describe({ ...message, id } as ClientMessage);
+      if (resumo) logWs('envia', `${resumo} #${id}`);
       socket.send(JSON.stringify({ ...message, id }));
     });
   }

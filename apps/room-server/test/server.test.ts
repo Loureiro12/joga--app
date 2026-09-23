@@ -7,7 +7,9 @@ import { test } from 'node:test';
 import { createTokenVerifier } from '../src/auth';
 import { loadConfig } from '../src/config';
 import { parseClientMessage } from '../src/messages';
-import { FAST, INPUT, ME, TestClient, roomWith, sleep, startServer , type ImpostorView } from './helpers';
+import { PROTOCOL_VERSION } from '@jogae/engine';
+
+import { FAST, INPUT, ME, TestClient, roomWith, sleep, startServer, type ImpostorView } from './helpers';
 
 test('config: valida ambiente e proíbe token de dev em produção', () => {
   assert.throws(() => loadConfig({ PORT: 'abc' }), /PORT inválida/);
@@ -65,7 +67,9 @@ test('healthz responde com contadores', async () => {
   try {
     const { clients } = await roomWith(server.url, ['h1', 'h2']);
     const body = (await (await fetch(`${server.base}/healthz`)).json()) as Record<string, unknown>;
-    assert.deepEqual([body.status, body.protocol, body.rooms, body.connections], ['ok', 1, 1, 2]);
+    // A versão do protocolo vem da constante: o healthz é como se confere, de fora, se o
+    // servidor no ar fala a mesma língua do app.
+    assert.deepEqual([body.status, body.protocol, body.rooms, body.connections], ['ok', PROTOCOL_VERSION, 1, 2]);
     assert.equal((await fetch(`${server.base}/nope`)).status, 404);
     clients.forEach((c) => c.close());
   } finally {
