@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Três jogos jogáveis: Impostor, Quem é Mais Provável e Bomba-Relógio (este sem sala, num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Quatro jogos jogáveis: Impostor, Quem é Mais Provável, Bomba-Relógio e Bomba: Alfabeto (os dois últimos sem sala, num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -263,6 +263,21 @@ Respeita a chave `sound` das configurações, pelo mesmo caminho dos hápticos. 
 **Verificado:** os quatro WAV carregam, a partida vai até a explosão e o console fica limpo. **Não verificado:** o som saindo de verdade — o navegador sem saída de áudio não prova isso, e o mesmo vale para o háptico.
 
 **De quebra:** havia um `yarn.lock` versionado (entrou no commit anterior sem eu notar) num projeto de npm workspaces. Era ele que fazia `expo install` escolher yarn e falhar. Removido e barrado no `.gitignore`.
+
+### Jogo 4 — Bomba-Relógio: Alfabeto (2026-09-23)
+
+Variante da Bomba-Relógio, e por isso **não ganhou motor próprio**: pavio, sustos, ordem, modos, placar e destaques são os mesmos e continuam em `bomb.ts`. O que muda entra como `settings.variant`, e `alphabet.ts` guarda só o que é dela — tema, grade de letras e o desarme. Duplicar as 250 linhas de lógica de sala e modos seria criar dois lugares para o mesmo bug.
+
+- **Tocar a letra é o que passa a bomba** (§6). Não há botão separado, então a jogada é instantânea — e como cada letra só serve uma vez, a rodada aperta sozinha conforme elas somem.
+- **Gastar a última letra desarma a bomba**: ninguém perde, todo mundo mantém a sequência, e no modo pontos há bônus (§29–30). É o momento alto do jogo e tem tela própria.
+- **Toque inválido não faz nada**, em silêncio: letra de fora do tema, já usada ou bomba apagada. Punir um toque errado no meio da pressa seria injusto.
+- **A letra gasta continua na tela**, apagada. Se sumisse, a grade se reorganizaria a cada toque e todo mundo teria de reaprender onde as letras estão bem na hora da pressa.
+- **Pavio de 30 a 90 s** (contra 20–60 do clássico) e segurança de 10 s: com as letras sumindo, pensar demora, e um pavio curto viraria sorteio.
+- **Conteúdo:** 18 temas com a lista de letras que cada um comporta. Oferecer "X" em Países travaria a rodada — por isso o tema carrega as próprias letras, e o modo Hardcore é quem devolve o A–Z inteiro. Testes travam o mínimo de 14 letras por tema e impedem que K/W/X/Y virem praxe.
+
+**Verificado:** 85 testes no motor (incluindo o desarme, toque inválido, hardcore, e o pavio próprio) e uma partida no navegador que terminou com a bomba desarmada às 20 letras, sem erro no console.
+
+**Pendência conhecida, fora desta entrega:** o repositório não tem `.prettierrc`, e o padrão do Prettier (aspas duplas, 80 colunas) diverge do código (aspas simples, ~160). Rodar `npx prettier --write` hoje reformata o projeto inteiro — já aconteceu nesta sessão e tive de reverter. Vale um commit separado só para isso, com `{ singleQuote: true, printWidth: 160 }`, ignorando `packages/db/src/database.types.ts`, que é gerado.
 
 ### Passo 6 — Assinatura
 

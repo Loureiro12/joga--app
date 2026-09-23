@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -6,11 +6,30 @@ import { routes } from '@/core/navigation/routes';
 import { colors } from '@/core/theme';
 import { Button, Chip, Screen, Segmented, Spacer, StackHeader, Txt } from '@/core/ui';
 
-import { BOMB_CATEGORIES, countChallenges, DEFAULT_BOMB_SETTINGS, type BombDifficulty, type BombMode } from '@jogae/engine';
+import {
+  ALPHABET_CATEGORIES,
+  BOMB_CATEGORIES,
+  countChallenges,
+  countThemes,
+  DEFAULT_ALPHABET_SETTINGS,
+  DEFAULT_BOMB_SETTINGS,
+  type BombDifficulty,
+  type BombMode,
+} from '@jogae/engine';
 import { bombActions, useBombRoster } from '../bombStore';
 
 /** `Aleatório` não é categoria: é a ausência de filtro. */
 const ANY = 'Aleatório';
+
+/** As categorias do Alfabeto agrupam temas, não tipos de desafio. */
+const ALPHABET_EMOJI: Record<string, string> = {
+  Natureza: '🌿',
+  Comida: '🍔',
+  Lugares: '🌎',
+  Cultura: '🎬',
+  'Dia a dia': '🏠',
+  Diversão: '🎉',
+};
 
 const CATEGORY_EMOJI: Record<string, string> = {
   'Conhecimentos gerais': '🌎',
@@ -38,16 +57,33 @@ const MODES: { value: BombMode; label: string; hint: string }[] = [
 ];
 
 export function BombSettingsScreen() {
+  const { variant } = useLocalSearchParams<{ variant?: string }>();
+  const alfabeto = variant === 'alfabeto';
+  const padrao = alfabeto ? DEFAULT_ALPHABET_SETTINGS : DEFAULT_BOMB_SETTINGS;
+
   const roster = useBombRoster();
   const [categories, setCategories] = useState<string[]>([]);
-  const [difficulties, setDifficulties] = useState<BombDifficulty[]>(DEFAULT_BOMB_SETTINGS.difficulties);
-  const [totalRounds, setTotalRounds] = useState(DEFAULT_BOMB_SETTINGS.totalRounds);
+  const [difficulties, setDifficulties] = useState<BombDifficulty[]>(padrao.difficulties);
+  const [totalRounds, setTotalRounds] = useState(padrao.totalRounds);
   const [mode, setMode] = useState<BombMode>('casual');
   const [order, setOrder] = useState<'circular' | 'caos'>('circular');
+  const [hardcore, setHardcore] = useState(false);
 
-  const settings = { categories, difficulties, totalRounds, mode, order, lives: 3 };
-  const disponiveis = countChallenges({ ...DEFAULT_BOMB_SETTINGS, ...settings });
+  const settings = {
+    ...padrao,
+    variant: alfabeto ? ('alfabeto' as const) : ('classico' as const),
+    categories,
+    difficulties,
+    totalRounds,
+    mode,
+    order,
+    lives: 3,
+    letterSet: hardcore ? ('hardcore' as const) : ('normal' as const),
+  };
+  const disponiveis = alfabeto ? countThemes(settings) : countChallenges(settings);
   const modoAtual = MODES.find((m) => m.value === mode)!;
+  const categoriasDaVez = alfabeto ? ALPHABET_CATEGORIES : BOMB_CATEGORIES;
+  const emojiDe = (c: string) => (alfabeto ? ALPHABET_EMOJI[c] : CATEGORY_EMOJI[c]);
 
   const toggleCategory = (id: string) => {
     if (id === ANY) return setCategories([]);
@@ -67,8 +103,8 @@ export function BombSettingsScreen() {
         </Txt>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           <Chip emoji="🎲" label={ANY} state={categories.length === 0 ? 'selected' : 'default'} onPress={() => toggleCategory(ANY)} />
-          {BOMB_CATEGORIES.map((c) => (
-            <Chip key={c} emoji={CATEGORY_EMOJI[c]} label={c} state={categories.includes(c) ? 'selected' : 'default'} onPress={() => toggleCategory(c)} />
+          {categoriasDaVez.map((c) => (
+            <Chip key={c} emoji={emojiDe(c)} label={c} state={categories.includes(c) ? 'selected' : 'default'} onPress={() => toggleCategory(c)} />
           ))}
         </View>
       </View>
@@ -89,6 +125,22 @@ export function BombSettingsScreen() {
         </View>
       </View>
 
+      {alfabeto && (
+        <View>
+          <Txt font="body600" size={16} style={{ marginBottom: 4 }}>
+            Letras
+          </Txt>
+          <Txt font="body400" size={12} lh={1.35} color={colors.muted} style={{ marginBottom: 10 }}>
+            No normal aparecem só as letras que aquele tema comporta. No hardcore vem o alfabeto
+            inteiro — inclusive K, W, X e Y, e o grupo que se vire.
+          </Txt>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Chip emoji="🔤" label="Normal" state={hardcore ? 'default' : 'selected'} onPress={() => setHardcore(false)} />
+            <Chip emoji="🔥" label="Hardcore" state={hardcore ? 'selected' : 'default'} onPress={() => setHardcore(true)} />
+          </View>
+        </View>
+      )}
+
       <View>
         <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
           Rodadas
@@ -99,7 +151,7 @@ export function BombSettingsScreen() {
           itemHeight={48}
           fontSize={24}
           font="display800"
-          options={[5, 10, 15, 0].map((n) => ({ value: n, label: n === 0 ? '∞' : String(n) }))}
+          options={(alfabeto ? [3, 5, 10, 0] : [5, 10, 15, 0]).map((n) => ({ value: n, label: n === 0 ? '∞' : String(n) }))}
         />
       </View>
 
@@ -133,7 +185,7 @@ export function BombSettingsScreen() {
       <Spacer />
 
       <Txt font="body400" size={13} color={colors.muted} center>
-        {roster.length} jogadores · {disponiveis} desafios no baralho
+        {roster.length} jogadores · {disponiveis} {alfabeto ? 'temas' : 'desafios'} no baralho
       </Txt>
       <Button label="Acender o pavio 🔥" onPress={start} />
     </Screen>

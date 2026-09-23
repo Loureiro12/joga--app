@@ -49,6 +49,8 @@ export type GameDefinition = {
    * `local`: um aparelho só, passando de mão em mão — não cria sala nem precisa de conta.
    */
   device?: 'sala' | 'local';
+  /** Qual bomba: o clássico (um desafio por rodada) ou o Alfabeto (tema e grade de letras). */
+  bombVariant?: 'classico' | 'alfabeto';
 };
 
 const comingSoon = {
@@ -171,6 +173,7 @@ export const GAMES: GameDefinition[] = [
   {
     id: 'bomba-relogio',
     device: 'local',
+    bombVariant: 'classico',
     name: 'Bomba-relógio',
     category: 'Caótico',
     tagline: 'Responda antes que estoure na sua mão.',
@@ -197,6 +200,40 @@ export const GAMES: GameDefinition[] = [
     wordCategories: [],
     roundOptions: [5, 10, 15, 0],
     defaults: { players: 5, category: '', rounds: 10 },
+    tags: ['Em alta', 'Festa', 'Rápidos'],
+    trending: true,
+    playable: true,
+  },
+  {
+    id: 'bomba-alfabeto',
+    device: 'local',
+    bombVariant: 'alfabeto',
+    name: 'Bomba: Alfabeto',
+    category: 'Caótico',
+    tagline: 'Cada letra só vale uma vez.',
+    description: 'Um tema e o alfabeto na tela. Fale uma resposta, toque na primeira letra e passe — ela some para todo mundo. Quanto mais o grupo sobrevive, menos letras sobram.',
+    emoji: '🔤',
+    color: colors.danger,
+    illustration: 'bomb',
+    minPlayers: 2,
+    recommendedPlayers: 4,
+    maxPlayers: 16,
+    playersLabel: 'Um celular só',
+    durationLabel: '10–20 min',
+    durationShort: '15 min',
+    infoChips: [
+      { emoji: '📱', label: 'Um celular só' },
+      { emoji: '🔤', label: 'Cada letra, uma vez' },
+      { emoji: '💣', label: 'Tempo secreto' },
+    ],
+    howToPlay: [
+      'Veja o tema e pense numa resposta. Fale em voz alta.',
+      'Toque na primeira letra da sua resposta: ela some e a bomba passa para o próximo.',
+      'Letra usada não volta. Se o grupo gastar todas antes de estourar, a bomba é desarmada e ninguém perde.',
+    ],
+    wordCategories: [],
+    roundOptions: [5, 10, 15, 0],
+    defaults: { players: 5, category: '', rounds: 5 },
     tags: ['Em alta', 'Festa', 'Rápidos'],
     trending: true,
     playable: true,

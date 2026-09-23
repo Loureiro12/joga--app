@@ -39,7 +39,8 @@ export const routes = {
   },
   /** Bomba-Relógio: um celular só, sem sala — por isso fora de `match`. */
   bomb: {
-    setup: '/bomb/setup',
+    /** `variant` diz qual das duas bombas: o clássico ou o Alfabeto. */
+    setup: (variant: 'classico' | 'alfabeto' = 'classico') => `/bomb/setup?variant=${variant}` as const,
     settings: '/bomb/settings',
     round: '/bomb/round',
     end: '/bomb/end',

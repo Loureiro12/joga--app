@@ -116,3 +116,17 @@ test('toda fase de partida tem saída — inclusive as dos jogos novos', async (
   // Nestas não há partida para abandonar: o lobby tem o próprio "Fechar" e o resto já acabou.
   for (const fase of ['lobby', 'finished', 'closed'] as RoomPhase[]) assert.equal(hasMatchToLeave(fase), false, `"${fase}" não deveria oferecer saída`);
 });
+
+test('as duas bombas são locais e apontam para a variante certa do motor', () => {
+  const classico = getGame('bomba-relogio')!;
+  const alfabeto = getGame('bomba-alfabeto')!;
+  for (const jogo of [classico, alfabeto]) {
+    assert.equal(jogo.device, 'local', `${jogo.id} precisa ser local`);
+    assert.equal(jogo.engineId, undefined, `${jogo.id} não pode apontar para um motor de sala`);
+    assert.equal(jogo.playable, true);
+  }
+  assert.equal(classico.bombVariant, 'classico');
+  assert.equal(alfabeto.bombVariant, 'alfabeto');
+  // Sem a variante, o fluxo local cairia sempre no clássico sem avisar.
+  assert.ok(GAMES.filter((g) => g.device === 'local').every((g) => g.bombVariant), 'jogo local sem variante definida');
+});

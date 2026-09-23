@@ -1,5 +1,7 @@
+import { ALPHABET_CATEGORIES, ALPHABET_RULES, canUseLetter, remainingLetters, startAlphabetRound } from './alphabet';
 import { CHALLENGES } from './bomb-challenges';
 import {
+  DEFAULT_ALPHABET_SETTINGS,
   DEFAULT_BOMB_SETTINGS,
   type BombChallenge,
   type BombHighlight,
@@ -78,7 +80,8 @@ export function drawFuse(settings: BombSettings, rng: () => number = Math.random
   const min = Math.max(1, settings.minSeconds);
   const max = Math.max(min, settings.maxSeconds);
   const enviesado = min + (max - min) * Math.pow(rng(), 0.65);
-  return Math.max(BOMB_RULES.safetySeconds, enviesado) * 1000;
+  const seguranca = settings.variant === 'alfabeto' ? ALPHABET_RULES.safetySeconds : BOMB_RULES.safetySeconds;
+  return Math.max(seguranca, enviesado) * 1000;
 }
 
 /**
@@ -115,6 +118,7 @@ export function createBombMatch(players: BombPlayer[], settings: Partial<BombSet
     phase: 'handoff',
     roundIndex: 1,
     challenge: null,
+    alphabet: null,
     usedChallengeIds: [],
     activeId: players[0]?.id ?? '',
     explodeAt: null,
@@ -134,9 +138,23 @@ export function createBombMatch(players: BombPlayer[], settings: Partial<BombSet
   };
   // Na primeira rodada quem começa é sorteado — não é o host, para não virar vantagem.
   base.activeId = pick(players, rng).id;
-  base.challenge = pickChallenge(merged, new Set(), rng);
-  base.usedChallengeIds = [base.challenge.id];
+  drawRound(base, rng);
   return base;
+}
+
+/** Sorteia o que a rodada precisa: um desafio no clássico, um tema com letras no Alfabeto. */
+function drawRound(state: BombState, rng: () => number): void {
+  if (state.settings.variant === 'alfabeto') {
+    const { theme, round } = startAlphabetRound(state.settings, new Set(state.usedChallengeIds), rng);
+    state.alphabet = round;
+    state.challenge = null;
+    if (!state.usedChallengeIds.includes(theme.id)) state.usedChallengeIds.push(theme.id);
+    return;
+  }
+  const challenge = pickChallenge(state.settings, new Set(state.usedChallengeIds), rng);
+  state.challenge = challenge;
+  state.alphabet = null;
+  if (!state.usedChallengeIds.includes(challenge.id)) state.usedChallengeIds.push(challenge.id);
 }
 
 /** "Estou pronto": acende o pavio. É só aqui que a bomba passa a contar. */
@@ -166,6 +184,62 @@ export function passBomb(state: BombState, now: number, rng: () => number = Math
     passes: { ...state.passes, [state.activeId]: (state.passes[state.activeId] ?? 0) + 1 },
     heldMs: { ...state.heldMs, [state.activeId]: (state.heldMs[state.activeId] ?? 0) + held },
     points: state.settings.mode === 'pontos' ? { ...state.points, [state.activeId]: (state.points[state.activeId] ?? 0) + BOMB_RULES.points.pass } : state.points,
+  };
+}
+
+/**
+ * Alfabeto: toca a letra, que é o mesmo que passar a bomba (§6). Recusa em silêncio o que não
+ * pode ser tocado — letra de fora do tema, já usada, ou bomba apagada — porque um toque inválido
+ * no meio da pressa não deveria punir ninguém.
+ *
+ * Gastar a última letra **desarma** a bomba: ninguém perde a rodada (§29).
+ */
+export function useLetter(state: BombState, letter: string, now: number, rng: () => number = Math.random): BombState {
+  if (!canUseLetter(state, letter)) return state;
+  const letra = letter.toUpperCase();
+  const held = state.heldSince === null ? 0 : now - state.heldSince;
+  const round = state.alphabet!;
+
+  const usado = {
+    ...state,
+    alphabet: { ...round, used: [...round.used, { letter: letra, playerId: state.activeId, ms: held }] },
+    passes: { ...state.passes, [state.activeId]: (state.passes[state.activeId] ?? 0) + 1 },
+    heldMs: { ...state.heldMs, [state.activeId]: (state.heldMs[state.activeId] ?? 0) + held },
+    points:
+      state.settings.mode === 'pontos'
+        ? { ...state.points, [state.activeId]: (state.points[state.activeId] ?? 0) + ALPHABET_RULES.points.letter }
+        : state.points,
+  };
+
+  if (remainingLetters(usado).length === 0) return disarm(usado);
+  return { ...usado, activeId: nextPlayerId(usado, rng), heldSince: now };
+}
+
+/** O grupo gastou o alfabeto inteiro antes de a bomba estourar: vitória de todos (§30). */
+function disarm(state: BombState): BombState {
+  const vivos = activePlayers(state);
+  const points = { ...state.points };
+  if (state.settings.mode === 'pontos') {
+    for (const p of vivos) points[p.id] = (points[p.id] ?? 0) + ALPHABET_RULES.points.disarm;
+  }
+  const streak = { ...state.streak };
+  const bestStreak = { ...state.bestStreak };
+  // Ninguém explodiu: a sequência de todo mundo continua.
+  for (const p of vivos) {
+    streak[p.id] = (streak[p.id] ?? 0) + 1;
+    bestStreak[p.id] = Math.max(bestStreak[p.id] ?? 0, streak[p.id]);
+  }
+  return {
+    ...state,
+    phase: 'disarmed',
+    explodeAt: null,
+    heldSince: null,
+    pendingAlarms: [],
+    loserId: null,
+    points,
+    streak,
+    bestStreak,
+    history: [...state.history, { round: state.roundIndex, challengeId: state.alphabet?.themeId ?? '', challenge: state.alphabet?.name ?? '', loserId: '', disarmed: true }],
   };
 }
 
@@ -225,7 +299,15 @@ function explode(state: BombState, now: number): BombState {
     bestStreak,
     heldMs: { ...state.heldMs, [loserId]: (state.heldMs[loserId] ?? 0) + held },
     bombs: { ...state.bombs, [loserId]: (state.bombs[loserId] ?? 0) + 1 },
-    history: [...state.history, { round: state.roundIndex, challengeId: state.challenge?.id ?? '', challenge: state.challenge?.text ?? '', loserId }],
+    history: [
+      ...state.history,
+      {
+        round: state.roundIndex,
+        challengeId: state.challenge?.id ?? state.alphabet?.themeId ?? '',
+        challenge: state.challenge?.text ?? state.alphabet?.name ?? '',
+        loserId,
+      },
+    ],
   };
 }
 
@@ -237,22 +319,22 @@ export function isOver(state: BombState): boolean {
 
 /** Próxima rodada: novo desafio, novo pavio, e quem começa segue a configuração (§30). */
 export function nextRound(state: BombState, rng: () => number = Math.random): BombState {
-  if (state.phase !== 'exploded') return state;
+  if (state.phase !== 'exploded' && state.phase !== 'disarmed') return state;
   if (isOver(state)) return { ...state, phase: 'finished' };
 
   const vivos = activePlayers(state);
   const perdedorSegue = state.settings.startsNext === 'perdedor' && state.loserId !== null && vivos.some((p) => p.id === state.loserId);
-  const challenge = pickChallenge(state.settings, new Set(state.usedChallengeIds), rng);
-  return {
+  const proximo: BombState = {
     ...state,
     phase: 'handoff',
     roundIndex: state.roundIndex + 1,
-    challenge,
-    usedChallengeIds: [...state.usedChallengeIds, challenge.id],
+    // Sem perdedor (rodada desarmada), o sorteio decide quem abre a próxima.
     activeId: perdedorSegue ? state.loserId! : pick(vivos, rng).id,
     loserId: null,
     alarmCount: 0,
   };
+  drawRound(proximo, rng);
+  return proximo;
 }
 
 /** Encerra uma partida sem limite de rodadas. */
@@ -288,7 +370,8 @@ export function highlights(state: BombState): BombHighlight[] {
   const segundos = (ms: number) => `${(ms / 1000).toFixed(1)}s em média`;
 
   const frio = [...state.players].sort((a, b) => (state.passes[b.id] ?? 0) - (state.passes[a.id] ?? 0))[0];
-  if (frio && (state.passes[frio.id] ?? 0) > 0) {
+  // No Alfabeto quem mais passou é o "mestre do alfabeto"; dois prêmios para o mesmo número não dizem nada.
+  if (state.settings.variant !== 'alfabeto' && frio && (state.passes[frio.id] ?? 0) > 0) {
     out.push({ key: 'frio', emoji: '🧊', title: 'Sangue frio', playerId: frio.id, value: `Passou a bomba ${state.passes[frio.id]}×` });
   }
 
@@ -309,6 +392,14 @@ export function highlights(state: BombState): BombHighlight[] {
     }
   }
 
+  if (state.settings.variant === 'alfabeto') {
+    // No Alfabeto, "passagem" é letra gasta: quem mais destravou o grupo merece o nome.
+    const mestre = [...state.players].sort((a, b) => (state.passes[b.id] ?? 0) - (state.passes[a.id] ?? 0))[0];
+    if (mestre && (state.passes[mestre.id] ?? 0) > 0) {
+      out.push({ key: 'alfabeto', emoji: '🔤', title: 'Mestre do alfabeto', playerId: mestre.id, value: `Gastou ${state.passes[mestre.id]} letras` });
+    }
+  }
+
   const sobrevivente = [...state.players].sort((a, b) => (state.bestStreak[b.id] ?? 0) - (state.bestStreak[a.id] ?? 0))[0];
   if (sobrevivente && (state.bestStreak[sobrevivente.id] ?? 0) > 1) {
     out.push({ key: 'sobrevivente', emoji: '🔥', title: 'Sobrevivente', playerId: sobrevivente.id, value: `${state.bestStreak[sobrevivente.id]} rodadas sem explodir` });
@@ -318,14 +409,18 @@ export function highlights(state: BombState): BombHighlight[] {
 
 /** Normaliza o que veio da tela: categoria desconhecida some e as listas nunca ficam vazias. */
 export function sanitizeBombSettings(input: Partial<BombSettings> | undefined): BombSettings {
-  const base = { ...DEFAULT_BOMB_SETTINGS, ...input };
-  const categories = base.categories.filter((c) => (BOMB_CATEGORIES as readonly string[]).includes(c));
+  // Cada variante tem faixa de tempo e nº de rodadas próprios; o padrão certo depende dela.
+  const padrao = input?.variant === 'alfabeto' ? DEFAULT_ALPHABET_SETTINGS : DEFAULT_BOMB_SETTINGS;
+  const base = { ...padrao, ...input };
+  const validas: readonly string[] = base.variant === 'alfabeto' ? ALPHABET_CATEGORIES : BOMB_CATEGORIES;
+  const categories = base.categories.filter((c) => validas.includes(c));
   const difficulties = (['facil', 'medio', 'dificil'] as const).filter((d) => base.difficulties.includes(d));
   const min = Math.min(Math.max(5, base.minSeconds), 300);
   return {
     ...base,
     categories,
-    difficulties: difficulties.length ? difficulties : DEFAULT_BOMB_SETTINGS.difficulties,
+    difficulties: difficulties.length ? difficulties : padrao.difficulties,
+    letterSet: base.letterSet === 'hardcore' ? 'hardcore' : 'normal',
     lives: Math.min(Math.max(1, Math.round(base.lives)), 5),
     totalRounds: Math.min(Math.max(0, Math.round(base.totalRounds)), 50),
     minSeconds: min,

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Pressable, View, type TextInput } from 'react-native';
 
@@ -18,6 +18,8 @@ import { bombActions, useBombRoster } from '../bombStore';
  * outro, e o campo volta a ficar vazio e focado sozinho.
  */
 export function BombSetupScreen() {
+  const { variant } = useLocalSearchParams<{ variant?: string }>();
+  const alfabeto = variant === 'alfabeto';
   const roster = useBombRoster();
   const [name, setName] = useState('');
   const campo = useRef<TextInput>(null);
@@ -113,7 +115,7 @@ export function BombSetupScreen() {
       <Button
         label={podeSeguir ? `Continuar com ${roster.length}` : `Adicione ${faltam === 1 ? 'mais uma pessoa' : `pelo menos ${faltam} pessoas`}`}
         disabled={!podeSeguir}
-        onPress={() => router.push(routes.bomb.settings)}
+        onPress={() => router.push(alfabeto ? `${routes.bomb.settings}?variant=alfabeto` : routes.bomb.settings)}
       />
       {podeSeguir && roster.length < BOMB_RULES.recommendedPlayers && (
         <Txt font="body400" size={12} color={colors.muted} center>

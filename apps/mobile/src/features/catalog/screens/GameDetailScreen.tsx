@@ -57,7 +57,7 @@ export function GameDetailScreen() {
           <Spacer />
           {game.playable ? (
             <>
-              <Button label={game.device === 'local' ? 'Começar' : 'Criar partida'} onPress={() => router.push(game.device === 'local' ? routes.bomb.setup : routes.createMatch(game.id))} />
+              <Button label={game.device === 'local' ? 'Começar' : 'Criar partida'} onPress={() => router.push(game.device === 'local' ? routes.bomb.setup(game.bombVariant ?? 'classico') : routes.createMatch(game.id))} />
               <Button label="Como jogar" variant="secondary" onPress={() => setSheet(true)} />
             </>
           ) : (

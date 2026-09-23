@@ -8,6 +8,7 @@ import {
   nextRound,
   passBomb,
   sanitizeBombSettings,
+  useLetter,
   type BombPlayer,
   type BombSettings,
   type BombState,
@@ -61,6 +62,14 @@ export const bombActions = {
   },
   pass() {
     useBombStore.setState((s) => (s.match ? { match: passBomb(s.match, Date.now()) } : s));
+  },
+  /** Alfabeto: tocar a letra é o que passa a bomba. Toque inválido devolve o mesmo estado. */
+  useLetter(letter: string) {
+    useBombStore.setState((s) => {
+      if (!s.match) return s;
+      const next = useLetter(s.match, letter, Date.now());
+      return next === s.match ? s : { match: next };
+    });
   },
   /** Chamado a cada quadro pela tela da rodada; devolve o mesmo objeto quando nada mudou. */
   tick() {

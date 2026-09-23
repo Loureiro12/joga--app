@@ -17,6 +17,10 @@ export type BombChallenge = {
   text: string;
 };
 
+import type { AlphabetRound } from './alphabet-types';
+
+export * from './alphabet-types';
+
 /** Jogador local: só nome e cor, sem conta. O jogo roda inteiro num aparelho só. */
 export type BombPlayer = { id: string; name: string; color: string };
 
@@ -28,7 +32,15 @@ export type BombMode =
   /** Pontos por passagem e por sobreviver à rodada. */
   | 'pontos';
 
+/**
+ * `classico`: um desafio ("Diga uma marca de carro") e um botão de passar.
+ * `alfabeto`: um tema e uma grade de letras — tocar a letra é o que passa a bomba, e cada
+ * letra só serve uma vez, então a rodada aperta sozinha conforme elas somem.
+ */
+export type BombVariant = 'classico' | 'alfabeto';
+
 export type BombSettings = {
+  variant: BombVariant;
   /** Vazio = todas as categorias. */
   categories: string[];
   difficulties: BombDifficulty[];
@@ -44,9 +56,12 @@ export type BombSettings = {
   /** Faixa do tempo secreto, em segundos. */
   minSeconds: number;
   maxSeconds: number;
+  /** Só no Alfabeto. `hardcore`: A–Z inteiro, inclusive as letras que o tema não cobre. */
+  letterSet: 'normal' | 'hardcore';
 };
 
 export const DEFAULT_BOMB_SETTINGS: BombSettings = {
+  variant: 'classico',
   categories: [],
   difficulties: ['facil', 'medio'],
   totalRounds: 10,
@@ -56,15 +71,30 @@ export const DEFAULT_BOMB_SETTINGS: BombSettings = {
   startsNext: 'perdedor',
   minSeconds: 20,
   maxSeconds: 60,
+  letterSet: 'normal',
+};
+
+/**
+ * O Alfabeto respira mais fundo: com as letras sumindo, pensar demora, e um pavio curto viraria
+ * sorteio em vez de jogo. A segurança também é maior, para dar tempo de as primeiras letras saírem.
+ */
+export const DEFAULT_ALPHABET_SETTINGS: BombSettings = {
+  ...DEFAULT_BOMB_SETTINGS,
+  variant: 'alfabeto',
+  totalRounds: 5,
+  minSeconds: 30,
+  maxSeconds: 90,
 };
 
 /**
  * `handoff`: "passe o celular para X", com a bomba ainda apagada — só no começo da rodada.
  * `armed`: bomba correndo. `exploded`: resultado da rodada. `finished`: fim da partida.
+ * `disarmed`: só no Alfabeto — o grupo gastou todas as letras antes de estourar e ninguém perdeu.
  */
-export type BombPhase = 'handoff' | 'armed' | 'exploded' | 'finished';
+export type BombPhase = 'handoff' | 'armed' | 'exploded' | 'disarmed' | 'finished';
 
-export type BombRoundLog = { round: number; challengeId: string; challenge: string; loserId: string };
+/** `loserId` vazio numa rodada desarmada: não houve perdedor. */
+export type BombRoundLog = { round: number; challengeId: string; challenge: string; loserId: string; disarmed?: boolean };
 
 export type BombState = {
   settings: BombSettings;
@@ -72,6 +102,8 @@ export type BombState = {
   phase: BombPhase;
   roundIndex: number;
   challenge: BombChallenge | null;
+  /** O tema e as letras da rodada. Só no Alfabeto; `null` no clássico. */
+  alphabet: AlphabetRound | null;
   /** Desafios já usados na partida: nenhum se repete. */
   usedChallengeIds: string[];
   /** Quem está com a bomba AGORA. É ele que perde se ela estourar (§19). */
@@ -105,6 +137,12 @@ export type BombState = {
 };
 
 /** Um destaque do fim da partida. `value` já vem formatado para a tela. */
-export type BombHighlight = { key: 'frio' | 'ima' | 'rapido' | 'pensador' | 'sobrevivente'; emoji: string; title: string; playerId: string; value: string };
+export type BombHighlight = {
+  key: 'frio' | 'ima' | 'rapido' | 'pensador' | 'sobrevivente' | 'alfabeto';
+  emoji: string;
+  title: string;
+  playerId: string;
+  value: string;
+};
 
 export type BombStanding = { playerId: string; bombs: number; points: number; lives: number; eliminated: boolean; position: number };

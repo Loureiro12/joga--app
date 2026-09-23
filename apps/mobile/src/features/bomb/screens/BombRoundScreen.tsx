@@ -10,7 +10,10 @@ import { Avatar, Button, Display, IconButton, ModalCard, Overline, Screen, Txt, 
 import { haptics } from '@/core/utils/haptics';
 
 import { BurningFuse, useBombPulse } from '../components/BurningFuse';
+import { LetterGrid } from '../components/LetterGrid';
 import { useBombSound } from '../useBombSound';
+import { remainingLetters } from '@jogae/engine';
+
 import { bombActions, useBombMatch } from '../bombStore';
 
 /** De quanto em quanto o app confere o relógio. O pavio é um instante absoluto; isto é só a checagem. */
@@ -157,6 +160,30 @@ export function BombRoundScreen() {
     );
   }
 
+  /* ----------------------------------------------------- bomba desarmada */
+  if (match.phase === 'disarmed') {
+    const gastas = match.alphabet?.used.length ?? 0;
+    return (
+      <Screen bg={colors.success} scroll={false}>
+        {menu}
+        <Enter kind="pop" duration={600} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <Txt size={72}>😮‍💨</Txt>
+          <Display size={52} center>
+            Bomba desarmada!
+          </Display>
+          <Txt font="body600" size={16} opacity={0.9} center style={{ maxWidth: 290 }}>
+            Vocês gastaram as {gastas} letras de {match.alphabet?.name} antes de ela estourar.
+          </Txt>
+          <Txt font="body400" size={14} opacity={0.8} center style={{ marginTop: 6 }}>
+            Ninguém perdeu esta rodada.
+          </Txt>
+        </Enter>
+        <Button label="Próxima rodada" variant="onColor" onPress={bombActions.nextRound} />
+        {match.settings.totalRounds === 0 && <Button label="Encerrar partida" variant="translucent" onPress={bombActions.endMatch} />}
+      </Screen>
+    );
+  }
+
   /* ------------------------------------------------------------- explosão */
   if (match.phase === 'exploded') {
     const perdedor = player(match.loserId ?? '');
@@ -187,6 +214,12 @@ export function BombRoundScreen() {
               💣 {match.bombs[match.loserId ?? '']} no total
             </Txt>
           )}
+          {match.alphabet && (
+            <Txt font="body400" size={13} opacity={0.8} center style={{ marginTop: 4 }}>
+              {match.alphabet.name} · {match.alphabet.used.length} de {match.alphabet.letters.length} letras · faltaram{' '}
+              {remainingLetters(match).slice(0, 6).join(' ')}
+            </Txt>
+          )}
         </Enter>
         <Button label="Próxima rodada" variant="onColor" onPress={bombActions.nextRound} />
         {match.settings.totalRounds === 0 && <Button label="Encerrar partida" variant="translucent" onPress={bombActions.endMatch} />}
@@ -195,54 +228,94 @@ export function BombRoundScreen() {
   }
 
   /* ---------------------------------------------------------- bomba ativa */
+  const alfabeto = match.alphabet;
+  const usadas = new Set(alfabeto?.used.map((u) => u.letter) ?? []);
+
   return (
     <Animated.View style={[{ flex: 1 }, shakeStyle]}>
       <Screen scroll={false}>
         {menu}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Overline color={colors.danger}>💣 Bomba ativa</Overline>
-          {/* O ✕ ocupa o canto direito; a categoria recua para não ficar embaixo dele. */}
+          {/* O ✕ ocupa o canto direito; o rótulo recua para não ficar embaixo dele. */}
           <Txt font="body600" size={12} color={colors.muted} style={{ marginRight: 48 }}>
-            {match.challenge?.category}
+            {alfabeto ? `${usadas.size}/${alfabeto.letters.length} letras` : match.challenge?.category}
           </Txt>
         </View>
 
-        <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
-          <Animated.View style={[{ backgroundColor: colors.surface, borderRadius: radii.card, padding: 24 }, pulso]}>
-            <Display size={34} lh={1.15} center>
-              {match.challenge?.text}
-            </Display>
-          </Animated.View>
+        {alfabeto ? (
+          // Alfabeto: tema em cima, grade embaixo. A grade É o botão de passar, então ela manda
+          // na tela — o nome de quem está com a bomba fica entre os dois, onde o olho passa.
+          <View style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
+            <Animated.View style={[{ alignItems: 'center', gap: 2 }, pulso]}>
+              <Txt size={30}>{alfabeto.emoji}</Txt>
+              <Display size={38} center adjustsFontSizeToFit numberOfLines={1}>
+                {alfabeto.name}
+              </Display>
+            </Animated.View>
 
-          <BurningFuse />
+            <View style={{ alignItems: 'center' }}>
+              <Txt font="body600" size={13} color={colors.muted}>
+                está com
+              </Txt>
+              <Display size={30} center adjustsFontSizeToFit numberOfLines={1}>
+                {active?.name}
+              </Display>
+            </View>
 
-          <View style={{ alignItems: 'center', gap: 6 }}>
-            <Txt font="body600" size={14} color={colors.muted}>
-              Está com
+            <LetterGrid
+              letters={alfabeto.letters}
+              used={usadas}
+              onPick={(letra) => {
+                haptics.light();
+                bombActions.useLetter(letra);
+              }}
+            />
+
+            <Txt font="body400" size={12} lh={1.35} color={colors.muted} center>
+              Fale a resposta em voz alta e toque na primeira letra.
             </Txt>
-            <Display size={44} center adjustsFontSizeToFit numberOfLines={1}>
-              {active?.name}
-            </Display>
           </View>
-        </View>
+        ) : (
+          <>
+            <View style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
+              <Animated.View style={[{ backgroundColor: colors.surface, borderRadius: radii.card, padding: 24 }, pulso]}>
+                <Display size={34} lh={1.15} center>
+                  {match.challenge?.text}
+                </Display>
+              </Animated.View>
 
-        {/* Enorme de propósito: a pessoa está sob pressão e precisa acertar o toque sem olhar. */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Passar bomba"
-          onPress={() => {
-            haptics.light();
-            bombActions.pass();
-          }}
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? colors.primaryLight : colors.primary,
-            borderRadius: radii.card,
-            paddingVertical: 34,
-            alignItems: 'center',
-          })}
-        >
-          <Display size={34}>Passar bomba 💣</Display>
-        </Pressable>
+              <BurningFuse />
+
+              <View style={{ alignItems: 'center', gap: 6 }}>
+                <Txt font="body600" size={14} color={colors.muted}>
+                  Está com
+                </Txt>
+                <Display size={44} center adjustsFontSizeToFit numberOfLines={1}>
+                  {active?.name}
+                </Display>
+              </View>
+            </View>
+
+            {/* Enorme de propósito: a pessoa está sob pressão e precisa acertar o toque sem olhar. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Passar bomba"
+              onPress={() => {
+                haptics.light();
+                bombActions.pass();
+              }}
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? colors.primaryLight : colors.primary,
+                borderRadius: radii.card,
+                paddingVertical: 34,
+                alignItems: 'center',
+              })}
+            >
+              <Display size={34}>Passar bomba 💣</Display>
+            </Pressable>
+          </>
+        )}
       </Screen>
     </Animated.View>
   );
