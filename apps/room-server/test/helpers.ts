@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net';
 
-import { PROTOCOL_VERSION, type ClientMessage, type RoomErrorCode, type RoomSnapshot, type ServerMessage } from '@jogae/engine';
+import { PROTOCOL_VERSION, type ClientMessage, type CreateRoomInput, type RoomErrorCode, type RoomSnapshot, type ServerMessage } from '@jogae/engine';
 import WebSocket from 'ws';
 
 import { loadConfig, type Config } from '../src/config';
@@ -8,7 +8,7 @@ import { createRoomServer, type RoomServer, type RoomServerOptions } from '../sr
 
 export const FAST = { revealStage1Ms: 30, revealStage2Ms: 60, allVotedPauseMs: 10, graceMs: 250, ackTimeoutMs: 5000 };
 export const ME = { name: 'Teste', color: '#7C3AED' };
-export const INPUT = { gameId: 'impostor', category: 'Comidas', totalRounds: 2, maxPlayers: 6 };
+export const INPUT = { gameId: 'impostor' as const, category: 'Comidas', totalRounds: 2, maxPlayers: 6 };
 
 export async function startServer(env: Record<string, string> = {}, options: RoomServerOptions = {}): Promise<RoomServer & { url: string; base: string; config: Config }> {
   const config = loadConfig({ PORT: '0', NODE_ENV: 'test', AUTH_MODE: 'dev', ...env });
@@ -120,11 +120,11 @@ export class TestClient {
 }
 
 /** Sobe uma sala com `names[0]` de host e os demais dentro. Devolve os clientes e o código. */
-export async function roomWith(url: string, names: string[]) {
+export async function roomWith(url: string, names: string[], input: CreateRoomInput = INPUT) {
   const clients: TestClient[] = [];
   for (const name of names) clients.push(await TestClient.open(url, name));
   const [host, ...guests] = clients;
-  await host.ok({ t: 'create', input: INPUT, me: { ...ME, name: names[0] } });
+  await host.ok({ t: 'create', input, me: { ...ME, name: names[0] } });
   await host.untilSnapshot(() => true, 'sala criada');
   const code = host.snapshot!.room.code;
   for (const guest of guests) await guest.ok({ t: 'join', code, me: { ...ME, name: guest.name } });

@@ -31,6 +31,14 @@ export interface RoomService {
   openVoting(): Promise<void>;
   nextRound(): Promise<void>;
   playAgain(): Promise<void>;
+  /* Desafio Secreto */
+  missionReady(): Promise<void>;
+  missionDone(): Promise<void>;
+  accuse(targetId: PlayerId, missionId: string): Promise<void>;
+  swapMission(): Promise<void>;
+  nextReveal(): Promise<void>;
+  voteReveal(valid: boolean): Promise<void>;
+
   /* Quem é Mais Provável */
   endVoting(): Promise<void>;
   skipQuestion(): Promise<void>;

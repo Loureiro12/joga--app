@@ -15,3 +15,4 @@ export * from './games/impostor';
 export * from './games/likely';
 export * from './room/protocol';
 export * from './room/RoomEngine';
+export * from './room/secretGame';

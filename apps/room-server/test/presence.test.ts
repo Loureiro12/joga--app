@@ -87,3 +87,21 @@ test('presença no Supabase: só ids de usuário real, não repete o que não mu
   assert.equal(calls.length, 6);
   presence.dispose();
 });
+
+test('a sala de um jogo que roda numa festa não é descartada por ficar sem ninguém online', async () => {
+  const server = await startServer();
+  try {
+    const { clients } = await roomWith(server.url, ['ana', 'bia', 'caio'], { gameId: 'secret', category: 'festa', totalRounds: 1, maxPlayers: 12 });
+    await clients[0].cmd({ type: 'startMatch' });
+    for (const c of clients) await c.cmd({ type: 'missionReady' });
+
+    // Todo mundo guarda o celular e vai viver a festa.
+    clients.forEach((c) => c.close());
+    await sleep(80);
+    // O varredor roda com o prazo padrão (10 min) já vencido do ponto de vista dele.
+    assert.equal(server.manager.sweep(), 0, 'a sala foi descartada no meio da partida');
+    assert.equal(server.manager.roomCount, 1);
+  } finally {
+    await server.close();
+  }
+});

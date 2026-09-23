@@ -6,11 +6,12 @@
 
 // Só tipo: o `import type` é apagado na compilação, então o ciclo types ↔ likely-types não existe em runtime.
 import type { LikelyIntensity, LikelySettings } from './games/likely-types';
+import type { SecretContext, SecretHighlight, SecretMission, SecretReveal, SecretSettings, SecretStatus } from './games/secret-types';
 
 export type PlayerId = string;
 
 /** Jogos com fluxo de partida implementado. O catálogo do app tem outros, ainda "em breve". */
-export type GameId = 'impostor' | 'likely';
+export type GameId = 'impostor' | 'likely' | 'secret';
 
 export type Player = {
   id: PlayerId;
@@ -40,7 +41,13 @@ export type RoomPhase =
   | 'role_reveal'
   | 'clues'
   /** Quem é Mais Provável: a pergunta na tela, antes de o host abrir a votação. */
-  | 'question';
+  | 'question'
+  /** Desafio Secreto: missões distribuídas, cada um revelando a sua escondido. */
+  | 'briefing'
+  /** Desafio Secreto: a noite correndo. O app praticamente some. */
+  | 'mission'
+  /** Desafio Secreto: a hora da verdade, um jogador por vez. */
+  | 'verdict';
 
 export type ClosedReason = 'host_left' | 'not_enough_players';
 
@@ -119,6 +126,27 @@ export type GameView =
       secret: SecretRole | null;
       result: ImpostorRoundResult | null;
       summary: ImpostorSummary | null;
+    }
+  | {
+      kind: 'secret';
+      context: SecretContext;
+      competitive: boolean;
+      /** A própria missão e o próprio estado. Nunca a de outra pessoa. */
+      mine: {
+        mission: SecretMission;
+        status: SecretStatus;
+        accusationsLeft: number;
+        swapsLeft: number;
+        /** Alguém já desconfiou de mim — sem dizer quem. */
+        suspected: boolean;
+      } | null;
+      /** Quem já leu e escondeu a própria missão. */
+      ready: PlayerId[];
+      /** Por alvo, as opções entre as quais se acusa. Vazio fora da noite. */
+      accusationOptions: Record<PlayerId, SecretMission[]>;
+      reveal: SecretReveal | null;
+      revealProgress: { index: number; total: number } | null;
+      summary: SecretSummary | null;
     }
   | {
       kind: 'likely';
@@ -230,9 +258,16 @@ export type MatchRecordPlayer = {
   timesEscaped: number;
 };
 
+/** O fim do Desafio Secreto: quem cumpriu, quem foi pego, e os títulos da noite. */
+export type SecretSummary = {
+  players: { playerId: PlayerId; status: SecretStatus; points: number; caughtBy: PlayerId | null }[];
+  highlights: SecretHighlight[];
+};
+
 export type PlayerIdentity = { id: PlayerId; name: string; color: string };
 
 export type { LikelyIntensity, LikelySettings };
+export * from './games/secret-types';
 
 /**
  * O que o host escolhe ao criar a sala. `totalRounds: 0` no "Quem é Mais Provável?" é a opção
@@ -243,7 +278,7 @@ export type CreateRoomInput = {
   category: string;
   totalRounds: number;
   maxPlayers: number;
-  settings?: Partial<LikelySettings>;
+  settings?: Partial<LikelySettings> & Partial<SecretSettings>;
 };
 
 export type RoomErrorCode =

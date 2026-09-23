@@ -10,7 +10,8 @@ import { getGame } from '@/features/catalog/data/games';
 import { usePremiumStore } from '@/features/premium/premiumStore';
 import { services } from '@/services';
 
-import type { LikelyIntensity, LikelySettings } from '@jogae/engine';
+import type { LikelyIntensity, LikelySettings, SecretContext, SecretDifficulty, SecretSettings } from '@jogae/engine';
+import { SECRET_LIMITS } from '@jogae/engine';
 import { roomErrorMessage } from '../hooks/roomActions';
 import { getIdentity } from '../hooks/useIdentity';
 
@@ -21,6 +22,12 @@ const INTENSITY_LABELS: Record<LikelyIntensity, { emoji: string; label: string }
   leve: { emoji: '🟢', label: 'Leve' },
   moderado: { emoji: '🟡', label: 'Moderado' },
   pesado: { emoji: '🔴', label: 'Pesado' },
+};
+
+const DIFFICULTY_LABELS: Record<SecretDifficulty, { emoji: string; label: string }> = {
+  facil: { emoji: '🟢', label: 'Fácil' },
+  media: { emoji: '🟡', label: 'Média' },
+  dificil: { emoji: '🔴', label: 'Difícil' },
 };
 
 /** Uma linha de liga/desliga, com o porquê embaixo — o host decide sem precisar adivinhar. */
@@ -50,6 +57,7 @@ export function CreateMatchScreen() {
   const { gameId } = useLocalSearchParams<{ gameId?: string }>();
   const game = getGame(gameId) ?? getGame('impostor')!;
   const isLikely = game.engineId === 'likely';
+  const isSecret = game.engineId === 'secret';
   const isPremium = usePremiumStore((s) => s.isPremium);
   const [players, setPlayers] = useState(game.defaults.players);
   const [category, setCategory] = useState(game.defaults.category);
@@ -57,6 +65,8 @@ export function CreateMatchScreen() {
   const [categories, setCategories] = useState<string[]>([]);
   const [rounds, setRounds] = useState(game.defaults.rounds);
   const [intensities, setIntensities] = useState<LikelyIntensity[]>(['leve', 'moderado']);
+  const [difficulties, setDifficulties] = useState<SecretDifficulty[]>(['facil', 'media']);
+  const [accusations, setAccusations] = useState(2);
   const [allowSelfVote, setAllowSelfVote] = useState(true);
   const [openVotes, setOpenVotes] = useState(true);
   const [competitive, setCompetitive] = useState(false);
@@ -66,12 +76,20 @@ export function CreateMatchScreen() {
     if (id === ANY) return setCategories([]);
     setCategories((current) => (current.includes(id) ? current.filter((c) => c !== id) : [...current, id]));
   };
+  const toggleDifficulty = (level: SecretDifficulty) => {
+    // Sem nenhuma faixa ligada não há missão para sortear: a última não desliga.
+    setDifficulties((current) => (current.includes(level) ? (current.length > 1 ? current.filter((d) => d !== level) : current) : [...current, level]));
+  };
   const toggleIntensity = (level: LikelyIntensity) => {
     // Pelo menos uma intensidade tem que ficar ligada, senão não há pergunta para sortear.
     setIntensities((current) => (current.includes(level) ? (current.length > 1 ? current.filter((i) => i !== level) : current) : [...current, level]));
   };
 
-  const settings: LikelySettings | undefined = isLikely ? { categories, intensities, allowSelfVote, openVotes, competitive } : undefined;
+  const settings: Partial<LikelySettings> & Partial<SecretSettings> | undefined = isLikely
+    ? { categories, intensities, allowSelfVote, openVotes, competitive }
+    : isSecret
+      ? { context: category as SecretContext, difficulties, accusations, swaps: 1, competitive }
+      : undefined;
 
   const create = async () => {
     setLoading(true);
@@ -86,8 +104,12 @@ export function CreateMatchScreen() {
     }
   };
 
-  const categoryResumo = isLikely ? (categories.length === 0 ? 'todas as categorias' : `${categories.length} categoria${categories.length > 1 ? 's' : ''}`) : category;
-  const roundsResumo = rounds === 0 ? 'sem limite' : `${rounds} rodadas`;
+  const categoryResumo = isLikely
+    ? categories.length === 0
+      ? 'todas as categorias'
+      : `${categories.length} categoria${categories.length > 1 ? 's' : ''}`
+    : (game.wordCategories.find((c) => c.id === category)?.label ?? category);
+  const roundsResumo = isSecret ? `${accusations} ${accusations === 1 ? 'acusação' : 'acusações'}` : rounds === 0 ? 'sem limite' : `${rounds} rodadas`;
 
   return (
     <Screen gap={22} header={<StackHeader title="Criar partida" onBack={() => router.back()} />}>
@@ -110,8 +132,13 @@ export function CreateMatchScreen() {
 
       <View>
         <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
-          {isLikely ? 'Categorias' : 'Categoria'}
+          {isLikely ? 'Categorias' : isSecret ? 'Onde vai ser?' : 'Categoria'}
         </Txt>
+        {isSecret && (
+          <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: -6, marginBottom: 10 }}>
+            Cada lugar tem missões próprias: no churrasco tem carne e fogo; na viagem, mala e roteiro.
+          </Txt>
+        )}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {game.wordCategories
             .filter((c) => features.premium || !c.premium)
@@ -153,6 +180,61 @@ export function CreateMatchScreen() {
         </View>
       )}
 
+      {isSecret && (
+        <>
+          <View>
+            <Txt font="body600" size={16} style={{ marginBottom: 4 }}>
+              Dificuldade
+            </Txt>
+            <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginBottom: 10 }}>
+              As difíceis rendem mais história, mas é mais fácil ser pego.
+            </Txt>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {(Object.keys(DIFFICULTY_LABELS) as SecretDifficulty[]).map((level) => (
+                <Chip
+                  key={level}
+                  emoji={DIFFICULTY_LABELS[level].emoji}
+                  label={DIFFICULTY_LABELS[level].label}
+                  state={difficulties.includes(level) ? 'selected' : 'default'}
+                  onPress={() => toggleDifficulty(level)}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: radii.card,
+              paddingVertical: 14,
+              paddingHorizontal: 20,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 14,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Txt font="body600" size={15}>
+                Acusações por pessoa
+              </Txt>
+              <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: 2 }}>
+                Poucas de propósito: com acusação de sobra, dá para chutar todo mundo.
+              </Txt>
+            </View>
+            <Stepper value={accusations} min={SECRET_LIMITS.accusations.min} max={SECRET_LIMITS.accusations.max} onChange={setAccusations} />
+          </View>
+
+          <OptionRow
+            title="Contar pontos"
+            hint="Pontua quem cumpre e quem pega os outros. Desligado, é só cumpriu ou não."
+            value={competitive}
+            onToggle={() => setCompetitive((v) => !v)}
+          />
+        </>
+      )}
+
+      {!isSecret && (
       <View>
         <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
           {isLikely ? 'Perguntas' : 'Rodadas'}
@@ -166,6 +248,7 @@ export function CreateMatchScreen() {
           options={game.roundOptions.map((n) => ({ value: n, label: n === 0 ? '∞' : String(n) }))}
         />
       </View>
+      )}
 
       {isLikely && (
         <View style={{ gap: 8 }}>

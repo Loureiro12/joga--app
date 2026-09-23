@@ -62,6 +62,31 @@ test('mensagens: entrada malformada ou fora dos limites é rejeitada', () => {
   assert.equal(long?.t === 'create' && long.me.name.length, 24, 'nome é cortado em 24');
 });
 
+test('criar sala de jogo sem rodada, e as opções do host que sobrevivem à validação', () => {
+  const criar = (input: Record<string, unknown>) => {
+    const m = parseClientMessage(JSON.stringify({ t: 'create', id: 1, input, me: ME }));
+    return m?.t === 'create' ? m.input : null;
+  };
+  const secreto = { gameId: 'secret', category: 'churrasco', totalRounds: 0, maxPlayers: 8 };
+
+  // O Desafio Secreto não tem rodada: dura o rolê. Exigir `totalRounds >= 1` impediria de criar a sala.
+  assert.ok(criar(secreto), 'o servidor recusou uma sala de jogo sem rodadas');
+  assert.ok(!criar({ ...secreto, gameId: 'impostor' }), 'o Impostor precisa de pelo menos uma rodada');
+
+  // As escolhas do host precisam chegar inteiras ao motor; o que ele descarta aqui vira o padrão
+  // em silêncio, e o grupo joga com uma configuração que ninguém pediu.
+  const escolhas = criar({ ...secreto, settings: { context: 'churrasco', difficulties: ['dificil'], accusations: 3, swaps: 0, competitive: true } });
+  assert.equal(escolhas?.settings?.context, 'churrasco');
+  assert.deepEqual(escolhas?.settings?.difficulties, ['dificil']);
+  assert.equal(escolhas?.settings?.accusations, 3);
+
+  // E o lixo é barrado antes do motor.
+  const lixo = criar({ ...secreto, settings: { context: 'balada', difficulties: ['impossivel'], accusations: 999 } });
+  assert.equal(lixo?.settings?.context, undefined);
+  assert.deepEqual(lixo?.settings?.difficulties, []);
+  assert.equal(lixo?.settings?.accusations, undefined);
+});
+
 test('healthz responde com contadores', async () => {
   const server = await startServer();
   try {

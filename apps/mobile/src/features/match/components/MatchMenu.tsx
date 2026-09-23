@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { colors } from '@/core/theme';
@@ -10,6 +10,21 @@ import { leaveMatch } from '../hooks/leaveMatch';
 import { roomActions } from '../hooks/roomActions';
 import { hasMatchToLeave } from '../matchPhase';
 import { useMatch } from '../store/matchStore';
+
+/**
+ * O canto superior direito pertence ao botão de sair. Uma tela que escreva ali (a rodada, a
+ * categoria, quantas acusações restam) precisa desviar dele — sem isso o ✕ cai em cima do texto.
+ */
+export const MATCH_MENU_INSET = 46;
+
+/**
+ * A primeira linha de uma tela de partida: rótulo à esquerda, estado à direita, e o espaço do
+ * botão de sair já reservado. Existe para que a próxima tela de partida não descubra a colisão
+ * depois de pronta.
+ */
+export function MatchTopRow({ children }: { children: ReactNode }) {
+  return <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: MATCH_MENU_INSET }}>{children}</View>;
+}
 
 /** Pedido de abertura vindo de fora (o botão físico de voltar, no Android). */
 let pedirAbertura: (() => void) | null = null;

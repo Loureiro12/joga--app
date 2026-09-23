@@ -7,6 +7,7 @@ import { Eyes } from '@/core/illustrations';
 import { colors, radii } from '@/core/theme';
 import { Button, Display, Overline, Screen, Txt, WaitingButton } from '@/core/ui';
 
+import { MatchTopRow } from '../components/MatchMenu';
 import { HoldToRevealButton, SecretCard } from '../components/SecretReveal';
 import { roomActions } from '../hooks/roomActions';
 import { useImpostorMatch } from '../store/matchStore';
@@ -53,12 +54,12 @@ export function RevealScreen() {
 
   return (
     <Screen scroll={false} bg={revealed && impostor && !acked ? colors.impostorBg : colors.background}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <MatchTopRow>
         <Overline>
           Rodada {room.roundIndex} · {category}
         </Overline>
         <Overline>Só você vê isso</Overline>
-      </View>
+      </MatchTopRow>
 
       {acked ? (
         <>

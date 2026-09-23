@@ -159,7 +159,10 @@ export class RoomManager {
     let removed = 0;
     for (const [code, engine] of this.rooms) {
       const anyoneOnline = engine.playerIds.some((id) => this.connections.has(id));
-      if (!anyoneOnline && now - engine.lastActivityAt > this.opts.idleRoomMs) {
+      // O jogo pode pedir mais fôlego: um que corre por trás de uma festa fica horas sem ninguém
+      // com o app aberto, e o prazo padrão descartaria a sala no meio da partida.
+      const limite = engine.idleRoomMs ?? this.opts.idleRoomMs;
+      if (!anyoneOnline && now - engine.lastActivityAt > limite) {
         this.destroy(code);
         removed++;
       }

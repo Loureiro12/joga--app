@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { colors, radii } from '@/core/theme';
 import { Button, Display, Overline, PillButton, Screen, Txt } from '@/core/ui';
 
+import { MatchTopRow } from '../../components/MatchMenu';
 import { roomActions } from '../../hooks/roomActions';
 import { useLikelyMatch } from '../../store/matchStore';
 
@@ -17,14 +18,14 @@ export function QuestionScreen() {
 
   return (
     <Screen scroll={false}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <MatchTopRow>
         <Overline>
           {round.totalRounds ? `Pergunta ${round.index} de ${round.totalRounds}` : `Pergunta ${round.index}`}
         </Overline>
         <Txt font="body600" size={12} color={colors.muted}>
           {round.category}
         </Txt>
-      </View>
+      </MatchTopRow>
 
       <View style={{ flex: 1, justifyContent: 'center', gap: 20 }}>
         <View style={{ backgroundColor: colors.surface, borderRadius: radii.card, padding: 24, gap: 10 }}>

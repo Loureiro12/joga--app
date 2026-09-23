@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { IMPOSTOR_CATEGORIES, categoryWords, type RoomPhase } from '@jogae/engine';
+import { IMPOSTOR_CATEGORIES, SECRET_CONTEXTS, categoryWords, countMissions, type RoomPhase, type SecretContext } from '@jogae/engine';
 
 import { GAMES, getGame } from '../src/features/catalog/data/games';
 
@@ -110,7 +110,7 @@ test('toda fase de partida tem saída — inclusive as dos jogos novos', async (
   const { hasMatchToLeave } = await import('../src/features/match/matchPhase');
 
   // Se um jogo novo trouxer uma fase, ela cai aqui e precisa de uma decisão consciente.
-  const emJogo: RoomPhase[] = ['role_reveal', 'clues', 'question', 'voting', 'revealing'];
+  const emJogo: RoomPhase[] = ['role_reveal', 'clues', 'question', 'voting', 'revealing', 'briefing', 'mission', 'verdict'];
   for (const fase of emJogo) assert.equal(hasMatchToLeave(fase), true, `a fase "${fase}" ficou sem saída`);
 
   // Nestas não há partida para abandonar: o lobby tem o próprio "Fechar" e o resto já acabou.
@@ -158,5 +158,79 @@ test('Entre Nós é local, para duas pessoas, e tem fluxo próprio', () => {
 test('todo jogo local diz por qual fluxo entra', () => {
   for (const jogo of GAMES.filter((g) => g.device === 'local' && g.playable)) {
     assert.ok(jogo.bombVariant || jogo.localFlow, `${jogo.id} é local mas não diz por onde começa`);
+  }
+});
+
+/**
+ * O Desafio Secreto é o único jogo em que a "categoria" da tela não é categoria: é o lugar onde o
+ * grupo está, e é ele que decide quais missões podem cair. Os dois lados dessa lista moram em
+ * arquivos diferentes — se saírem de sincronia, o host escolhe "churrasco" e o motor joga com
+ * outro baralho, sem nenhum aviso.
+ */
+test('os lugares oferecidos na tela são os que o motor do Desafio Secreto conhece', () => {
+  const secreto = getGame('desafio-secreto')!;
+  assert.equal(secreto.playable, true);
+  assert.equal(secreto.engineId, 'secret', 'o jogo precisa de sala: cada missão é privada');
+  assert.equal(secreto.device, undefined, 'não é de um celular só');
+
+  const oferecidos = secreto.wordCategories.map((c) => c.id);
+  assert.deepEqual(oferecidos.filter((id) => !(SECRET_CONTEXTS as readonly string[]).includes(id)), [], 'lugar na tela que o motor não conhece');
+  assert.deepEqual(SECRET_CONTEXTS.filter((c) => !oferecidos.includes(c)), [], 'lugar com missões que ninguém consegue escolher');
+  assert.ok(oferecidos.includes(secreto.defaults.category), 'o lugar padrão não está entre as opções');
+
+  // E o padrão tem que dar partida para a maior sala: 12 missões distintas mais as falsas.
+  const quantas = countMissions({ context: secreto.defaults.category as SecretContext, difficulties: ['facil', 'media'], accusations: 2, swaps: 1, competitive: false });
+  assert.ok(quantas >= secreto.maxPlayers + 3, `o lugar padrão só tem ${quantas} missões`);
+});
+
+/**
+ * A missão só pode existir na tela enquanto o dedo está nela. O jogo acontece com todos lado a
+ * lado, olhando de esguelha: uma tela que deixasse a missão à mostra entregaria o jogo no primeiro
+ * descuido. Por isso nenhuma tela do Desafio Secreto imprime a própria missão fora do `HoldToReveal`.
+ */
+test('a missão nunca fica à mostra: as telas do segredo só a mostram sob o dedo', async () => {
+  const { readFile } = await import('node:fs/promises');
+  for (const tela of ['BriefingScreen', 'MissionScreen']) {
+    const src = await readFile(new URL(`../src/features/match/screens/secret/${tela}.tsx`, import.meta.url), 'utf8');
+    assert.ok(src.includes('<HoldToReveal'), `${tela} mostra a missão sem exigir o dedo na tela`);
+    const [antes] = src.split('<HoldToReveal');
+    assert.ok(!antes.includes('mine.mission.text'), `${tela} imprime a missão antes do HoldToReveal`);
+  }
+
+  // A tela da revelação é o oposto: ali a missão é pública, e é o fim do jogo.
+  const verdict = await readFile(new URL('../src/features/match/screens/secret/VerdictScreen.tsx', import.meta.url), 'utf8');
+  assert.ok(!verdict.includes('HoldToReveal'), 'na hora da verdade a missão é do grupo, não mais de quem a recebeu');
+});
+
+/**
+ * O botão de sair mora no canto superior direito de toda tela de partida. Uma tela que escreva
+ * ali — a rodada, a categoria, quantas acusações restam — precisa desviar dele, e descobrir isso
+ * só na hora de olhar o celular já custou uma colisão em cinco telas. `MatchTopRow` reserva o
+ * espaço; este teste é o que impede a próxima tela de esquecer.
+ */
+test('nenhuma tela de partida escreve por baixo do botão de sair', async () => {
+  const { readFile, readdir } = await import('node:fs/promises');
+  const base = new URL('../src/features/match/screens/', import.meta.url);
+  const arquivos: string[] = [];
+  for (const entrada of await readdir(base, { withFileTypes: true })) {
+    if (entrada.isDirectory()) {
+      for (const filho of await readdir(new URL(entrada.name + '/', base))) arquivos.push(`${entrada.name}/${filho}`);
+    } else if (entrada.name.endsWith('.tsx')) arquivos.push(entrada.name);
+  }
+
+  // Estas não estão em partida: o menu de saída não aparece nelas, então o canto é livre.
+  const semMenu = ['LobbyScreen.tsx', 'EndScreen.tsx', 'AbortedScreen.tsx', 'CreateMatchScreen.tsx', 'JoinRoomScreen.tsx', 'RankingScreen.tsx'];
+
+  for (const arquivo of arquivos.filter((f) => f.endsWith('.tsx') && !semMenu.some((s) => f.endsWith(s)))) {
+    const src = await readFile(new URL(arquivo, base), 'utf8');
+    // A primeira linha da tela: o que vem logo depois do <Screen> de abertura.
+    const inicio = src.indexOf('<Screen');
+    if (inicio < 0) continue;
+    const topo = src.slice(inicio, inicio + 600);
+    if (!topo.includes("justifyContent: 'space-between'")) continue;
+    assert.ok(
+      src.includes('<MatchTopRow>'),
+      `${arquivo} abre com uma linha de canto a canto sem MatchTopRow: o ✕ cai em cima do texto da direita`,
+    );
   }
 });

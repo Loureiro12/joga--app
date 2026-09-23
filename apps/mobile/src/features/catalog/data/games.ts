@@ -155,8 +155,8 @@ export const GAMES: GameDefinition[] = [
     playable: true,
   },
   {
-    ...comingSoon,
     id: 'desafio-secreto',
+    engineId: 'secret',
     name: 'Desafio secreto',
     category: 'Festa',
     tagline: 'Complete sua missão sem ninguém perceber.',
@@ -165,12 +165,36 @@ export const GAMES: GameDefinition[] = [
     color: colors.success,
     illustration: 'mask',
     minPlayers: 3,
-    recommendedPlayers: 3,
+    recommendedPlayers: 5,
     maxPlayers: 12,
-    playersLabel: '3+ jogadores',
-    durationLabel: '20 min',
-    durationShort: '20 min',
+    playersLabel: '3–12 jogadores',
+    // O único jogo que não é de uma sentada: começa no início do rolê e fecha quando ele acaba.
+    durationLabel: 'A noite inteira',
+    durationShort: 'A noite',
+    infoChips: [
+      { emoji: '📱', label: 'Um celular por pessoa' },
+      { emoji: '👥', label: 'Melhor com 5 a 8' },
+      { emoji: '🌙', label: 'Roda por trás do rolê' },
+    ],
+    howToPlay: [
+      'Cada um recebe uma missão que só ele vê e tenta cumprir durante o rolê, sem ninguém perceber.',
+      'Desconfiou de alguém? Acuse — mas você precisa dizer qual missão acha que é. Errar gasta a acusação.',
+      'No fim, as missões são abertas uma por uma e o grupo decide quem cumpriu de verdade.',
+    ],
+    // No Desafio Secreto a "categoria" é onde o grupo está: é o que decide quais missões cabem.
+    wordCategories: [
+      { id: 'festa', label: 'Festa', emoji: '🎉' },
+      { id: 'casa', label: 'Em casa', emoji: '🏠' },
+      { id: 'jantar', label: 'Jantar', emoji: '🍝' },
+      { id: 'churrasco', label: 'Churrasco', emoji: '🍖' },
+      { id: 'viagem', label: 'Viagem', emoji: '✈️' },
+      { id: 'jogos', label: 'Noite de jogos', emoji: '🎲' },
+    ],
+    // Não tem rodada: a partida é a noite. O campo existe para o tipo, e a tela não mostra.
+    roundOptions: [0],
+    defaults: { players: 6, category: 'festa', rounds: 0 },
     tags: ['Em alta', 'Festa', 'Família'],
+    playable: true,
   },
   {
     id: 'bomba-relogio',

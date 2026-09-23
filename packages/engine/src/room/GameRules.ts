@@ -37,6 +37,14 @@ export interface GameRules<S> {
   readonly maxPlayers: number;
   /** Comandos que só o host pode mandar; os demais são recusados com `not_host`. */
   readonly hostCommands: ReadonlySet<RoomCommand['type']>;
+  /**
+   * Prazos de sala que este jogo precisa diferentes do padrão.
+   *
+   * O padrão serve a jogos de uma sentada, em que todo mundo está com o app aberto. Um jogo que
+   * corre por trás de uma festa — as pessoas fecham o app e voltam horas depois — seria destruído
+   * por ele: os jogadores seriam removidos em 30 s e a sala descartada em 10 min.
+   */
+  readonly roomConfig?: { graceMs?: number; idleRoomMs?: number };
 
   /** Estado inicial, no lobby, a partir do que o host escolheu ao criar a sala. */
   initial(input: CreateRoomInput, ctx: GameCtx): S;

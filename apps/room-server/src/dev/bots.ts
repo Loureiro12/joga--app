@@ -44,8 +44,10 @@ function bot(index: number, onCode?: (code: string) => void) {
   function react(s: RoomSnapshot) {
     const iAmHost = s.room.hostId === s.meId;
     const game = s.game;
-    const deal = game.kind === 'impostor' ? (game.round?.deal ?? 0) : (game.round?.questionId ?? '-');
-    const key = `${s.room.phase}|${deal}|${game.result?.stage ?? '-'}|${iAmHost}|${s.players.filter((p) => p.connected).length}`;
+    // Chave do "já reagi a isto": muda quando a situação muda, e cada jogo diz o que é situação.
+    const deal = game.kind === 'impostor' ? (game.round?.deal ?? 0) : game.kind === 'likely' ? (game.round?.questionId ?? '-') : (game.mine?.status ?? '-');
+    const stage = game.kind === 'secret' ? '-' : (game.result?.stage ?? '-');
+    const key = `${s.room.phase}|${deal}|${stage}|${iAmHost}|${s.players.filter((p) => p.connected).length}`;
     if (key === acted) return;
     acted = key;
     const later = (ms: number, fn: () => void) => setTimeout(fn, ms);
@@ -67,7 +69,14 @@ function bot(index: number, onCode?: (code: string) => void) {
       later(15_000, () => cmd({ type: 'openVoting' }));
     }
     if (s.room.phase === 'question') later(rand(4000, 7000), () => cmd({ type: 'openVoting' }));
-    if (s.room.phase === 'revealing' && game.result?.stage === 2) later(9000, () => cmd({ type: 'nextRound' }));
+    if (s.room.phase === 'revealing' && game.kind !== 'secret' && game.result?.stage === 2) later(9000, () => cmd({ type: 'nextRound' }));
+
+    // Desafio Secreto: o bot confirma a missão para a noite poder começar, e não faz mais nada —
+    // cumprir missão é coisa de gente na mesa, não de bot.
+    if (game.kind === 'secret') {
+      if (s.room.phase === 'briefing' && !game.ready.includes(s.meId)) later(rand(600, 2000), () => cmd({ type: 'missionReady' }));
+      if (s.room.phase === 'verdict' && iAmHost) later(12_000, () => cmd({ type: 'nextReveal' }));
+    }
   }
 
   function connect() {

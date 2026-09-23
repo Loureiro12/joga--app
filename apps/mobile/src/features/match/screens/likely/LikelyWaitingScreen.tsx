@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { colors } from '@/core/theme';
 import { Avatar, Display, Overline, PillButton, ProgressRing, Screen, Txt } from '@/core/ui';
 
+import { MatchTopRow } from '../../components/MatchMenu';
 import { roomActions } from '../../hooks/roomActions';
 import { useLikelyMatch } from '../../store/matchStore';
 
@@ -20,7 +21,7 @@ export function LikelyWaitingScreen() {
 
   return (
     <Screen scroll={false}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <MatchTopRow>
         <Overline>Pergunta {round.index} · Votação</Overline>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
@@ -28,7 +29,7 @@ export function LikelyWaitingScreen() {
             Seu voto está guardado
           </Txt>
         </View>
-      </View>
+      </MatchTopRow>
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 }}>
         <ProgressRing size={180} thickness={12} progress={votes.total ? votes.votedIds.length / votes.total : 0} color={colors.accent}>

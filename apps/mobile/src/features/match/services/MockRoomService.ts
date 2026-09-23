@@ -18,6 +18,18 @@ import { wait } from '@/core/utils/format';
 
 import type { RoomService, RoomServiceDebug, Unsubscribe } from './RoomService';
 
+/**
+ * O pedaço do estado do Desafio Secreto que a simulação precisa ler. O mock roda o motor de
+ * verdade, então dá para espiar o estado interno — é o que permite a um bot "acusar" com a lista
+ * de opções na mão, coisa que um cliente real nunca poderia fazer.
+ */
+type SecretPeek = {
+  players: Record<PlayerId, { ready: boolean; status: string; accusationsLeft: number }>;
+  options: Record<PlayerId, string[]>;
+  revealOrder: PlayerId[];
+  revealIndex: number;
+};
+
 /** Timings da simulação (README do handoff, "Fase 1"). Ajustáveis para testes. */
 export type MockRoomConfig = {
   latencyMs: number;
@@ -32,6 +44,9 @@ export type MockRoomConfig = {
   botHostStartMs: number;
   botHostOpenVotingMs: number;
   botHostNextRoundMs: number;
+  /** Desafio Secreto: quanto os bots "levam" para cumprir a missão e para validar a história. */
+  botSecretActMs: number;
+  botSecretVoteMs: number;
 };
 
 export const DEFAULT_MOCK_CONFIG: MockRoomConfig = {
@@ -46,6 +61,8 @@ export const DEFAULT_MOCK_CONFIG: MockRoomConfig = {
   botHostStartMs: 1800,
   botHostOpenVotingMs: 12000,
   botHostNextRoundMs: 9000,
+  botSecretActMs: 4000,
+  botSecretVoteMs: 1400,
 };
 
 /** Única sala "existente" no mock; qualquer outro código dá "Sala não encontrada". */
@@ -84,6 +101,7 @@ export class MockRoomService implements RoomService {
   private intervals = new Map<string, ReturnType<typeof setInterval>>();
   /** Para agendar cada automação do bot-host uma vez por situação. */
   private hostPlanKey = '';
+  private secretPlanKey = '';
 
   constructor(private readonly config: MockRoomConfig = DEFAULT_MOCK_CONFIG) {}
 
@@ -139,6 +157,12 @@ export class MockRoomService implements RoomService {
   endVoting = () => this.command({ type: 'endVoting' });
   skipQuestion = () => this.command({ type: 'skipQuestion' });
   endMatch = () => this.command({ type: 'endMatch' });
+  missionReady = () => this.command({ type: 'missionReady' });
+  missionDone = () => this.command({ type: 'missionDone' });
+  accuse = (targetId: PlayerId, missionId: string) => this.command({ type: 'accuse', targetId, missionId });
+  swapMission = () => this.command({ type: 'swapMission' });
+  nextReveal = () => this.command({ type: 'nextReveal' });
+  voteReveal = (valid: boolean) => this.command({ type: 'voteReveal', valid });
   ackRole = () => this.command({ type: 'ackRole' });
   setPaused = (paused: boolean) => this.command({ type: 'setPaused', paused });
 
@@ -186,6 +210,8 @@ export class MockRoomService implements RoomService {
       if (engine.phase === 'lobby') asHost({ type: 'startMatch' });
       else if (engine.phase === 'clues') asHost({ type: 'openVoting' });
       else if (engine.phase === 'revealing') asHost({ type: 'nextRound' });
+      else if (engine.phase === 'mission') asHost({ type: 'endMatch' });
+      else if (engine.phase === 'verdict') asHost({ type: 'nextReveal' });
     },
   };
 
@@ -224,7 +250,55 @@ export class MockRoomService implements RoomService {
       const acked = new Set((engine.serialize().game as { ackedIds: string[] }).ackedIds);
       engine.playerIds.filter((id) => isBot(id) && !acked.has(id)).forEach((id) => this.tryDispatch(id, { type: 'ackRole' }));
     }
+    if (engine.phase === 'briefing' || engine.phase === 'mission' || engine.phase === 'verdict') this.planBotSecret();
     this.planBotHost();
+  }
+
+  /**
+   * Os bots jogando o Desafio Secreto. Não é só enfeite: sem eles a fase de briefing nunca
+   * fecharia (ela espera todos esconderem a missão) e a hora da verdade não teria votos.
+   */
+  private planBotSecret() {
+    const engine = this.engine;
+    if (!engine) return;
+    const game = engine.serialize().game as unknown as SecretPeek;
+    const bots = engine.playerIds.filter(isBot);
+
+    // Sem esta chave, cada ação de bot re-armaria o plano e os bots acabariam acusando todo mundo:
+    // o plano é montado uma vez por fase (e, na revelação, uma vez por missão aberta).
+    const key = `${engine.phase}|${game.revealIndex}`;
+    if (key === this.secretPlanKey) return;
+    this.secretPlanKey = key;
+
+    if (engine.phase === 'briefing') {
+      // Escondem a missão na hora: quem segura a fase é você.
+      bots.filter((id) => !game.players[id]?.ready).forEach((id) => this.tryDispatch(id, { type: 'missionReady' }));
+      return;
+    }
+
+    if (engine.phase === 'mission') {
+      // Dois terços cumprem a missão, e um acusa: o suficiente para a hora da verdade ter conversa.
+      this.after('botSecret', this.config.botSecretActMs, () => {
+        const atual = this.engine?.serialize().game as unknown as SecretPeek | undefined;
+        if (!atual || this.engine?.phase !== 'mission') return;
+        bots.forEach((id, i) => {
+          if (i % 3 !== 2 && atual.players[id]?.status === 'ativa') this.tryDispatch(id, { type: 'missionDone' });
+        });
+        const acusador = bots.find((id) => atual.players[id]?.accusationsLeft > 0);
+        const alvo = engine.playerIds.find((id) => id !== acusador && atual.options[id]?.length);
+        if (acusador && alvo) this.tryDispatch(acusador, { type: 'accuse', targetId: alvo, missionId: atual.options[alvo][0] });
+      });
+      return;
+    }
+
+    // Hora da verdade: o grupo valida a história de quem está na vez, com uma pausa para dar tempo
+    // de ler a tela. A chave inclui o índice, então cada revelação recebe a sua rodada de votos.
+    const alvo = game.revealOrder[game.revealIndex];
+    if (!alvo) return;
+    this.after(`botReveal:${game.revealIndex}`, this.config.botSecretVoteMs, () => {
+      if (this.engine?.phase !== 'verdict') return;
+      bots.filter((id) => id !== alvo).forEach((id, i) => this.tryDispatch(id, { type: 'voteReveal', valid: i % 4 !== 3 }));
+    });
   }
 
   /** Quando o host é um bot, ele conduz a partida sozinho (com calma, respeitando a pausa). */
@@ -233,7 +307,8 @@ export class MockRoomService implements RoomService {
     if (!engine || !isBot(engine.hostId)) return;
     const snap = engine.snapshotFor(engine.hostId);
     const lobbyReady = snap.room.phase === 'lobby' && this.pendingBots.length === 0;
-    const key = `${engine.hostId}|${snap.room.phase}|${snap.room.roundIndex}|${snap.game.result?.stage ?? '-'}|${lobbyReady}`;
+    const stage = snap.game.kind === 'secret' ? '-' : (snap.game.result?.stage ?? '-');
+    const key = `${engine.hostId}|${snap.room.phase}|${snap.room.roundIndex}|${stage}|${lobbyReady}`;
     if (key === this.hostPlanKey) return;
     this.hostPlanKey = key;
     this.clearTimer('botHost');
@@ -245,8 +320,13 @@ export class MockRoomService implements RoomService {
     else if (snap.room.phase === 'clues') {
       this.after('botHostTimer', Math.min(1000, botHostOpenVotingMs / 2), () => this.tryDispatch(host, { type: 'setTimerRunning', running: true }));
       this.after('botHost', botHostOpenVotingMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'openVoting' })));
-    } else if (snap.room.phase === 'revealing' && snap.game.result?.stage === 2) {
+    } else if (snap.room.phase === 'revealing' && snap.game.kind !== 'secret' && snap.game.result?.stage === 2) {
       this.after('botHost', botHostNextRoundMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'nextRound' })));
+    } else if (snap.room.phase === 'mission') {
+      // Na vida real a noite acaba quando o rolê acaba; aqui, depois de os bots agirem.
+      this.after('botHost', this.config.botSecretActMs + botHostNextRoundMs, () => this.tryDispatch(host, { type: 'endMatch' }));
+    } else if (snap.room.phase === 'verdict') {
+      this.after('botHost', botHostNextRoundMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'nextReveal' })));
     }
   }
 
@@ -347,6 +427,7 @@ export class MockRoomService implements RoomService {
     this.meId = null;
     this.pendingBots = [];
     this.hostPlanKey = '';
+    this.secretPlanKey = '';
     this.setConnection({ status: 'online' });
   }
 }

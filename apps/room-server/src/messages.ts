@@ -1,4 +1,15 @@
-import { PROTOCOL_VERSION, type ClientMessage, type CreateRoomInput, type LikelyIntensity, type PlayerAppearance, type RoomCommand } from '@jogae/engine';
+import {
+  PROTOCOL_VERSION,
+  SECRET_CONTEXTS,
+  SECRET_DIFFICULTIES,
+  SECRET_LIMITS,
+  type ClientMessage,
+  type CreateRoomInput,
+  type LikelyIntensity,
+  type PlayerAppearance,
+  type RoomCommand,
+  type SecretDifficulty,
+} from '@jogae/engine';
 
 /**
  * Tudo que chega do cliente é tratado como hostil até ser validado aqui.
@@ -18,12 +29,19 @@ function appearance(v: unknown): PlayerAppearance | null {
 
 const INTENSITIES = new Set<string>(['leve', 'moderado', 'pesado']);
 
-/** As opções do "Quem é Mais Provável?". O engine normaliza de novo; aqui só barramos lixo. */
-function likelySettings(v: unknown): CreateRoomInput['settings'] {
+/** As opções de jogo que o host escolheu. O engine normaliza de novo; aqui só barramos lixo. */
+function gameSettings(v: unknown): CreateRoomInput['settings'] {
   if (!isObject(v)) return undefined;
   const list = (x: unknown, max: number) => (Array.isArray(x) && x.length <= max && x.every((i) => typeof i === 'string' && i.length <= 30) ? (x as string[]) : undefined);
   const bool = (x: unknown) => (typeof x === 'boolean' ? x : undefined);
+  const num = (x: unknown, min: number, max: number) => (isInt(x, min, max) ? x : undefined);
+  const { accusations, swaps } = SECRET_LIMITS;
   return {
+    // Do Desafio Secreto; o engine normaliza de novo.
+    context: typeof v.context === 'string' && (SECRET_CONTEXTS as readonly string[]).includes(v.context) ? (v.context as never) : undefined,
+    difficulties: list(v.difficulties, SECRET_DIFFICULTIES.length)?.filter((d): d is SecretDifficulty => (SECRET_DIFFICULTIES as readonly string[]).includes(d)),
+    accusations: num(v.accusations, accusations.min, accusations.max),
+    swaps: num(v.swaps, swaps.min, swaps.max),
     categories: list(v.categories, 12),
     intensities: list(v.intensities, 3)?.filter((i): i is LikelyIntensity => INTENSITIES.has(i)),
     allowSelfVote: bool(v.allowSelfVote),
@@ -34,13 +52,14 @@ function likelySettings(v: unknown): CreateRoomInput['settings'] {
 
 function roomInput(v: unknown): CreateRoomInput | null {
   if (!isObject(v)) return null;
-  if (v.gameId !== 'impostor' && v.gameId !== 'likely') return null; // jogos com regras no engine
+  if (v.gameId !== 'impostor' && v.gameId !== 'likely' && v.gameId !== 'secret') return null; // jogos com regras no engine
   if (typeof v.category !== 'string' || v.category.length < 1 || v.category.length > 30) return null;
-  // `totalRounds: 0` no "Quem é Mais Provável?" é a partida sem limite; o Impostor exige pelo menos 1.
-  const minRounds = v.gameId === 'likely' ? 0 : 1;
+  // `totalRounds: 0` é a partida sem limite do "Quem é Mais Provável?" e a ausência de rodada no
+  // Desafio Secreto, que dura o rolê inteiro. Só o Impostor exige pelo menos uma.
+  const minRounds = v.gameId === 'impostor' ? 1 : 0;
   // O teto da sala pode ser 2: o mínimo é técnico, não recomendação — quem decide o tamanho é o host.
   if (!isInt(v.totalRounds, minRounds, 30) || !isInt(v.maxPlayers, 2, 20)) return null;
-  return { gameId: v.gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers, settings: likelySettings(v.settings) };
+  return { gameId: v.gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers, settings: gameSettings(v.settings) };
 }
 
 function command(v: unknown): RoomCommand | null {
@@ -55,7 +74,17 @@ function command(v: unknown): RoomCommand | null {
     case 'endVoting':
     case 'skipQuestion':
     case 'endMatch':
+    case 'missionReady':
+    case 'missionDone':
+    case 'swapMission':
+    case 'nextReveal':
       return { type: v.type };
+    case 'accuse':
+      return typeof v.targetId === 'string' && v.targetId.length <= 80 && typeof v.missionId === 'string' && v.missionId.length <= 40
+        ? { type: v.type, targetId: v.targetId, missionId: v.missionId }
+        : null;
+    case 'voteReveal':
+      return typeof v.valid === 'boolean' ? { type: v.type, valid: v.valid } : null;
     case 'setTimerRunning':
       return typeof v.running === 'boolean' ? { type: v.type, running: v.running } : null;
     case 'setPaused':

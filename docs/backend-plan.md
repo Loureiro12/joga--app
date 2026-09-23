@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Cinco jogos jogáveis: Impostor e Quem é Mais Provável (em sala), Bomba-Relógio, Bomba: Alfabeto e Entre Nós (num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Seis jogos jogáveis: Impostor, Quem é Mais Provável e Desafio Secreto (em sala), Bomba-Relógio, Bomba: Alfabeto e Entre Nós (num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -247,6 +247,7 @@ Antes só havia saída em duas telas: o lobby e a de pistas do Impostor. Quem es
 - **Android:** o botão físico de voltar deixou de ser inerte e passa a abrir esse menu. Ele não sai direto: abandonar a partida no reflexo seria cruel.
 - **Bomba-Relógio:** não há sala para deixar, o aparelho é do grupo. Então são duas saídas — *encerrar* (vai para o resultado com o que já rolou) e *descartar*. Encerrar só aparece depois da primeira rodada, senão não há resultado nenhum.
 - A regra de quais fases têm saída virou `matchPhase.ts`, sem nada de React, e um teste percorre todas as fases. A lista cresce a cada jogo, e uma fase esquecida é exatamente uma tela sem saída.
+- **O canto do botão cobrava aluguel (corrigido em 2026-09-23).** Pôr o ✕ num canto fixo fez ele cair em cima do que as telas já escreviam ali — a rodada, a categoria, "só você vê isso". Cinco telas ficaram assim. A primeira linha de tela de partida virou `MatchTopRow`, que reserva o espaço, e um teste reprova a tela nova que abrir uma linha de canto a canto sem ele.
 
 **Verificado:** a Bomba no navegador (o ✕, o modal, o descartar, e "encerrar" ausente antes da primeira rodada) e a ausência correta do menu no lobby. **Não verificado no navegador:** o menu nas fases de partida dos jogos de sala — elas exigem uma sala com três pessoas, e o servidor de produção ainda recusa o login até a chave ser trocada.
 
@@ -298,6 +299,28 @@ Jogo de conversa para um casal, local, e o primeiro **sem nenhuma mecânica de c
 **Conteúdo:** 160 cartas em 10 categorias, com follow-ups, e 12 cartas de ação ("diga uma coisa que você admira e quase nunca fala"). A régua de segurança foi a mais dura de todas: nada de trauma, término, infidelidade, fertilidade, saúde, morte, dívida ou conflito familiar, e nenhuma pergunta cujo caminho honesto leve a mágoa — "o que te faz sentir distante de mim?" convida a conversar, "o que você menos gosta em mim?" convida a brigar.
 
 **Fica de fora:** resposta secreta escrita, previsão, escolha entre duas, escala (§27–32), reações, favoritar, memórias, perguntas criadas pelo casal, IA e as sessões prontas tipo Date Night (§49–50).
+
+### Jogo 6 — Desafio Secreto (2026-09-23)
+
+O primeiro jogo que **roda por trás de uma festa**, e não numa sentada: cada um recebe uma missão secreta, tenta cumpri-la durante o rolê e o app some do caminho. Volta a exigir sala, porque cada missão é privada e precisa de um celular por pessoa.
+
+Essa diferença de duração é o que mais mexeu no código:
+
+- **Os prazos da sala são outros.** `GameRules` ganhou `roomConfig`: o Desafio Secreto pede seis horas de tolerância e de sala ociosa. Com o padrão de 30 s e 10 min, quem guardasse o celular seria removido da própria partida e a sala morreria antes da sobremesa.
+- **Nada é anunciado na hora.** Marcar "consegui" não avisa ninguém, e acusar não mostra o resultado. Se o app dissesse ao grupo que algo acabou de acontecer, todos deduziriam a missão pelo que tinham acabado de ver.
+- **A tela mais importante é a que quase não aparece.** `HoldToReveal`: a missão só existe na tela enquanto o dedo está nela, e some quando o app vai para segundo plano — o seletor de apps mostra a última tela. Um teste impede que uma tela nova do jogo imprima a missão fora desse componente.
+
+**Acusar custa e exige palpite** (§30–33): duas acusações por noite, e não basta apontar — é preciso escolher, entre quatro missões, qual é a do outro. As quatro opções de cada alvo são **sorteadas uma vez, no começo, e nunca mais**. Geradas a cada acusação, daria para abrir a tela várias vezes e cruzar as listas até isolar a verdadeira.
+
+**O lugar muda a noite.** O banco tem 144 missões; 24 delas só existem em um lugar (a churrasqueira, a mala, o placar). O sorteio dá uma missão do lugar por faixa de dificuldade: sem essa preferência, as poucas específicas quase nunca sairiam e escolher "onde vai ser?" não mudaria nada. Isso abriu uma pista que precisou ser fechada no mesmo passo — como as missões do lugar são distribuídas, elas sumiam do banco de opções falsas, e uma lista com três missões de conversa e uma sobre o fogo responderia sozinha. As falsas passaram a ser do mesmo tipo da verdadeira.
+
+**A hora da verdade é do grupo, não do app** (§38–42): as missões abrem uma por vez, quem foi pego primeiro, e o grupo decide se a história aconteceu. Empate valida — na dúvida, a pessoa contou a verdade. A validação vem só no fim porque interromper a noite para julgar cada missão mataria o jogo.
+
+**Verificado no navegador:** a noite inteira com cinco bots — briefing, "segure para ver" (a missão some ao soltar e não vaza no texto da tela), consegui, acusação com as quatro opções, hora da verdade com votação e o fim. Sem erro de console.
+
+**Dois bugs de servidor apareceram nesse passo** e foram corrigidos: `totalRounds: 0` era recusado na criação da sala (o Desafio Secreto não tem rodadas, dura o rolê), e a dificuldade escolhida pelo host era descartada na validação — o grupo jogaria com uma configuração que ninguém pediu.
+
+**Fica de fora:** missões em dupla, missões criadas pelo grupo, foto como prova e a segunda rodada de missões na mesma noite.
 
 ### Passo 6 — Assinatura
 

@@ -7,6 +7,7 @@ import { Avatar, Button, Display, Overline, ProgressRing, RoundProgress, Screen,
 import { formatClock } from '@/core/utils/format';
 import { haptics } from '@/core/utils/haptics';
 
+import { MatchTopRow } from '../components/MatchMenu';
 import { roomActions } from '../hooks/roomActions';
 import { useRoundTimer } from '../hooks/useRoundTimer';
 import { useImpostorMatch } from '../store/matchStore';
@@ -33,18 +34,17 @@ export function RoundScreen() {
     <Screen
       header={
         <View style={{ gap: 14 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <MatchTopRow>
             <Display size={40}>
               Rodada {round.index}
               <Display size={22} color={colors.muted}>
                 /{room.totalRounds}
               </Display>
             </Display>
-            {/* O menu da partida ocupa o canto direito; a categoria recua para não colidir. */}
-            <View style={{ backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 10, marginRight: 48 }}>
+            <View style={{ backgroundColor: colors.surface, borderRadius: radii.pill, paddingVertical: 8, paddingHorizontal: 10 }}>
               <Overline>{round.category}</Overline>
             </View>
-          </View>
+          </MatchTopRow>
           <RoundProgress total={room.totalRounds} current={round.index} />
         </View>
       }

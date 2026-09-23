@@ -36,6 +36,11 @@ export const routes = {
     likelyWaiting: '/match/likely-waiting',
     likelyResult: '/match/likely-result',
     likelyEnd: '/match/likely-end',
+    // Desafio Secreto
+    briefing: '/match/briefing',
+    mission: '/match/mission',
+    verdict: '/match/verdict',
+    secretEnd: '/match/secret-end',
   },
   /** Bomba-Relógio: um celular só, sem sala — por isso fora de `match`. */
   bomb: {

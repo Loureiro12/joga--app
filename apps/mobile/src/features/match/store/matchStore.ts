@@ -79,6 +79,7 @@ export function useMatch(): MatchView | null {
 
 type ImpostorView = Extract<GameView, { kind: 'impostor' }>;
 type LikelyView = Extract<GameView, { kind: 'likely' }>;
+type SecretView = Extract<GameView, { kind: 'secret' }>;
 
 /**
  * As telas de um jogo pedem a view dele, já achatada no snapshot — `match.round`, `match.result`.
@@ -88,6 +89,11 @@ type LikelyView = Extract<GameView, { kind: 'likely' }>;
 export function useImpostorMatch(): (MatchView & ImpostorView) | null {
   const match = useMatch();
   return match && match.game.kind === 'impostor' ? { ...match, ...match.game } : null;
+}
+
+export function useSecretMatch(): (MatchView & SecretView) | null {
+  const match = useMatch();
+  return match && match.game.kind === 'secret' ? { ...match, ...match.game } : null;
 }
 
 export function useLikelyMatch(): (MatchView & LikelyView) | null {

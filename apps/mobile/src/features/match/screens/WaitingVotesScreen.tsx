@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { colors } from '@/core/theme';
 import { Avatar, Display, Overline, ProgressRing, Screen, Txt } from '@/core/ui';
 
+import { MatchTopRow } from '../components/MatchMenu';
 import { useImpostorMatch } from '../store/matchStore';
 
 /** Tela 15: Aguardando votos (tela cheia). Avança sozinha quando o servidor muda a fase. */
@@ -17,7 +18,7 @@ export function WaitingVotesScreen() {
 
   return (
     <Screen scroll={false}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <MatchTopRow>
         <Overline>Rodada {room.roundIndex} · Votação</Overline>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
@@ -25,7 +26,7 @@ export function WaitingVotesScreen() {
             Seu voto está guardado
           </Txt>
         </View>
-      </View>
+      </MatchTopRow>
 
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 }}>
         <ProgressRing size={180} thickness={12} progress={votes.votedIds.length / votes.total} color={colors.accent}>

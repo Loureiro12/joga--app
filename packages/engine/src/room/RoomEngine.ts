@@ -16,6 +16,7 @@ import {
 import type { GameCtx, GameRules } from './GameRules';
 import { impostorGame, type ImpostorState } from './impostorGame';
 import { likelyGame, type LikelyState } from './likelyGame';
+import { secretGame, type SecretState } from './secretGame';
 import type { RoomCommand } from './protocol';
 
 /**
@@ -67,7 +68,7 @@ export const realScheduler: Scheduler = {
 type EnginePlayer = Player & { disconnectedAt: number | null };
 
 /** Estado de um jogo, discriminado pelo `gameId` da sala. */
-export type GameState = ImpostorState | LikelyState;
+export type GameState = ImpostorState | LikelyState | SecretState;
 
 /** Tudo que é preciso para recriar a sala em outro processo. JSON puro. */
 export type EngineState = {
@@ -95,6 +96,7 @@ export type RoomEngineDeps = {
 const GAMES: Record<GameId, GameRules<never>> = {
   impostor: impostorGame as GameRules<never>,
   likely: likelyGame as GameRules<never>,
+  secret: secretGame as GameRules<never>,
 };
 
 export const rulesFor = (gameId: GameId): GameRules<never> => GAMES[gameId] ?? GAMES.impostor;
@@ -372,12 +374,22 @@ export class RoomEngine {
   /* ------------------------------------------------------------------ alarme */
 
   /** Aplica tudo que venceu até `now`. Devolve se algo mudou. */
+  /** Quanto tempo quem caiu mantém a vaga. O jogo pode esticar (ver `GameRules.roomConfig`). */
+  private get graceMs(): number {
+    return this.game.roomConfig?.graceMs ?? this.config.graceMs;
+  }
+
+  /** Quanto a sala sobrevive sem ninguém conectado. Quem descarta é o servidor. */
+  get idleRoomMs(): number | undefined {
+    return this.game.roomConfig?.idleRoomMs;
+  }
+
   private runDue(now: number): boolean {
     const s = this.state;
     let changed = false;
 
     for (let guard = 0; guard < 50; guard++) {
-      const expired = s.players.find((p) => p.disconnectedAt !== null && p.disconnectedAt + this.config.graceMs <= now);
+      const expired = s.players.find((p) => p.disconnectedAt !== null && p.disconnectedAt + this.graceMs <= now);
       let fired = false;
       if (expired) {
         this.removePlayer(expired.id);
@@ -396,7 +408,7 @@ export class RoomEngine {
   private nextDeadline(): number | null {
     const s = this.state;
     const deadlines: number[] = [];
-    for (const p of s.players) if (p.disconnectedAt !== null) deadlines.push(p.disconnectedAt + this.config.graceMs);
+    for (const p of s.players) if (p.disconnectedAt !== null) deadlines.push(p.disconnectedAt + this.graceMs);
     deadlines.push(...this.game.deadlines(s.game as never, this.ctx()));
     return deadlines.length ? Math.min(...deadlines) : null;
   }

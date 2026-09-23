@@ -103,4 +103,67 @@ async function likely() {
   await svc.leaveRoom();
 }
 
-host().then(guest).then(likely).then(() => { console.log('SMOKE OK'); process.exit(0); }).catch((e) => { console.error('SMOKE FAIL', e); process.exit(1); });
+/**
+ * Desafio Secreto: o jogo que não tem rodada. Confere o fluxo inteiro (briefing → noite →
+ * hora da verdade) e, principalmente, que a missão de um jogador nunca chega no celular do outro.
+ */
+async function secret() {
+  const secretView = (x: RoomSnapshot) => x.game as Extract<RoomSnapshot['game'], { kind: 'secret' }>;
+  const svc = new MockRoomService(fast);
+  await svc.createRoom({ gameId: 'secret', category: 'festa', totalRounds: 0, maxPlayers: 6, settings: { context: 'festa', difficulties: ['facil', 'media'], accusations: 2, swaps: 1, competitive: true } }, me);
+  let s = await until(svc, (x) => x.players.length >= 4, 'lobby');
+  await svc.startMatch();
+
+  s = await until(svc, (x) => x.room.phase === 'briefing', 'briefing');
+  const minha = secretView(s).mine!;
+  console.log('secret missão:', minha.mission.text, '·', minha.mission.difficulty);
+  if (!minha.mission.contexts.includes('festa')) throw new Error('missão sorteada fora do contexto pedido');
+
+  // O snapshot é o que chega pelo fio: a missão dos outros não pode estar nele em lugar nenhum.
+  const fio = JSON.stringify(s);
+  for (const campo of ['missionOf', 'options', 'caughtAt', 'completedAt']) {
+    if (fio.includes('"' + campo + '"')) throw new Error('o snapshot carrega o campo interno ' + campo);
+  }
+
+  await svc.missionReady();
+  s = await until(svc, (x) => x.room.phase === 'mission', 'noite');
+  // Na noite, e só nela, aparecem as quatro opções por alvo — nunca a missão verdadeira marcada.
+  const opcoes = secretView(s).accusationOptions;
+  const alvo = Object.keys(opcoes)[0];
+  if (!alvo || opcoes[alvo].length !== 4) throw new Error('as opções de acusação não vieram em quatro');
+  if (opcoes['me']) throw new Error('o app recebeu as opções da própria missão');
+  await svc.missionDone();
+  await svc.accuse(alvo, opcoes[alvo][0].id);
+
+  s = await until(svc, (x) => secretView(x).mine!.accusationsLeft === 1, 'acusação gasta');
+  // Dá tempo de os bots cumprirem as missões e acusarem: sem isso a hora da verdade fica vazia.
+  await new Promise((r) => setTimeout(r, 200));
+  await svc.endMatch();
+  s = await until(svc, (x) => x.room.phase === 'verdict', 'hora da verdade');
+  console.log('secret revelação 1:', s.players.find((p) => p.id === secretView(s).reveal!.playerId)?.name, '·', secretView(s).reveal!.status);
+
+  const total = secretView(s).revealProgress!.total;
+  for (let i = 1; i <= total; i++) {
+    s = await until(svc, (x) => x.room.phase !== 'verdict' || secretView(x).revealProgress!.index === i, 'revelação ' + i);
+    if (s.room.phase !== 'verdict') break;
+    const dono = secretView(s).reveal!.playerId;
+    if (dono !== 'me') await svc.voteReveal(true);
+    // O grupo inteiro vota antes de virar a página — é o que valida (ou não) a história.
+    if (secretView(s).reveal!.status === 'concluida') {
+      await until(svc, (x) => (x.votes?.votedIds.length ?? 0) >= (x.votes?.total ?? 0), 'votos da revelação ' + i);
+    }
+    await svc.nextReveal();
+  }
+
+  s = await until(svc, (x) => x.room.phase === 'finished', 'fim da noite');
+  const resumo = secretView(s).summary!;
+  console.log('secret fim:', resumo.players.length, 'missões ·', resumo.players.filter((p) => p.status === 'validada').length, 'validadas ·', resumo.highlights.length, 'destaques');
+  if (resumo.players.length !== s.players.length) throw new Error('o resumo perdeu alguém');
+  // Quem foi pego ou não depende do sorteio; o que não pode variar é o grupo ter julgado todo mundo:
+  // ninguém pode acabar a noite em "concluida", que é o estado de quem ainda espera validação.
+  if (resumo.players.some((p) => p.status === 'concluida')) throw new Error('alguém ficou sem julgamento na hora da verdade');
+  if (resumo.players.find((p) => p.playerId === 'me')!.status === 'concluida') throw new Error('a sua missão não foi julgada');
+  await svc.leaveRoom();
+}
+
+host().then(guest).then(likely).then(secret).then(() => { console.log('SMOKE OK'); process.exit(0); }).catch((e) => { console.error('SMOKE FAIL', e); process.exit(1); });

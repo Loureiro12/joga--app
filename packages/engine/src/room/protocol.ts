@@ -30,7 +30,20 @@ export type RoomCommand =
   | { type: 'playAgain' }
   | { type: 'ackRole' }
   | { type: 'castVote'; targetId: PlayerId }
-  | { type: 'setPaused'; paused: boolean };
+  | { type: 'setPaused'; paused: boolean }
+  /* Desafio Secreto */
+  /** "Li minha missão e escondi": a partida só começa quando todos confirmarem. */
+  | { type: 'missionReady' }
+  /** "Consegui." Fica em segredo até a hora da verdade. */
+  | { type: 'missionDone' }
+  /** Acusa alguém de estar cumprindo uma missão específica. */
+  | { type: 'accuse'; targetId: PlayerId; missionId: string }
+  /** Troca a missão que não cabe no rolê. Uma por pessoa. */
+  | { type: 'swapMission' }
+  /** Hora da verdade: host passa para o próximo. */
+  | { type: 'nextReveal' }
+  /** Hora da verdade: o grupo diz se a história valeu. */
+  | { type: 'voteReveal'; valid: boolean };
 
 /** Nome e cor vêm do perfil do app; o id do jogador vem SEMPRE do token, nunca da mensagem. */
 export type PlayerAppearance = { name: string; color: string };
