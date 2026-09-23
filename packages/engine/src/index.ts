@@ -10,6 +10,7 @@
 export * from './types';
 export * from './games/alphabet';
 export * from './games/bomb';
+export * from './games/couple';
 export * from './games/impostor';
 export * from './games/likely';
 export * from './room/protocol';

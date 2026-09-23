@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Quatro jogos jogáveis: Impostor, Quem é Mais Provável, Bomba-Relógio e Bomba: Alfabeto (os dois últimos sem sala, num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Cinco jogos jogáveis: Impostor e Quem é Mais Provável (em sala), Bomba-Relógio, Bomba: Alfabeto e Entre Nós (num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -278,6 +278,26 @@ Variante da Bomba-Relógio, e por isso **não ganhou motor próprio**: pavio, su
 **Verificado:** 85 testes no motor (incluindo o desarme, toque inválido, hardcore, e o pavio próprio) e uma partida no navegador que terminou com a bomba desarmada às 20 letras, sem erro no console.
 
 **Pendência conhecida, fora desta entrega:** o repositório não tem `.prettierrc`, e o padrão do Prettier (aspas duplas, 80 colunas) diverge do código (aspas simples, ~160). Rodar `npx prettier --write` hoje reformata o projeto inteiro — já aconteceu nesta sessão e tive de reverter. Vale um commit separado só para isso, com `{ singleQuote: true, printWidth: 160 }`, ignorando `packages/db/src/database.types.ts`, que é gerado.
+
+### Jogo 5 — Entre Nós (2026-09-23)
+
+Jogo de conversa para um casal, local, e o primeiro **sem nenhuma mecânica de competição**: sem vencedor, pontos, cronômetro ou resposta certa. Motor próprio (`games/couple.ts`), porque não há nada em comum com bomba nem com sala — o que existe aqui é ordem de perguntas.
+
+**Quase todo o código é sobre qual carta aparece quando**, porque é aí que está a diferença entre uma noite boa e um interrogatório:
+
+- **Começa leve e desce aos poucos** (§38). Abrir com uma pergunta profunda pede vulnerabilidade de quem ainda nem entrou no clima.
+- **Respiro a cada quatro cartas** (§37): uma leve entra no meio das profundas. Um teste garante no máximo três cartas fundas seguidas.
+- **`intimidade` é opt-in de verdade.** Não entra no clima "Surpresa", não entra marcando a categoria na mão, e nunca aparece nas primeiras cartas. Três testes cobrem isso, porque é a falha que estragaria a noite de alguém.
+- **Trocar a pergunta não gasta a vez** nem pede motivo (§35), e some do resumo — o casal não conversou sobre ela.
+- **Aprofundar abre a segunda camada da mesma conversa** (§34), sem trocar de assunto.
+
+**O fim não dá nota** (§56): mostra sobre o que se conversou e nada mais. Nenhuma porcentagem de compatibilidade, nenhum "vocês concordam em 64%", nenhum conselho sobre a relação. Diferença de resposta não é defeito.
+
+**Nada é persistido**, e aqui é mais que simplicidade: o casal acabou de falar de coisas pessoais, e guardar isso sem pedir seria quebra de confiança. Se um dia houver "guardar descobertas", tem de ser ação explícita deles.
+
+**Conteúdo:** 160 cartas em 10 categorias, com follow-ups, e 12 cartas de ação ("diga uma coisa que você admira e quase nunca fala"). A régua de segurança foi a mais dura de todas: nada de trauma, término, infidelidade, fertilidade, saúde, morte, dívida ou conflito familiar, e nenhuma pergunta cujo caminho honesto leve a mágoa — "o que te faz sentir distante de mim?" convida a conversar, "o que você menos gosta em mim?" convida a brigar.
+
+**Fica de fora:** resposta secreta escrita, previsão, escolha entre duas, escala (§27–32), reações, favoritar, memórias, perguntas criadas pelo casal, IA e as sessões prontas tipo Date Night (§49–50).
 
 ### Passo 6 — Assinatura
 

@@ -9,9 +9,16 @@ import { BackButton, Button, Chip, Display, ErrorState, Screen, Spacer, Txt } fr
 
 import { GameArt } from '../components/GameArt';
 import { HowToPlaySheet } from '../components/HowToPlaySheet';
-import { getGame } from '../data/games';
+import { getGame, type GameDefinition } from '../data/games';
 
 /** Tela 7: Detalhes do jogo. Genérica: funciona para qualquer item do catálogo. */
+/** Cada jogo entra por um caminho: sala, uma das bombas, ou um fluxo local próprio. */
+function destinoDoJogo(game: GameDefinition): string {
+  if (game.device !== 'local') return routes.createMatch(game.id);
+  if (game.localFlow === 'casal') return routes.couple.setup;
+  return routes.bomb.setup(game.bombVariant ?? 'classico');
+}
+
 export function GameDetailScreen() {
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const insets = useSafeAreaInsets();
@@ -57,7 +64,7 @@ export function GameDetailScreen() {
           <Spacer />
           {game.playable ? (
             <>
-              <Button label={game.device === 'local' ? 'Começar' : 'Criar partida'} onPress={() => router.push(game.device === 'local' ? routes.bomb.setup(game.bombVariant ?? 'classico') : routes.createMatch(game.id))} />
+              <Button label={game.device === 'local' ? 'Começar' : 'Criar partida'} onPress={() => router.push(destinoDoJogo(game))} />
               <Button label="Como jogar" variant="secondary" onPress={() => setSheet(true)} />
             </>
           ) : (

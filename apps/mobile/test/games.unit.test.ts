@@ -127,8 +127,8 @@ test('as duas bombas são locais e apontam para a variante certa do motor', () =
   }
   assert.equal(classico.bombVariant, 'classico');
   assert.equal(alfabeto.bombVariant, 'alfabeto');
-  // Sem a variante, o fluxo local cairia sempre no clássico sem avisar.
-  assert.ok(GAMES.filter((g) => g.device === 'local').every((g) => g.bombVariant), 'jogo local sem variante definida');
+  // Nem todo jogo local é bomba: o Entre Nós tem fluxo próprio. A cobertura de "todo jogo local
+  // sabe por onde entra" está no teste seguinte.
 });
 
 /**
@@ -142,5 +142,21 @@ test('o aviso de passagem nunca bloqueia o toque', async () => {
   // E não pode saber do pavio, como o resto da tensão da bomba.
   for (const proibido of ['explodeAt', 'bombStore', 'pendingAlarms']) {
     assert.ok(!flash.includes(proibido), `o flash toca em "${proibido}"`);
+  }
+});
+
+test('Entre Nós é local, para duas pessoas, e tem fluxo próprio', () => {
+  const jogo = getGame('entre-nos')!;
+  assert.equal(jogo.device, 'local');
+  assert.equal(jogo.localFlow, 'casal', 'sem isso o catálogo mandaria o casal para a tela da bomba');
+  assert.equal(jogo.engineId, undefined);
+  assert.equal(jogo.bombVariant, undefined, 'não é uma bomba');
+  // O jogo foi feito para um casal: abrir para mais gente mudaria a natureza das perguntas.
+  assert.deepEqual([jogo.minPlayers, jogo.maxPlayers], [2, 2]);
+});
+
+test('todo jogo local diz por qual fluxo entra', () => {
+  for (const jogo of GAMES.filter((g) => g.device === 'local' && g.playable)) {
+    assert.ok(jogo.bombVariant || jogo.localFlow, `${jogo.id} é local mas não diz por onde começa`);
   }
 });

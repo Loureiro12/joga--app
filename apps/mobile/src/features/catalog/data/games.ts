@@ -51,6 +51,8 @@ export type GameDefinition = {
   device?: 'sala' | 'local';
   /** Qual bomba: o clássico (um desafio por rodada) ou o Alfabeto (tema e grade de letras). */
   bombVariant?: 'classico' | 'alfabeto';
+  /** Jogo local que não é bomba: tem fluxo próprio. */
+  localFlow?: 'casal';
 };
 
 const comingSoon = {
@@ -255,6 +257,40 @@ export const GAMES: GameDefinition[] = [
     durationLabel: '5 min',
     durationShort: '5 min',
     tags: ['Rápidos', 'Família', 'Engraçados'],
+  },
+  {
+    id: 'entre-nos',
+    device: 'local',
+    localFlow: 'casal',
+    name: 'Entre nós',
+    category: 'Casais',
+    tagline: 'Conversas que não surgem sozinhas.',
+    description:
+      'Um casal, um celular e uma pergunta por vez. Os dois respondem, conversam, e seguem quando quiserem. Não tem placar, nem tempo, nem resposta certa.',
+    emoji: '❤️',
+    color: colors.accent,
+    illustration: 'trophy',
+    minPlayers: 2,
+    recommendedPlayers: 2,
+    maxPlayers: 2,
+    playersLabel: 'Para duas pessoas',
+    durationLabel: '15–45 min',
+    durationShort: '30 min',
+    infoChips: [
+      { emoji: '💑', label: 'Só vocês dois' },
+      { emoji: '🕊', label: 'Sem placar' },
+      { emoji: '⏳', label: 'Sem pressa' },
+    ],
+    howToPlay: [
+      'Escolham o clima e o assunto. A conversa começa leve e vai ficando mais profunda.',
+      'Os dois respondem a mesma pergunta, um de cada vez. Depois conversem o quanto quiserem.',
+      'Dá para aprofundar a mesma pergunta, trocar por outra, ou pular — sem explicar por quê.',
+    ],
+    wordCategories: [],
+    roundOptions: [5, 10, 20, 0],
+    defaults: { players: 2, category: '', rounds: 10 },
+    tags: ['Casais'],
+    playable: true,
   },
   {
     ...comingSoon,

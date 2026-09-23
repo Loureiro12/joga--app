@@ -45,4 +45,11 @@ export const routes = {
     round: '/bomb/round',
     end: '/bomb/end',
   },
+  /** Entre Nós: também local, e com fluxo próprio (nada de bomba nem de placar). */
+  couple: {
+    setup: '/couple/setup',
+    settings: '/couple/settings',
+    session: '/couple/session',
+    end: '/couple/end',
+  },
 } as const;
