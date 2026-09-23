@@ -32,7 +32,7 @@ const MAX_MESSAGES_PER_10S = 60;
 export function createRoomServer(config: Config, options: RoomServerOptions = {}): RoomServer {
   const startedAt = Date.now();
   const log = options.log ?? (config.env === 'test' ? () => {} : (event, data) => console.log(JSON.stringify({ at: new Date().toISOString(), event, ...data })));
-  const verifyToken = options.verifyToken ?? createTokenVerifier(config);
+  const verifyToken = options.verifyToken ?? createTokenVerifier(config, fetch, log);
   const manager = new RoomManager({
     store: config.storeDir ? new FileRoomStore(config.storeDir) : new MemoryRoomStore(),
     recorder: options.recorder ?? createMatchRecorder(config, log),

@@ -223,6 +223,18 @@ O catálogo ganhou `device: 'sala' | 'local'`, e é ele que decide o destino do 
 
 **Fica de fora por ora:** sons (o projeto não tem assets de áudio), botão de contestação (§27 — a própria spec sugere deixar verbal no MVP), modificadores de rodada (§39), desafios personalizados (§42), IA (§43) e card de compartilhamento (§52). Nada disso está no caminho do resto.
 
+### Log de desenvolvimento (2026-09-23)
+
+O app passou a imprimir no Metro cada requisição e cada troca de tela, em `apps/mobile/src/core/logging/`. Um ponto por canal, escolhido para não deixar buraco quando alguém escrever código novo: o `fetch` do cliente Supabase (pega auth, perfil, histórico, amigos e RPCs de uma vez), o WebSocket do `RemoteRoomService` e o `pathname` do expo-router.
+
+- **Desligado em produção** e sem segredo nem em dev: token, senha e chave são apagados antes de virar texto. No Android, `adb logcat` deixa qualquer app ler esse console.
+- `code` precisou de tratamento especial: na volta do OAuth é o código do PKCE (vale uma sessão), nos parâmetros de tela é o código da sala (quatro dígitos que a pessoa grita na mesa). Só o de sala escapa.
+
+**Dois problemas que o log revelou na primeira execução:**
+
+1. **O `PROTOCOL_VERSION` não tinha subido** quando o snapshot mudou de forma (`round/secret/result` → `game`). App novo contra servidor velho se entenderiam mal em silêncio. Agora é **2**, e o servidor recusa quem não bate com `bye protocol`. O helper de teste tinha o número escrito na mão — corrigido para usar a constante.
+2. **O servidor no Fly recusa o login do app** (`bye unauthenticated`), e roda código anterior a tudo isto (`minPlayers: 3`, sem `/api/room`). O `createTokenVerifier` engolia o motivo; agora registra status e corpo da resposta do Auth, para separar "token inválido" de "a chave do servidor está errada".
+
 ### Passo 6 — Assinatura
 
 - RevenueCat com o id do usuário do Supabase; webhook → `entitlements`.

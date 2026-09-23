@@ -1,6 +1,6 @@
 import type { AddressInfo } from 'node:net';
 
-import type { ClientMessage, RoomErrorCode, RoomSnapshot, ServerMessage } from '@jogae/engine';
+import { PROTOCOL_VERSION, type ClientMessage, type RoomErrorCode, type RoomSnapshot, type ServerMessage } from '@jogae/engine';
 import WebSocket from 'ws';
 
 import { loadConfig, type Config } from '../src/config';
@@ -60,7 +60,8 @@ export class TestClient {
     const client = new TestClient(ws, name);
     await new Promise<void>((resolve, reject) => (ws.once('open', resolve), ws.once('error', reject)));
     if (opts.hello !== false) {
-      client.raw({ t: 'hello', v: 1, token: opts.token ?? `dev:${name}` });
+      // A constante, nunca o número na mão: com ele escrito aqui, subir a versão trava a suíte inteira.
+      client.raw({ t: 'hello', v: PROTOCOL_VERSION, token: opts.token ?? `dev:${name}` });
       await client.until(() => client.messages.some((m) => m.t === 'welcome') || client.closed !== null, 'welcome');
     }
     return client;
