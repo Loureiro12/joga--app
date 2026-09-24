@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "74b95e30-1336-40d6-ad6e-93bf9f4e6705"
+      }
+    },
+    "android": {
+      "package": "com.loureiro_12.jogae"
+    }
+  }
+}
