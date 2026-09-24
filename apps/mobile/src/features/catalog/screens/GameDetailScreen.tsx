@@ -13,8 +13,7 @@ import { getGame, type GameDefinition } from '../data/games';
 
 /** Tela 7: Detalhes do jogo. Genérica: funciona para qualquer item do catálogo. */
 /** Cada jogo entra por um caminho: sala, uma das bombas, ou um fluxo local próprio. */
-function destinoDoJogo(game: GameDefinition): string {
-  if (game.device !== 'local') return routes.createMatch(game.id);
+function destinoLocal(game: GameDefinition): string {
   if (game.localFlow === 'casal') return routes.couple.setup;
   return routes.bomb.setup(game.bombVariant ?? 'classico');
 }
@@ -64,7 +63,19 @@ export function GameDetailScreen() {
           <Spacer />
           {game.playable ? (
             <>
-              <Button label={game.device === 'local' ? 'Começar' : 'Criar partida'} onPress={() => router.push(destinoDoJogo(game))} />
+              {/* As bombas jogam dos dois jeitos, e a escolha é do grupo: num celular só, ou cada
+                  um no seu. Os outros jogos têm um caminho só e mostram um botão só. */}
+              {game.device === 'ambos' ? (
+                <>
+                  <Button label="Um celular só" onPress={() => router.push(destinoLocal(game))} />
+                  <Button label="Cada um no seu celular" variant="secondary" onPress={() => router.push(routes.createMatch(game.id))} />
+                </>
+              ) : (
+                <Button
+                  label={game.device === 'local' ? 'Começar' : 'Criar partida'}
+                  onPress={() => router.push(game.device === 'local' ? destinoLocal(game) : routes.createMatch(game.id))}
+                />
+              )}
               <Button label="Como jogar" variant="secondary" onPress={() => setSheet(true)} />
             </>
           ) : (

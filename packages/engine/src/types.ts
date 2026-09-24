@@ -6,13 +6,15 @@
 
 // Só tipo: o `import type` é apagado na compilação, então o ciclo types ↔ likely-types não existe em runtime.
 import type { LikelyIntensity, LikelySettings } from './games/likely-types';
+import type { AlphabetRound } from './games/alphabet-types';
+import type { BombHighlight, BombMode, BombPhase, BombSettings, BombStanding, BombVariant } from './games/bomb-types';
 import type { PerfectCouple, PerfectPairingView, PerfectResultView, PerfectRoundPublic, PerfectSettings, PerfectSummary } from './games/perfect-types';
 import type { SecretContext, SecretHighlight, SecretMission, SecretReveal, SecretSettings, SecretStatus } from './games/secret-types';
 
 export type PlayerId = string;
 
 /** Jogos com fluxo de partida implementado. O catálogo do app tem outros, ainda "em breve". */
-export type GameId = 'impostor' | 'likely' | 'secret' | 'perfect';
+export type GameId = 'impostor' | 'likely' | 'secret' | 'perfect' | 'bomb';
 
 export type Player = {
   id: PlayerId;
@@ -52,7 +54,11 @@ export type RoomPhase =
   /** Casal Perfeito: formando as duplas, antes de a primeira pergunta entrar. */
   | 'pairing'
   /** Casal Perfeito: todos respondendo em segredo, cada um no seu celular. */
-  | 'answering';
+  | 'answering'
+  /** Bomba-Relógio em sala: é a vez de alguém, e a bomba ainda está apagada. */
+  | 'handoff'
+  /** Bomba-Relógio em sala: pavio correndo. */
+  | 'armed';
 
 export type ClosedReason = 'host_left' | 'not_enough_players';
 
@@ -158,6 +164,30 @@ export type GameView =
       round: LikelyRoundPublic | null;
       result: LikelyResultView | null;
       summary: LikelySummary | null;
+    }
+  | {
+      kind: 'bomb';
+      variant: BombVariant;
+      mode: BombMode;
+      phase: BombPhase;
+      roundIndex: number;
+      totalRounds: number | null;
+      challenge: { text: string; category: string } | null;
+      /**
+       * O tema e as letras. `used` vem SEM o tempo de cada letra: somados, eles diriam há quanto
+       * tempo o pavio está queimando, que é justamente o que o jogo esconde.
+       */
+      alphabet: (Omit<AlphabetRound, 'used'> & { used: { letter: string; playerId: PlayerId }[] }) | null;
+      /** Quem está com a bomba agora. É o único que pode passar (ou tocar a letra). */
+      activeId: PlayerId;
+      /** Sobe a cada susto. Público de propósito: o susto é para todo mundo ouvir. */
+      alarmCount: number;
+      loserId: PlayerId | null;
+      lives: Record<PlayerId, number>;
+      bombs: Record<PlayerId, number>;
+      eliminated: PlayerId[];
+      standings: BombStanding[] | null;
+      highlights: BombHighlight[] | null;
     }
   | {
       kind: 'perfect';
@@ -289,6 +319,22 @@ export * from './games/perfect-types';
 export * from './games/secret-types';
 
 /**
+ * As escolhas do host, do jeito que elas chegam pela rede.
+ *
+ * É a união das opções de todos os jogos, e por isso os campos que jogos diferentes usam com
+ * valores diferentes (`categories`, `difficulties` — 'media' no Desafio Secreto, 'medio' na
+ * Bomba) ficam como `string[]`. A validação não é o tipo: é o sanitizador de cada jogo, que
+ * filtra o que reconhece e descarta o resto.
+ */
+export type CreateRoomSettings = Omit<
+  Partial<LikelySettings> & Partial<SecretSettings> & Partial<PerfectSettings> & Partial<BombSettings>,
+  'categories' | 'difficulties'
+> & {
+  categories?: string[];
+  difficulties?: string[];
+};
+
+/**
  * O que o host escolhe ao criar a sala. `totalRounds: 0` no "Quem é Mais Provável?" é a opção
  * sem limite. `settings` são as opções daquele jogo; o engine normaliza e ignora o que não conhece.
  */
@@ -297,7 +343,7 @@ export type CreateRoomInput = {
   category: string;
   totalRounds: number;
   maxPlayers: number;
-  settings?: Partial<LikelySettings> & Partial<SecretSettings> & Partial<PerfectSettings>;
+  settings?: CreateRoomSettings;
 };
 
 export type RoomErrorCode =

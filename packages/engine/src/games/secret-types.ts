@@ -98,12 +98,15 @@ export type SecretHighlight = {
 
 export const SECRET_POINTS = { facil: 100, media: 200, dificil: 300, rightAccusation: 150, wrongAccusation: -50, ghost: 100 } as const;
 
+/** As opções como chegam pela rede: `difficulties` é texto livre, filtrado pelo sanitizador. */
+export type SecretSettingsInput = Partial<Omit<SecretSettings, 'difficulties'>> & { difficulties?: string[] };
+
 /**
  * As opções do host chegam pela rede e podem vir com qualquer coisa. Aqui elas viram um
  * `SecretSettings` válido: sem isso, um cliente adulterado pediria 999 acusações — e com
  * acusação de sobra ninguém precisa deduzir nada, basta tentar todas as combinações.
  */
-export function sanitizeSecretSettings(input: Partial<SecretSettings> | undefined): SecretSettings {
+export function sanitizeSecretSettings(input: SecretSettingsInput | undefined): SecretSettings {
   const base = { ...DEFAULT_SECRET_SETTINGS, ...input };
   const difficulties = SECRET_DIFFICULTIES.filter((d) => Array.isArray(base.difficulties) && base.difficulties.includes(d));
   const clamp = (n: unknown, { min, max }: { min: number; max: number }, fallback: number) =>

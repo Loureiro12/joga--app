@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { createTokenVerifier } from '../src/auth';
 import { loadConfig } from '../src/config';
 import { parseClientMessage } from '../src/messages';
-import { PROTOCOL_VERSION } from '@jogae/engine';
+import { PROTOCOL_VERSION, type RoomCommand } from '@jogae/engine';
 
 import { FAST, INPUT, ME, TestClient, roomWith, sleep, startServer, type ImpostorView } from './helpers';
 
@@ -60,6 +60,54 @@ test('mensagens: entrada malformada ou fora dos limites é rejeitada', () => {
   assert.equal(parseClientMessage('[1,2]'), null);
   const long = parseClientMessage(JSON.stringify({ t: 'create', id: 1, input: INPUT, me: { name: 'N'.repeat(200), color: ME.color } }));
   assert.equal(long?.t === 'create' && long.me.name.length, 24, 'nome é cortado em 24');
+});
+
+/**
+ * O validador é uma lista escrita à mão, e um jogo novo traz comandos novos. Esquecer um deles
+ * some sem barulho: o mock do app não passa por aqui, então o jogo funciona em dev e é recusado
+ * em produção — foi exatamente o que aconteceu com os comandos do Casal Perfeito.
+ *
+ * O `Record` abaixo é exaustivo por tipo: comando novo no protocolo sem exemplo aqui não compila.
+ */
+test('todo comando do protocolo passa pelo validador do servidor', () => {
+  const exemplos: Record<RoomCommand['type'], RoomCommand> = {
+    startMatch: { type: 'startMatch' },
+    setTimerRunning: { type: 'setTimerRunning', running: true },
+    resetTimer: { type: 'resetTimer' },
+    openVoting: { type: 'openVoting' },
+    endVoting: { type: 'endVoting' },
+    skipQuestion: { type: 'skipQuestion' },
+    endMatch: { type: 'endMatch' },
+    nextRound: { type: 'nextRound' },
+    playAgain: { type: 'playAgain' },
+    ackRole: { type: 'ackRole' },
+    castVote: { type: 'castVote', targetId: 'p1' },
+    setPaused: { type: 'setPaused', paused: true },
+    missionReady: { type: 'missionReady' },
+    missionDone: { type: 'missionDone' },
+    accuse: { type: 'accuse', targetId: 'p1', missionId: 'fal-001' },
+    swapMission: { type: 'swapMission' },
+    nextReveal: { type: 'nextReveal' },
+    voteReveal: { type: 'voteReveal', valid: true },
+    pairWith: { type: 'pairWith', targetId: 'p1' },
+    unpair: { type: 'unpair' },
+    beginQuestions: { type: 'beginQuestions' },
+    submitAnswer: { type: 'submitAnswer', value: 'praia' },
+    armBomb: { type: 'armBomb' },
+    passBomb: { type: 'passBomb' },
+    useLetter: { type: 'useLetter', letter: 'A' },
+  };
+
+  for (const [tipo, cmd] of Object.entries(exemplos)) {
+    const m = parseClientMessage(JSON.stringify({ t: 'cmd', id: 1, cmd }));
+    assert.ok(m?.t === 'cmd', `o servidor recusaria "${tipo}" — o jogo quebra só em produção`);
+    assert.deepEqual(m.cmd, cmd, `"${tipo}" chegou ao engine diferente do que foi enviado`);
+  }
+
+  // E o que tem payload continua sendo conferido.
+  assert.equal(parseClientMessage(JSON.stringify({ t: 'cmd', id: 1, cmd: { type: 'useLetter', letter: 'AB' } })), null);
+  assert.equal(parseClientMessage(JSON.stringify({ t: 'cmd', id: 1, cmd: { type: 'submitAnswer', value: '' } })), null);
+  assert.equal(parseClientMessage(JSON.stringify({ t: 'cmd', id: 1, cmd: { type: 'pairWith', targetId: 42 } })), null);
 });
 
 test('criar sala de jogo sem rodada, e as opções do host que sobrevivem à validação', () => {

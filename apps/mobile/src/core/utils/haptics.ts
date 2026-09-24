@@ -15,6 +15,16 @@ export const haptics = {
   selection: () => run(() => Haptics.selectionAsync()),
   success: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)),
   error: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)),
+  /**
+   * Duas batidas curtas: "é a sua vez".
+   *
+   * Duas, e não uma, porque na Bomba-Relógio em sala o celular está no bolso ou na mesa e uma
+   * batida só se confunde com notificação. O intervalo é curto de propósito — o jogo é de pressa.
+   */
+  turn: () => {
+    haptics.heavy();
+    setTimeout(() => haptics.heavy(), 160);
+  },
 };
 
 function run(fn: () => Promise<void>) {

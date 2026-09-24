@@ -81,6 +81,7 @@ type ImpostorView = Extract<GameView, { kind: 'impostor' }>;
 type LikelyView = Extract<GameView, { kind: 'likely' }>;
 type SecretView = Extract<GameView, { kind: 'secret' }>;
 type PerfectView = Extract<GameView, { kind: 'perfect' }>;
+type BombRoomView = Extract<GameView, { kind: 'bomb' }>;
 
 /**
  * As telas de um jogo pedem a view dele, já achatada no snapshot — `match.round`, `match.result`.
@@ -105,4 +106,9 @@ export function useLikelyMatch(): (MatchView & LikelyView) | null {
 export function usePerfectMatch(): (MatchView & PerfectView) | null {
   const match = useMatch();
   return match && match.game.kind === 'perfect' ? { ...match, ...match.game } : null;
+}
+
+export function useBombRoomMatch(): (MatchView & BombRoomView) | null {
+  const match = useMatch();
+  return match && match.game.kind === 'bomb' ? { ...match, ...match.game } : null;
 }

@@ -7,6 +7,7 @@ import {
   type BombHighlight,
   type BombPlayer,
   type BombSettings,
+  type BombSettingsInput,
   type BombStanding,
   type BombState,
 } from './bomb-types';
@@ -408,13 +409,13 @@ export function highlights(state: BombState): BombHighlight[] {
 }
 
 /** Normaliza o que veio da tela: categoria desconhecida some e as listas nunca ficam vazias. */
-export function sanitizeBombSettings(input: Partial<BombSettings> | undefined): BombSettings {
+export function sanitizeBombSettings(input: BombSettingsInput | undefined): BombSettings {
   // Cada variante tem faixa de tempo e nº de rodadas próprios; o padrão certo depende dela.
   const padrao = input?.variant === 'alfabeto' ? DEFAULT_ALPHABET_SETTINGS : DEFAULT_BOMB_SETTINGS;
   const base = { ...padrao, ...input };
   const validas: readonly string[] = base.variant === 'alfabeto' ? ALPHABET_CATEGORIES : BOMB_CATEGORIES;
-  const categories = base.categories.filter((c) => validas.includes(c));
-  const difficulties = (['facil', 'medio', 'dificil'] as const).filter((d) => base.difficulties.includes(d));
+  const categories = (base.categories ?? []).filter((c: string) => validas.includes(c));
+  const difficulties = (['facil', 'medio', 'dificil'] as const).filter((d) => (base.difficulties ?? []).includes(d));
   const min = Math.min(Math.max(5, base.minSeconds), 300);
   return {
     ...base,

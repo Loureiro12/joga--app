@@ -43,6 +43,10 @@ export interface RoomService {
   unpair(): Promise<void>;
   beginQuestions(): Promise<void>;
   submitAnswer(value: string): Promise<void>;
+  /* Bomba-Relógio em sala */
+  armBomb(): Promise<void>;
+  passBomb(): Promise<void>;
+  useLetter(letter: string): Promise<void>;
 
   /* Quem é Mais Provável */
   endVoting(): Promise<void>;

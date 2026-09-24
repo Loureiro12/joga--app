@@ -46,6 +46,8 @@ export const routes = {
     answer: '/match/answer',
     matchReveal: '/match/match-reveal',
     perfectEnd: '/match/perfect-end',
+    /** Bomba-Relógio em sala: uma tela só para o fluxo inteiro, como na versão de um celular. */
+    bombRoom: '/match/bomb',
   },
   /** Bomba-Relógio: um celular só, sem sala — por isso fora de `match`. */
   bomb: {

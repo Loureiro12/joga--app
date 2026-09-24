@@ -14,12 +14,15 @@ import { Display, Txt } from '@/core/ui';
  *
  * **Não bloqueia o toque** (`pointerEvents: none`): a bomba continua contando por baixo, e quem
  * recebeu não pode perder tempo esperando uma animação terminar para poder jogar.
+ *
+ * Na partida em sala, o aviso muda de tom no celular de quem recebeu: ali não é "a vez de
+ * fulano", é "é com você" — e é esse celular que precisa ser entendido em meio segundo.
  */
 
 /** Tempo total na tela. Curto o bastante para não atrasar a jogada, longo para o olho pegar. */
 const VISIVEL_MS = 520;
 
-export function HandoffFlash({ name, color, letter, onDone }: { name: string; color: string; letter?: string; onDone: () => void }) {
+export function HandoffFlash({ name, color, letter, mine, onDone }: { name: string; color: string; letter?: string; mine?: boolean; onDone: () => void }) {
   const p = useSharedValue(0);
 
   useEffect(() => {
@@ -55,11 +58,11 @@ export function HandoffFlash({ name, color, letter, onDone }: { name: string; co
           </View>
         ) : null}
         <Txt font="body700" size={22} color={colors.background} style={{ opacity: 0.7 }}>
-          ➜ agora é a vez de
+          {mine ? '➜ a bomba é sua' : '➜ agora é a vez de'}
         </Txt>
         {/* O nome é a informação da tela: ocupa a largura toda e só encolhe se não couber. */}
         <Display size={76} color={colors.background} center adjustsFontSizeToFit numberOfLines={1} style={{ paddingHorizontal: 20, alignSelf: 'stretch' }}>
-          {name}
+          {mine ? 'AGORA!' : name}
         </Display>
       </Animated.View>
     </Animated.View>

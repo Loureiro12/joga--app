@@ -2,7 +2,7 @@
 
 Decidido em 2026-09-19. Este documento diz **o que** o backend precisa fazer, **com que tecnologia**, **em que ordem**, e o que ainda depende de decisão de produto. Atualize-o quando um passo terminar ou uma decisão mudar.
 
-**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Sete jogos jogáveis: Impostor, Quem é Mais Provável, Desafio Secreto e Casal Perfeito (em sala), Bomba-Relógio, Bomba: Alfabeto e Entre Nós (num aparelho só). Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
+**Estado:** passos 1 a 4 concluídos (fundação, conta e perfil, servidor de salas, histórico). Sete jogos jogáveis: Impostor, Quem é Mais Provável, Desafio Secreto e Casal Perfeito (em sala), Entre Nós (num aparelho só) e as duas bombas — Bomba-Relógio e Bomba: Alfabeto —, que jogam **dos dois jeitos**. Passo 5: site e amigos feitos, push a fazer. Premium escondido até o passo 6. Passos 6–7 não iniciados.
 
 ## 1. O que o app exige
 
@@ -345,6 +345,27 @@ Isso encostou numa suposição que estava em todo o resto do código — o `Room
 **Verificado no navegador:** partida de 10 perguntas do começo ao fim com cinco bots — pareamento, as quatro mecânicas, cronômetro, resposta enviada, revelação casal a casal, placar entre rodadas, match final e o resultado com títulos e estatísticas. Sem erro de console.
 
 **Fica de fora:** rodada de aposta (§44), perguntas criadas pelo host (§56), packs premium (§57), IA (§58) e o nome de equipe editável (§10 — cor e emoji são automáticos). A revelação é sempre simultânea, casal a casal na mesma tela; a variante de abrir um casal por vez nas perguntas especiais (§37/§39) não entrou.
+
+### As bombas em sala (2026-09-24)
+
+As duas bombas passaram a jogar também com cada um no seu celular. O grupo escolhe na tela do jogo: *um celular só* (o que já existia, passando de mão em mão) ou *cada um no seu*, com a bomba virtual.
+
+**O motor não foi reescrito.** `bomb.ts` já recebia `now` e `rng` por parâmetro — a disciplina que o `GameRules` exige —, então `room/bombGame.ts` é um invólucro que não tem regra de bomba nenhuma. Ele faz três coisas: traduz os jogadores da sala, entrega ao servidor os prazos do pavio, e corta do snapshot o que não pode sair. Pavio, sustos, ordem, modos, placar e destaques continuam num lugar só.
+
+**O corte é a razão de o jogo poder existir em rede.** Com um aparelho, `explodeAt` ficava na memória dele e ninguém olhava. Em sala ele trafegaria — e quem abrisse o WebSocket saberia o segundo exato da explosão, que é a única coisa que o jogo inteiro depende de esconder. O snapshot não leva `explodeAt`, `pendingAlarms`, `heldSince` nem `heldMs`, e no Alfabeto as letras gastas vão sem o tempo de cada uma: somados, eles diriam há quanto tempo o pavio queima. Três testes guardam isso — um deles lê o valor de verdade do estado salvo e procura por ele no fio.
+
+**Duas batidas quando a vez chega.** Foi o pedido, e ele resolve o problema real do modo em sala: com o celular no bolso ou na mesa, ninguém percebe que a bomba chegou. Uma batida só se confundiria com notificação, então `haptics.turn()` dá duas, curtas. Quem não está com a bomba vê a tela dizer exatamente isso.
+
+**Quem não está com a bomba continua vendo o jogo.** No Alfabeto a grade aparece em todos os celulares, apagada para quem não pode tocar — saber quais letras já foram é do grupo. O desafio do clássico também é público: a mesa precisa ouvir e julgar a resposta.
+
+**A bomba não pausa.** É o único jogo de sala que recusa `setPaused`: parar o relógio daria a quem está com ela o poder de fugir da explosão.
+
+**Dois bugs vieram junto e foram corrigidos:**
+
+- **Os comandos do Casal Perfeito nunca tinham entrado no validador do servidor.** O mock do app não passa por ele, então o jogo funcionava em dev e seria recusado em produção. Agora existe um teste com um `Record<RoomCommand['type'], RoomCommand>` exaustivo: comando novo no protocolo sem exemplo ali não compila.
+- **`totalRounds` tinha duas fontes de verdade** — o campo da sala e o das opções da bomba, herdado da versão de um celular. A tela diria "rodada 2 de 2" e a partida seguiria até a décima. Quem manda é a sala, como em todos os outros jogos.
+
+**Verificado no navegador:** as duas variantes, com cinco bots — a bomba dando a volta na mesa, o botão de passar só no celular da vez, o aviso de passagem falando diferente em quem recebeu, a grade de letras compartilhada e o "não é a sua vez". Sem erro de console.
 
 ### Passo 6 — Assinatura
 

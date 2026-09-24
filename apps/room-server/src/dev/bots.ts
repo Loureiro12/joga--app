@@ -52,8 +52,10 @@ function bot(index: number, onCode?: (code: string) => void) {
           ? (game.round?.questionId ?? '-')
           : game.kind === 'secret'
             ? (game.mine?.status ?? '-')
-            : `${game.round?.questionId ?? '-'}|${game.couples.length}`;
-    const stage = game.kind === 'secret' ? '-' : (game.result?.stage ?? '-');
+            : game.kind === 'perfect'
+              ? `${game.round?.questionId ?? '-'}|${game.couples.length}`
+              : `${game.activeId}|${game.alarmCount}`;
+    const stage = game.kind === 'impostor' || game.kind === 'likely' || game.kind === 'perfect' ? (game.result?.stage ?? '-') : '-';
     const key = `${s.room.phase}|${deal}|${stage}|${iAmHost}|${s.players.filter((p) => p.connected).length}`;
     if (key === acted) return;
     acted = key;
@@ -82,6 +84,16 @@ function bot(index: number, onCode?: (code: string) => void) {
       }
     }
 
+    // Bomba-Relógio: o bot acende quando a bomba cai na mão dele e passa depois de pensar um
+    // pouco. Se ele passasse na hora, a bomba nunca sobraria para ninguém.
+    if (game.kind === 'bomb' && game.activeId === s.meId) {
+      if (s.room.phase === 'handoff') later(rand(1200, 2500), () => cmd({ type: 'armBomb' }));
+      if (s.room.phase === 'armed') {
+        const letra = game.alphabet?.letters.split('').find((l) => !game.alphabet!.used.some((u) => u.letter === l));
+        later(rand(2000, 6000), () => cmd(letra ? { type: 'useLetter', letter: letra } : { type: 'passBomb' }));
+      }
+    }
+
     if (!iAmHost) return;
     // Bot que é (ou virou) host conduz a partida.
     if (s.room.phase === 'lobby' && s.players.filter((p) => p.connected).length >= 3) later(4000, () => cmd({ type: 'startMatch' }));
@@ -92,7 +104,10 @@ function bot(index: number, onCode?: (code: string) => void) {
     if (s.room.phase === 'question') later(rand(4000, 7000), () => cmd({ type: 'openVoting' }));
     // O host bot só abre as perguntas quando todo mundo já tem par.
     if (game.kind === 'perfect' && s.room.phase === 'pairing' && !game.pairing?.waiting.length) later(3000, () => cmd({ type: 'beginQuestions' }));
-    if (s.room.phase === 'revealing' && game.kind !== 'secret' && game.result?.stage === 2) later(9000, () => cmd({ type: 'nextRound' }));
+    if (game.kind === 'bomb' && s.room.phase === 'revealing') later(6000, () => cmd({ type: 'nextRound' }));
+    if (s.room.phase === 'revealing' && (game.kind === 'impostor' || game.kind === 'likely' || game.kind === 'perfect') && game.result?.stage === 2) {
+      later(9000, () => cmd({ type: 'nextRound' }));
+    }
 
     // Desafio Secreto: o bot confirma a missão para a noite poder começar, e não faz mais nada —
     // cumprir missão é coisa de gente na mesa, não de bot.

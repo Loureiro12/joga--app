@@ -47,8 +47,9 @@ export type GameDefinition = {
   /**
    * `sala`: cada um no seu celular, com conta e servidor.
    * `local`: um aparelho só, passando de mão em mão — não cria sala nem precisa de conta.
+   * `ambos`: as duas bombas jogam dos dois jeitos, e quem escolhe é o grupo na tela do jogo.
    */
-  device?: 'sala' | 'local';
+  device?: 'sala' | 'local' | 'ambos';
   /** Qual bomba: o clássico (um desafio por rodada) ou o Alfabeto (tema e grade de letras). */
   bombVariant?: 'classico' | 'alfabeto';
   /** Jogo local que não é bomba: tem fluxo próprio. */
@@ -198,7 +199,9 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: 'bomba-relogio',
-    device: 'local',
+    // Joga dos dois jeitos: um celular passando de mão, ou cada um no seu com a bomba virtual.
+    device: 'ambos',
+    engineId: 'bomb',
     bombVariant: 'classico',
     name: 'Bomba-relógio',
     category: 'Caótico',
@@ -210,11 +213,11 @@ export const GAMES: GameDefinition[] = [
     minPlayers: 2,
     recommendedPlayers: 4,
     maxPlayers: 16,
-    playersLabel: 'Um celular só',
+    playersLabel: '2–16 jogadores',
     durationLabel: '10–15 min',
     durationShort: '15 min',
     infoChips: [
-      { emoji: '📱', label: 'Um celular só' },
+      { emoji: '📱', label: 'Um celular ou vários' },
       { emoji: '👥', label: 'Melhor com 4 a 8' },
       { emoji: '💣', label: 'Tempo secreto' },
     ],
@@ -232,7 +235,8 @@ export const GAMES: GameDefinition[] = [
   },
   {
     id: 'bomba-alfabeto',
-    device: 'local',
+    device: 'ambos',
+    engineId: 'bomb',
     bombVariant: 'alfabeto',
     name: 'Bomba: Alfabeto',
     category: 'Caótico',
@@ -244,11 +248,11 @@ export const GAMES: GameDefinition[] = [
     minPlayers: 2,
     recommendedPlayers: 4,
     maxPlayers: 16,
-    playersLabel: 'Um celular só',
+    playersLabel: '2–16 jogadores',
     durationLabel: '10–20 min',
     durationShort: '15 min',
     infoChips: [
-      { emoji: '📱', label: 'Um celular só' },
+      { emoji: '📱', label: 'Um celular ou vários' },
       { emoji: '🔤', label: 'Cada letra, uma vez' },
       { emoji: '💣', label: 'Tempo secreto' },
     ],

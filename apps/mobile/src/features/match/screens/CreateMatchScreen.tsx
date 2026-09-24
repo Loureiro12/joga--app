@@ -6,12 +6,12 @@ import { features } from '@/core/config/features';
 import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
 import { Button, Chip, Screen, Segmented, Spacer, StackHeader, Stepper, Toggle, Txt, toast } from '@/core/ui';
-import { getGame } from '@/features/catalog/data/games';
+import { getGame, type GameCategoryOption } from '@/features/catalog/data/games';
 import { usePremiumStore } from '@/features/premium/premiumStore';
 import { services } from '@/services';
 
-import type { LikelyIntensity, LikelySettings, PerfectSettings, SecretContext, SecretDifficulty, SecretSettings } from '@jogae/engine';
-import { PERFECT_TIMERS, SECRET_LIMITS, countPerfectQuestions, sanitizePerfectSettings } from '@jogae/engine';
+import type { BombMode, CreateRoomSettings, LikelyIntensity, SecretContext, SecretDifficulty } from '@jogae/engine';
+import { ALPHABET_CATEGORIES, BOMB_CATEGORIES, PERFECT_TIMERS, SECRET_LIMITS, countPerfectQuestions, sanitizePerfectSettings } from '@jogae/engine';
 import { roomErrorMessage } from '../hooks/roomActions';
 import { getIdentity } from '../hooks/useIdentity';
 
@@ -23,6 +23,12 @@ const INTENSITY_LABELS: Record<LikelyIntensity, { emoji: string; label: string }
   moderado: { emoji: '🟡', label: 'Moderado' },
   pesado: { emoji: '🔴', label: 'Pesado' },
 };
+
+const BOMB_MODES: { id: BombMode; emoji: string; label: string; hint: string }[] = [
+  { id: 'casual', emoji: '😄', label: 'Casual', hint: 'Cada explosão é uma bomba no nome de quem segurava. Ninguém sai.' },
+  { id: 'eliminacao', emoji: '💀', label: 'Eliminação', hint: 'Três vidas. Quem zera sai, e a partida vai até sobrar uma pessoa.' },
+  { id: 'pontos', emoji: '🏆', label: 'Pontos', hint: 'Pontua quem passa a bomba e quem sobrevive à rodada.' },
+];
 
 const DIFFICULTY_LABELS: Record<SecretDifficulty, { emoji: string; label: string }> = {
   facil: { emoji: '🟢', label: 'Fácil' },
@@ -59,11 +65,15 @@ export function CreateMatchScreen() {
   const isLikely = game.engineId === 'likely';
   const isSecret = game.engineId === 'secret';
   const isPerfect = game.engineId === 'perfect';
+  /** As duas bombas usam o mesmo motor; a variante vem do catálogo. */
+  const isBomb = game.engineId === 'bomb';
   /** Jogos em que a categoria não é uma só: marcar várias (ou nenhuma) é o normal. */
-  const multiCategoria = isLikely || isPerfect;
+  const multiCategoria = isLikely || isPerfect || isBomb;
   const isPremium = usePremiumStore((s) => s.isPremium);
   const [players, setPlayers] = useState(game.defaults.players);
   const [category, setCategory] = useState(game.defaults.category);
+  /** As categorias da bomba moram no engine, e mudam com a variante. */
+  const categoriasDaBomba: GameCategoryOption[] = (game.bombVariant === 'alfabeto' ? ALPHABET_CATEGORIES : BOMB_CATEGORIES).map((c) => ({ id: c, label: c, emoji: '' }));
   /** Só o "Quem é Mais Provável?" aceita várias categorias de uma vez. Vazio = todas. */
   const [categories, setCategories] = useState<string[]>([]);
   const [rounds, setRounds] = useState(game.defaults.rounds);
@@ -71,6 +81,7 @@ export function CreateMatchScreen() {
   const [difficulties, setDifficulties] = useState<SecretDifficulty[]>(['facil', 'media']);
   const [accusations, setAccusations] = useState(2);
   const [timerSec, setTimerSec] = useState(20);
+  const [bombMode, setBombMode] = useState<BombMode>('casual');
   const [allowSelfVote, setAllowSelfVote] = useState(true);
   const [openVotes, setOpenVotes] = useState(true);
   const [competitive, setCompetitive] = useState(false);
@@ -89,13 +100,18 @@ export function CreateMatchScreen() {
     setIntensities((current) => (current.includes(level) ? (current.length > 1 ? current.filter((i) => i !== level) : current) : [...current, level]));
   };
 
-  const settings: (Partial<LikelySettings> & Partial<SecretSettings> & Partial<PerfectSettings>) | undefined = isLikely
+  // `CreateRoomSettings` é o tipo de transporte: os campos que jogos diferentes usam com valores
+  // diferentes vêm como texto livre, e quem valida é o sanitizador de cada motor.
+  const settings: CreateRoomSettings | undefined = isLikely
     ? { categories, intensities, allowSelfVote, openVotes, competitive }
     : isSecret
       ? { context: category as SecretContext, difficulties, accusations, swaps: 1, competitive }
       : isPerfect
         ? { categories, timerSec }
-        : undefined;
+        : isBomb
+          ? // `totalRounds` não vai aqui: quantas rodadas é campo da sala, e o motor lê de lá.
+            { variant: game.bombVariant ?? 'classico', categories, mode: bombMode }
+          : undefined;
 
   const create = async () => {
     setLoading(true);
@@ -116,6 +132,7 @@ export function CreateMatchScreen() {
       : `${categories.length} categoria${categories.length > 1 ? 's' : ''}`
     : (game.wordCategories.find((c) => c.id === category)?.label ?? category);
   const roundsResumo = isSecret ? `${accusations} ${accusations === 1 ? 'acusação' : 'acusações'}` : rounds === 0 ? 'sem limite' : `${rounds} rodadas`;
+  const modoResumo = isBomb ? ` · ${BOMB_MODES.find((m) => m.id === bombMode)?.label.toLowerCase()}` : '';
 
   return (
     <Screen gap={22} header={<StackHeader title="Criar partida" onBack={() => router.back()} />}>
@@ -140,6 +157,11 @@ export function CreateMatchScreen() {
         <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
           {multiCategoria ? 'Categorias' : isSecret ? 'Onde vai ser?' : 'Categoria'}
         </Txt>
+        {isBomb && (
+          <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: -6, marginBottom: 10 }}>
+            Sem marcar nada, vem de tudo.
+          </Txt>
+        )}
         {isPerfect && (
           <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: -6, marginBottom: 10 }}>
             Sem marcar nada, vem de tudo — menos 🔥 Casal, que só entra se vocês escolherem.
@@ -151,7 +173,7 @@ export function CreateMatchScreen() {
           </Txt>
         )}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {game.wordCategories
+          {(isBomb ? categoriasDaBomba : game.wordCategories)
             .filter((c) => features.premium || !c.premium)
             .map((c) => {
               const locked = !!c.premium && !isPremium;
@@ -264,6 +286,22 @@ export function CreateMatchScreen() {
         </View>
       )}
 
+      {isBomb && (
+        <View>
+          <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
+            Modo
+          </Txt>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {BOMB_MODES.map((m) => (
+              <Chip key={m.id} emoji={m.emoji} label={m.label} state={bombMode === m.id ? 'selected' : 'default'} onPress={() => setBombMode(m.id)} />
+            ))}
+          </View>
+          <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: 8 }}>
+            {BOMB_MODES.find((m) => m.id === bombMode)?.hint}
+          </Txt>
+        </View>
+      )}
+
       {!isSecret && (
       <View>
         <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
@@ -306,7 +344,7 @@ export function CreateMatchScreen() {
       <Spacer />
 
       <Txt font="body400" size={13} color={colors.muted} center>
-        {game.name} · {categoryResumo} · {roundsResumo} · até {players} jogadores
+        {game.name} · {categoryResumo} · {roundsResumo}{modoResumo} · até {players} jogadores
       </Txt>
       {/* Pedir 30 perguntas de uma categoria que só tem 14 faria o baralho recomeçar no meio. */}
       {isPerfect && rounds > 0 && countPerfectQuestions(sanitizePerfectSettings({ categories })) < rounds && (

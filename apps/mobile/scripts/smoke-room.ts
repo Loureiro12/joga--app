@@ -10,9 +10,9 @@ import type { RoomSnapshot } from '@jogae/engine';
 const view = (s: RoomSnapshot | null) => s!.game as Extract<RoomSnapshot['game'], { kind: 'impostor' }>;
 
 const fast = Object.fromEntries(Object.entries(DEFAULT_MOCK_CONFIG).map(([k, v]) => [k, k.endsWith('Sec') ? v : Math.max(5, Math.round((v as number) / 100))])) as typeof DEFAULT_MOCK_CONFIG;
-const until = (svc: MockRoomService, pred: (s: RoomSnapshot) => boolean, label: string) =>
+const until = (svc: MockRoomService, pred: (s: RoomSnapshot) => boolean, label: string, ms = 5000) =>
   new Promise<RoomSnapshot>((res, rej) => {
-    const t = setTimeout(() => rej(new Error('timeout: ' + label)), 5000);
+    const t = setTimeout(() => rej(new Error('timeout: ' + label)), ms);
     let un: (() => void) | undefined; let done = false;
     un = svc.subscribe((s) => { if (!done && s && pred(s)) { done = true; clearTimeout(t); setTimeout(() => un?.(), 0); res(s); } });
   });
@@ -219,14 +219,15 @@ async function perfect() {
 
   await svc.nextRound();
   s = await until(svc, (x) => x.room.phase === 'finished' || perfectView(x).round?.tieBreak === true, 'fim ou desempate');
-  if (perfectView(s).round?.tieBreak) {
-    // Empate no topo: a partida não acaba sem desempate (§48).
-    console.log('perfect desempate entre', perfectView(s).couples.length, 'casais');
+  // Empate no topo: a partida não acaba sem desempate (§48) — e ele pode empatar de novo.
+  for (let i = 1; perfectView(s).round?.tieBreak && i <= 4; i++) {
+    console.log('perfect desempate', i, 'entre', perfectView(s).couples.length, 'casais');
     await svc.submitAnswer(perfectView(s).round!.options[0].id);
-    await until(svc, (x) => perfectView(x).result?.stage === 2, 'revelação do desempate');
+    await until(svc, (x) => perfectView(x).result?.stage === 2, 'revelação do desempate ' + i);
     await svc.nextRound();
-    s = await until(svc, (x) => x.room.phase === 'finished', 'fim depois do desempate');
+    s = await until(svc, (x) => x.room.phase === 'finished' || perfectView(x).round?.tieBreak === true, 'fim ou novo desempate');
   }
+  if (s.room.phase !== 'finished') throw new Error('a partida não fechou nem depois dos desempates');
 
   const resumo = perfectView(s).summary!;
   console.log('perfect fim:', resumo.standings.map((l) => `${l.matches}/${l.rounds}`).join(' '), '·', resumo.percent + '% coincidiram ·', resumo.titles.length, 'títulos');
@@ -235,4 +236,85 @@ async function perfect() {
   await svc.leaveRoom();
 }
 
-host().then(guest).then(likely).then(secret).then(perfect).then(() => { console.log('SMOKE OK'); process.exit(0); }).catch((e) => { console.error('SMOKE FAIL', e); process.exit(1); });
+/**
+ * Bomba-Relógio em sala: cada um no seu celular, a bomba virtual. O que mais importa aqui é o
+ * que NÃO está no snapshot — o instante da explosão.
+ */
+async function bomb() {
+  const bombView = (x: RoomSnapshot) => x.game as Extract<RoomSnapshot['game'], { kind: 'bomb' }>;
+  const svc = new MockRoomService(fast);
+  await svc.createRoom({ gameId: 'bomb', category: 'Aleatório', totalRounds: 2, maxPlayers: 5, settings: { variant: 'classico', mode: 'casual', minSeconds: 6, maxSeconds: 6 } }, me);
+  await until(svc, (x) => x.players.length >= 4, 'lobby');
+  await svc.startMatch();
+
+  let s = await until(svc, (x) => x.room.phase === 'handoff', 'é a vez de alguém');
+  console.log('bomb rodada 1:', bombView(s).challenge?.text, '· começa com', s.players.find((p) => p.id === bombView(s).activeId)?.name);
+
+  // O pavio não trafega: sem isso, quem abrisse o WebSocket saberia o segundo da explosão.
+  const fio = JSON.stringify(s);
+  for (const campo of ['explodeAt', 'pendingAlarms', 'heldSince', 'heldMs', 'usedChallengeIds']) {
+    if (fio.includes('"' + campo + '"')) throw new Error('o snapshot carrega o campo secreto ' + campo);
+  }
+
+  // Quem começou pode ser um bot; se for a minha vez, acendo eu. (A regra de "só quem está com
+  // a bomba acende" tem teste próprio no engine — aqui o alvo é o fluxo pela rede.)
+  if (bombView(s).activeId === 'me') await svc.armBomb();
+  s = await until(svc, (x) => x.room.phase === 'armed', 'bomba acesa');
+  if (bombView(s).activeId === 'me') await svc.passBomb();
+
+  // Ninguém precisa mandar nada: é o servidor que faz a bomba estourar.
+  s = await until(svc, (x) => bombView(x).phase === 'exploded', 'explosão', 12000);
+  const perdedor = s.players.find((p) => p.id === bombView(s).loserId)?.name;
+  console.log('bomb explodiu com', perdedor, '· bombas dele:', bombView(s).bombs[bombView(s).loserId!]);
+  if (!bombView(s).loserId) throw new Error('explodiu sem perdedor');
+
+  await svc.nextRound();
+  s = await until(svc, (x) => x.room.phase === 'handoff' && x.room.roundIndex === 2, 'rodada 2');
+  if (bombView(s).activeId === 'me') await svc.armBomb();
+  s = await until(svc, (x) => x.room.phase === 'armed', 'bomba acesa 2');
+  s = await until(svc, (x) => bombView(x).phase === 'exploded', 'explosão 2', 12000);
+  await svc.nextRound();
+
+  s = await until(svc, (x) => x.room.phase === 'finished', 'fim');
+  const placar = bombView(s).standings!;
+  console.log('bomb fim:', placar.map((l) => `${l.position}º ${l.bombs}💣`).join(' '), '·', (bombView(s).highlights ?? []).length, 'destaques');
+  if (placar.length !== s.players.length) throw new Error('o placar perdeu alguém');
+  await svc.leaveRoom();
+}
+
+/** Alfabeto em sala: tocar a letra é o que passa a bomba, e todo mundo vê a grade. */
+async function bombAlphabet() {
+  const bombView = (x: RoomSnapshot) => x.game as Extract<RoomSnapshot['game'], { kind: 'bomb' }>;
+  const svc = new MockRoomService(fast);
+  await svc.createRoom({ gameId: 'bomb', category: 'Aleatório', totalRounds: 1, maxPlayers: 4, settings: { variant: 'alfabeto', minSeconds: 300, maxSeconds: 300 } }, me);
+  await until(svc, (x) => x.players.length >= 3, 'lobby');
+  await svc.startMatch();
+
+  let s = await until(svc, (x) => x.room.phase === 'handoff', 'vez');
+  const tema = bombView(s).alphabet!;
+  console.log('alfabeto:', tema.name, '·', tema.letters.length, 'letras');
+  if (bombView(s).activeId === 'me') await svc.armBomb();
+  s = await until(svc, (x) => x.room.phase === 'armed', 'acesa');
+
+  // Gasta o alfabeto inteiro: com pavio de 300s, o grupo desarma antes de estourar.
+  let atual: RoomSnapshot | null = s;
+  const unsub = svc.subscribe((x) => (atual = x));
+  for (let i = 0; i < tema.letters.length + 6; i++) {
+    if (!atual || atual.room.phase !== 'armed') break;
+    const v = bombView(atual);
+    if (v.activeId === 'me') {
+      const livre = v.alphabet!.letters.split('').find((l) => !v.alphabet!.used.some((u) => u.letter === l));
+      if (livre) await svc.useLetter(livre);
+    }
+    await new Promise((r) => setTimeout(r, 60));
+  }
+  unsub();
+
+  s = await until(svc, (x) => bombView(x).phase === 'disarmed' || bombView(x).phase === 'exploded', 'fim da rodada', 12000);
+  console.log('alfabeto rodada:', bombView(s).phase, '·', bombView(s).alphabet!.used.length, 'letras gastas');
+  // O tempo de cada letra não pode ter vindo junto: somado, ele diria há quanto tempo o pavio queima.
+  if (JSON.stringify(s).includes('"ms"')) throw new Error('o tempo de cada letra vazou no snapshot');
+  await svc.leaveRoom();
+}
+
+host().then(guest).then(likely).then(secret).then(perfect).then(bomb).then(bombAlphabet).then(() => { console.log('SMOKE OK'); process.exit(0); }).catch((e) => { console.error('SMOKE FAIL', e); process.exit(1); });

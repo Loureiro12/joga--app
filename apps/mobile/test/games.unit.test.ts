@@ -55,12 +55,14 @@ test('só o impostor está jogável; os outros jogos não prometem categoria', (
   }
 });
 
-test('a Bomba-Relógio é local: não passa por sala nem por motor de rede', () => {
+test('a Bomba-Relógio joga dos dois jeitos, e sabe entrar por cada um', () => {
   const bomba = getGame('bomba-relogio')!;
   assert.equal(bomba.playable, true);
-  assert.equal(bomba.device, 'local');
-  assert.equal(bomba.engineId, undefined, 'jogo local não pode apontar para um motor de sala');
-  assert.equal(bomba.wordCategories.length, 0, 'as categorias dele ficam na própria tela de configuração');
+  assert.equal(bomba.device, 'ambos', 'um celular só, ou cada um no seu');
+  // Os dois caminhos precisam existir: sem o motor não há sala; sem a variante não há tela local.
+  assert.equal(bomba.engineId, 'bomb');
+  assert.equal(bomba.bombVariant, 'classico');
+  assert.equal(bomba.wordCategories.length, 0, 'as categorias dele vêm do engine, por variante');
 });
 
 test('todo jogo jogável sabe como começar: ou tem motor de sala, ou é local', () => {
@@ -122,23 +124,25 @@ test('toda fase de partida tem saída — inclusive as dos jogos novos', async (
   const { hasMatchToLeave } = await import('../src/features/match/matchPhase');
 
   // Se um jogo novo trouxer uma fase, ela cai aqui e precisa de uma decisão consciente.
-  const emJogo: RoomPhase[] = ['role_reveal', 'clues', 'question', 'voting', 'revealing', 'briefing', 'mission', 'verdict', 'pairing', 'answering'];
+  const emJogo: RoomPhase[] = ['role_reveal', 'clues', 'question', 'voting', 'revealing', 'briefing', 'mission', 'verdict', 'pairing', 'answering', 'handoff', 'armed'];
   for (const fase of emJogo) assert.equal(hasMatchToLeave(fase), true, `a fase "${fase}" ficou sem saída`);
 
   // Nestas não há partida para abandonar: o lobby tem o próprio "Fechar" e o resto já acabou.
   for (const fase of ['lobby', 'finished', 'closed'] as RoomPhase[]) assert.equal(hasMatchToLeave(fase), false, `"${fase}" não deveria oferecer saída`);
 });
 
-test('as duas bombas são locais e apontam para a variante certa do motor', () => {
+test('as duas bombas apontam para a variante certa e para o mesmo motor de sala', () => {
   const classico = getGame('bomba-relogio')!;
   const alfabeto = getGame('bomba-alfabeto')!;
   for (const jogo of [classico, alfabeto]) {
-    assert.equal(jogo.device, 'local', `${jogo.id} precisa ser local`);
-    assert.equal(jogo.engineId, undefined, `${jogo.id} não pode apontar para um motor de sala`);
+    assert.equal(jogo.device, 'ambos', `${jogo.id} precisa oferecer os dois modos`);
+    assert.equal(jogo.engineId, 'bomb', `${jogo.id} precisa do motor de sala`);
     assert.equal(jogo.playable, true);
   }
   assert.equal(classico.bombVariant, 'classico');
   assert.equal(alfabeto.bombVariant, 'alfabeto');
+  // As duas usam o MESMO motor: é a variante que muda a rodada, não o jogo.
+  assert.equal(classico.engineId, alfabeto.engineId);
   // Nem todo jogo local é bomba: o Entre Nós tem fluxo próprio. A cobertura de "todo jogo local
   // sabe por onde entra" está no teste seguinte.
 });
@@ -168,8 +172,12 @@ test('Entre Nós é local, para duas pessoas, e tem fluxo próprio', () => {
 });
 
 test('todo jogo local diz por qual fluxo entra', () => {
-  for (const jogo of GAMES.filter((g) => g.device === 'local' && g.playable)) {
-    assert.ok(jogo.bombVariant || jogo.localFlow, `${jogo.id} é local mas não diz por onde começa`);
+  for (const jogo of GAMES.filter((g) => (g.device === 'local' || g.device === 'ambos') && g.playable)) {
+    assert.ok(jogo.bombVariant || jogo.localFlow, `${jogo.id} joga local mas não diz por onde começa`);
+  }
+  // E quem joga em sala precisa de motor, inclusive os que também jogam local.
+  for (const jogo of GAMES.filter((g) => (g.device === undefined || g.device === 'sala' || g.device === 'ambos') && g.playable)) {
+    assert.ok(jogo.engineId, `${jogo.id} joga em sala mas não tem motor`);
   }
 });
 
@@ -287,4 +295,32 @@ test('a tela de responder não tem como mostrar a resposta de mais ninguém', as
   }
   // "8 de 10 responderam" pode; "3 votos na praia" não.
   assert.ok(src.includes('votes?.total'), 'faltou o quantos já responderam');
+});
+
+/**
+ * A Bomba em sala repete a regra de ouro da versão de um celular: **nada na tela pode saber
+ * quando ela estoura**. Lá o perigo era a animação; aqui é maior, porque a tela lê um snapshot
+ * que vem pela rede — se um dia o pavio entrar nele, é aqui que o teste avisa.
+ */
+test('a tela da bomba em sala não tem como saber quando ela estoura', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL('../src/features/match/screens/bomb/BombRoomScreen.tsx', import.meta.url), 'utf8');
+
+  for (const proibido of ['explodeAt', 'pendingAlarms', 'heldSince', 'remainingSec', 'setInterval']) {
+    assert.ok(!src.includes(proibido), `a tela da bomba em sala toca em "${proibido}"`);
+  }
+  // A explosão chega como mudança de fase, vinda do servidor — e não de uma conta local.
+  assert.ok(src.includes("phase === 'exploded'"), 'a tela não reage à explosão do servidor');
+  // E o aviso da vez é o pedido do jogo: duas batidas.
+  assert.ok(src.includes('haptics.turn()'), 'sumiu a vibração de "é a sua vez"');
+});
+
+test('a vibração de "é a sua vez" são duas batidas, e respeita a configuração do usuário', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL('../src/core/utils/haptics.ts', import.meta.url), 'utf8');
+  const turn = src.slice(src.indexOf('turn:'));
+  // Duas, e não uma: com o celular na mesa, uma batida só se confunde com notificação.
+  assert.equal((turn.match(/haptics\.heavy\(\)/g) ?? []).length, 2, 'a vibração de vez não tem duas batidas');
+  // Passa pelo `run`, que é quem respeita o ajuste "Vibração" do app.
+  assert.ok(src.includes('config.isEnabled()'), 'a vibração deixou de respeitar a configuração');
 });

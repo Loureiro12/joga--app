@@ -52,7 +52,14 @@ export type RoomCommand =
   /** Host: todo mundo tem par, podem começar as perguntas. */
   | { type: 'beginQuestions' }
   /** Responde a pergunta da rodada. Depois de enviada, não muda (§33). */
-  | { type: 'submitAnswer'; value: string };
+  | { type: 'submitAnswer'; value: string }
+  /* Bomba-Relógio em sala */
+  /** "Estou pronto": acende o próprio pavio. Só quem está com a bomba. */
+  | { type: 'armBomb' }
+  /** Passa a bomba adiante. A responsabilidade muda no toque. */
+  | { type: 'passBomb' }
+  /** Alfabeto: tocar a letra é o que passa a bomba. */
+  | { type: 'useLetter'; letter: string };
 
 /** Nome e cor vêm do perfil do app; o id do jogador vem SEMPRE do token, nunca da mensagem. */
 export type PlayerAppearance = { name: string; color: string };

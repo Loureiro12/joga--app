@@ -57,6 +57,9 @@ export type MockRoomConfig = {
   /** Casal Perfeito: quanto os bots levam para escolher par e para responder. */
   botPairMs: number;
   botAnswerMs: number;
+  /** Bomba em sala: quanto o bot demora para acender e para passar adiante. */
+  botArmMs: number;
+  botPassMs: number;
 };
 
 export const DEFAULT_MOCK_CONFIG: MockRoomConfig = {
@@ -75,7 +78,13 @@ export const DEFAULT_MOCK_CONFIG: MockRoomConfig = {
   botSecretVoteMs: 1400,
   botPairMs: 1200,
   botAnswerMs: 1800,
+  botArmMs: 1500,
+  botPassMs: 3500,
 };
+
+/** Em que tempo da revelação o jogo está. Os que não revelam em tempos devolvem `'-'`. */
+const stageOf = (game: RoomSnapshot['game']): 0 | 1 | 2 | '-' =>
+  game.kind === 'impostor' || game.kind === 'likely' || game.kind === 'perfect' ? (game.result?.stage ?? '-') : '-';
 
 /** Única sala "existente" no mock; qualquer outro código dá "Sala não encontrada". */
 export const MOCK_JOINABLE_CODE = '4827';
@@ -114,6 +123,7 @@ export class MockRoomService implements RoomService {
   /** Para agendar cada automação do bot-host uma vez por situação. */
   private hostPlanKey = '';
   private secretPlanKey = '';
+  private bombPlanKey = '';
 
   constructor(private readonly config: MockRoomConfig = DEFAULT_MOCK_CONFIG) {}
 
@@ -179,6 +189,9 @@ export class MockRoomService implements RoomService {
   unpair = () => this.command({ type: 'unpair' });
   beginQuestions = () => this.command({ type: 'beginQuestions' });
   submitAnswer = (value: string) => this.command({ type: 'submitAnswer', value });
+  armBomb = () => this.command({ type: 'armBomb' });
+  passBomb = () => this.command({ type: 'passBomb' });
+  useLetter = (letter: string) => this.command({ type: 'useLetter', letter });
   ackRole = () => this.command({ type: 'ackRole' });
   setPaused = (paused: boolean) => this.command({ type: 'setPaused', paused });
 
@@ -230,6 +243,7 @@ export class MockRoomService implements RoomService {
       else if (engine.phase === 'verdict') asHost({ type: 'nextReveal' });
       else if (engine.phase === 'pairing') asHost({ type: 'beginQuestions' });
       else if (engine.phase === 'answering') asHost({ type: 'endMatch' });
+      else if (engine.phase === 'handoff' || engine.phase === 'armed') asHost({ type: 'endMatch' });
     },
   };
 
@@ -270,6 +284,7 @@ export class MockRoomService implements RoomService {
     }
     if (engine.phase === 'briefing' || engine.phase === 'mission' || engine.phase === 'verdict') this.planBotSecret();
     if (engine.phase === 'pairing' || engine.phase === 'answering') this.planBotPerfect();
+    if (engine.phase === 'handoff' || engine.phase === 'armed') this.planBotBomb();
     this.planBotHost();
   }
 
@@ -360,13 +375,42 @@ export class MockRoomService implements RoomService {
     });
   }
 
+  /**
+   * Os bots jogando a Bomba-Relógio em sala. Eles pensam um pouco antes de passar: se passassem
+   * na hora, a bomba nunca sobraria para ninguém e a rodada viraria um pingue-pongue.
+   */
+  private planBotBomb() {
+    const engine = this.engine;
+    if (!engine) return;
+    const snap = engine.snapshotFor(engine.hostId);
+    if (snap.game.kind !== 'bomb') return;
+    const { activeId, alphabet } = snap.game;
+    if (!isBot(activeId)) return;
+
+    const key = `${snap.room.phase}|${activeId}|${alphabet?.used.length ?? 0}|${snap.room.roundIndex}`;
+    if (key === this.bombPlanKey) return;
+    this.bombPlanKey = key;
+
+    if (snap.room.phase === 'handoff') {
+      this.after('botBomb', this.config.botArmMs, () => this.tryDispatch(activeId, { type: 'armBomb' }));
+      return;
+    }
+    this.after('botBomb', this.config.botPassMs, () => {
+      if (this.engine?.phase !== 'armed') return;
+      const atual = this.engine.snapshotFor(this.engine.hostId).game;
+      if (atual.kind !== 'bomb' || atual.activeId !== activeId) return;
+      const livre = atual.alphabet?.letters.split('').find((l) => !atual.alphabet!.used.some((u) => u.letter === l));
+      this.tryDispatch(activeId, livre ? { type: 'useLetter', letter: livre } : { type: 'passBomb' });
+    });
+  }
+
   /** Quando o host é um bot, ele conduz a partida sozinho (com calma, respeitando a pausa). */
   private planBotHost() {
     const engine = this.engine;
     if (!engine || !isBot(engine.hostId)) return;
     const snap = engine.snapshotFor(engine.hostId);
     const lobbyReady = snap.room.phase === 'lobby' && this.pendingBots.length === 0;
-    const stage = snap.game.kind === 'secret' ? '-' : (snap.game.result?.stage ?? '-');
+    const stage = stageOf(snap.game);
     const key = `${engine.hostId}|${snap.room.phase}|${snap.room.roundIndex}|${stage}|${lobbyReady}`;
     if (key === this.hostPlanKey) return;
     this.hostPlanKey = key;
@@ -379,7 +423,10 @@ export class MockRoomService implements RoomService {
     else if (snap.room.phase === 'clues') {
       this.after('botHostTimer', Math.min(1000, botHostOpenVotingMs / 2), () => this.tryDispatch(host, { type: 'setTimerRunning', running: true }));
       this.after('botHost', botHostOpenVotingMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'openVoting' })));
-    } else if (snap.room.phase === 'revealing' && snap.game.kind !== 'secret' && snap.game.result?.stage === 2) {
+    } else if (snap.room.phase === 'revealing' && snap.game.kind === 'bomb') {
+      // Na bomba a revelação é a explosão: o host bot dá tempo de a mesa reagir e segue.
+      this.after('botHost', botHostNextRoundMs, () => this.tryDispatch(host, { type: 'nextRound' }));
+    } else if (snap.room.phase === 'revealing' && stage === 2) {
       this.after('botHost', botHostNextRoundMs, () => this.whenNotPaused(() => this.tryDispatch(host, { type: 'nextRound' })));
     } else if (snap.room.phase === 'mission') {
       // Na vida real a noite acaba quando o rolê acaba; aqui, depois de os bots agirem.
@@ -491,6 +538,7 @@ export class MockRoomService implements RoomService {
     this.pendingBots = [];
     this.hostPlanKey = '';
     this.secretPlanKey = '';
+    this.bombPlanKey = '';
     this.setConnection({ status: 'online' });
   }
 }

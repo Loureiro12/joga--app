@@ -1,4 +1,5 @@
 import {
+  BOMB_CATEGORIES,
   PERFECT_CATEGORIES,
   PERFECT_TIMERS,
   PROTOCOL_VERSION,
@@ -48,7 +49,16 @@ function gameSettings(v: unknown): CreateRoomInput['settings'] {
     // Do Casal Perfeito. As categorias dele e as do outro jogo dividem o mesmo campo; cada motor
     // fica com o que reconhece e descarta o resto.
     timerSec: (PERFECT_TIMERS as readonly number[]).includes(v.timerSec as number) ? (v.timerSec as number) : undefined,
-    categories: list(v.categories, Math.max(12, PERFECT_CATEGORIES.length)),
+    categories: list(v.categories, Math.max(12, PERFECT_CATEGORIES.length, BOMB_CATEGORIES.length)),
+    // Da Bomba-Relógio. O engine sanea de novo; aqui só barramos o que está fora de escala.
+    variant: v.variant === 'alfabeto' || v.variant === 'classico' ? v.variant : undefined,
+    mode: ['casual', 'eliminacao', 'pontos'].includes(v.mode as string) ? (v.mode as never) : undefined,
+    order: v.order === 'caos' || v.order === 'circular' ? v.order : undefined,
+    startsNext: v.startsNext === 'sorteio' || v.startsNext === 'perdedor' ? v.startsNext : undefined,
+    letterSet: v.letterSet === 'hardcore' || v.letterSet === 'normal' ? v.letterSet : undefined,
+    lives: num(v.lives, 1, 5),
+    minSeconds: num(v.minSeconds, 5, 300),
+    maxSeconds: num(v.maxSeconds, 5, 300),
     intensities: list(v.intensities, 3)?.filter((i): i is LikelyIntensity => INTENSITIES.has(i)),
     allowSelfVote: bool(v.allowSelfVote),
     openVotes: bool(v.openVotes),
@@ -59,7 +69,7 @@ function gameSettings(v: unknown): CreateRoomInput['settings'] {
 function roomInput(v: unknown): CreateRoomInput | null {
   if (!isObject(v)) return null;
   // Jogos com regras no engine. Sem isto, uma sala nasceria sem motor e morreria no primeiro comando.
-  const jogos: GameId[] = ['impostor', 'likely', 'secret', 'perfect'];
+  const jogos: GameId[] = ['impostor', 'likely', 'secret', 'perfect', 'bomb'];
   if (typeof v.gameId !== 'string' || !jogos.includes(v.gameId as GameId)) return null;
   const gameId = v.gameId as GameId;
   if (typeof v.category !== 'string' || v.category.length < 1 || v.category.length > 30) return null;
@@ -87,6 +97,10 @@ function command(v: unknown): RoomCommand | null {
     case 'missionDone':
     case 'swapMission':
     case 'nextReveal':
+    case 'unpair':
+    case 'beginQuestions':
+    case 'armBomb':
+    case 'passBomb':
       return { type: v.type };
     case 'accuse':
       return typeof v.targetId === 'string' && v.targetId.length <= 80 && typeof v.missionId === 'string' && v.missionId.length <= 40
@@ -99,7 +113,12 @@ function command(v: unknown): RoomCommand | null {
     case 'setPaused':
       return typeof v.paused === 'boolean' ? { type: v.type, paused: v.paused } : null;
     case 'castVote':
+    case 'pairWith':
       return typeof v.targetId === 'string' && v.targetId.length <= 80 ? { type: v.type, targetId: v.targetId } : null;
+    case 'submitAnswer':
+      return typeof v.value === 'string' && v.value.length > 0 && v.value.length <= 40 ? { type: v.type, value: v.value } : null;
+    case 'useLetter':
+      return typeof v.letter === 'string' && v.letter.length === 1 ? { type: v.type, letter: v.letter } : null;
     default:
       return null;
   }

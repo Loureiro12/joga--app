@@ -60,6 +60,15 @@ export type BombSettings = {
   letterSet: 'normal' | 'hardcore';
 };
 
+/**
+ * As opções como chegam pela rede, na sala.
+ *
+ * `categories` e `difficulties` vêm como texto livre porque o campo é compartilhado com os
+ * outros jogos — o Desafio Secreto usa 'media' onde a bomba usa 'medio'. Quem valida é o
+ * sanitizador, não o tipo.
+ */
+export type BombSettingsInput = Partial<Omit<BombSettings, 'categories' | 'difficulties'>> & { categories?: string[]; difficulties?: string[] };
+
 export const DEFAULT_BOMB_SETTINGS: BombSettings = {
   variant: 'classico',
   categories: [],
