@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import { adsState } from '@/features/ads/adsStore';
+
 import {
   armBomb,
   bombTick,
@@ -35,6 +37,12 @@ export const useBombRoster = () => useBombStore((s) => s.roster);
 
 /** Paleta do app; a cor é só para distinguir as pessoas na tela. */
 const COLORS = ['#7C3AED', '#FACC15', '#22C55E', '#EF4444', '#A78BFA', '#27272F'];
+
+/** A partida acabou agora? Então ela conta para o ritmo dos anúncios. */
+function contando(antes: BombState, depois: BombState): BombState {
+  if (antes.phase !== 'finished' && depois.phase === 'finished') adsState.countMatch();
+  return depois;
+}
 
 export const bombActions = {
   addPlayer(name: string) {
@@ -80,10 +88,10 @@ export const bombActions = {
     });
   },
   nextRound() {
-    useBombStore.setState((s) => (s.match ? { match: nextRound(s.match) } : s));
+    useBombStore.setState((s) => (s.match ? { match: contando(s.match, nextRound(s.match)) } : s));
   },
   endMatch() {
-    useBombStore.setState((s) => (s.match ? { match: endMatch(s.match) } : s));
+    useBombStore.setState((s) => (s.match ? { match: contando(s.match, endMatch(s.match)) } : s));
   },
   /** Mesma turma, partida nova. */
   playAgain(settings: Partial<BombSettings>) {

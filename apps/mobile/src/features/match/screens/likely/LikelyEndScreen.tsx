@@ -6,6 +6,9 @@ import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Chip, Display, Overline, Screen, Txt, WaitingButton } from '@/core/ui';
 import { formatPoints, plural } from '@/core/utils/format';
 
+import { exitAfterMatch } from '@/features/ads/exitAfterMatch';
+import { getGameByEngine } from '@/features/catalog/data/games';
+
 import { leaveMatch } from '../../hooks/leaveMatch';
 import { roomActions } from '../../hooks/roomActions';
 import { useLikelyMatch } from '../../store/matchStore';
@@ -17,7 +20,7 @@ import { useLikelyMatch } from '../../store/matchStore';
 export function LikelyEndScreen() {
   const match = useLikelyMatch();
   if (!match?.summary) return null;
-  const { summary, scores, isHost, displayName, player } = match;
+  const { summary, scores, isHost, displayName, player, room } = match;
   const maisEscolhido = summary.mostChosenIds.map((id) => player(id)).filter(Boolean);
   const competitivo = scores.some((s) => s.points > 0);
 
@@ -95,7 +98,7 @@ export function LikelyEndScreen() {
       )}
 
       {isHost ? <Button label="Jogar novamente" variant="onColor" onPress={() => roomActions.playAgain()} /> : <WaitingButton label="Aguardando o host" />}
-      <Button label="Escolher outro jogo" variant="translucent" onPress={() => leaveMatch(routes.explore)} />
+      <Button label="Escolher outro jogo" variant="translucent" onPress={() => exitAfterMatch(getGameByEngine(room.gameId)?.id, () => leaveMatch(routes.explore))} />
     </Screen>
   );
 }

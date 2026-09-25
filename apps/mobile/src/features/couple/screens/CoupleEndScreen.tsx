@@ -75,6 +75,11 @@ export function CoupleEndScreen() {
           router.replace(routes.couple.settings);
         }}
       />
+      {/*
+        Sem anúncio aqui, de propósito. O casal acabou de conversar sobre coisa pessoal, e a tela
+        seguinte ser um anúncio destrói a confiança que este jogo inteiro depende de construir.
+        `ADS_NEVER_IN` guarda a mesma decisão do lado da política, com teste.
+      */}
       <Button
         label="Por hoje chega"
         variant="translucent"

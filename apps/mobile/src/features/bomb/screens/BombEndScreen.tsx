@@ -1,13 +1,13 @@
-import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Enter } from '@/core/animation/Enter';
-import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Display, Overline, Screen, Txt } from '@/core/ui';
 import { plural } from '@/core/utils/format';
 
 import { highlights, standings } from '@jogae/engine';
+import { exitLocalMatch } from '@/features/ads/exitAfterMatch';
+
 import { bombActions, useBombMatch } from '../bombStore';
 
 /**
@@ -103,10 +103,7 @@ export function BombEndScreen() {
       <Button
         label="Escolher outro jogo"
         variant="translucent"
-        onPress={() => {
-          bombActions.leave();
-          router.replace(routes.explore);
-        }}
+        onPress={() => exitLocalMatch(match.settings.variant === 'alfabeto' ? 'bomba-alfabeto' : 'bomba-relogio', bombActions.leave)}
       />
     </Screen>
   );

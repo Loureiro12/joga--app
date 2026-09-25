@@ -6,6 +6,9 @@ import { colors, radii } from '@/core/theme';
 import { Button, Display, Overline, Screen, Txt, WaitingButton } from '@/core/ui';
 import { formatPoints, plural } from '@/core/utils/format';
 
+import { exitAfterMatch } from '@/features/ads/exitAfterMatch';
+import { getGameByEngine } from '@/features/catalog/data/games';
+
 import { leaveMatch } from '../../hooks/leaveMatch';
 import { roomActions } from '../../hooks/roomActions';
 import { usePerfectMatch } from '../../store/matchStore';
@@ -18,7 +21,7 @@ import { usePerfectMatch } from '../../store/matchStore';
 export function PerfectEndScreen() {
   const match = usePerfectMatch();
   if (!match?.summary) return null;
-  const { summary, couples, myCoupleId, isHost, displayName } = match;
+  const { summary, couples, myCoupleId, isHost, displayName, room } = match;
   const { standings, titles, mine } = summary;
 
   const campeao = standings[0];
@@ -147,7 +150,7 @@ export function PerfectEndScreen() {
       )}
 
       {isHost ? <Button label="Jogar de novo" onPress={() => roomActions.playAgain()} /> : <WaitingButton label="Aguardando o host" />}
-      <Button label="Escolher outro jogo" variant="tertiary" onPress={() => leaveMatch(routes.explore)} />
+      <Button label="Escolher outro jogo" variant="tertiary" onPress={() => exitAfterMatch(getGameByEngine(room.gameId)?.id, () => leaveMatch(routes.explore))} />
     </Screen>
   );
 }

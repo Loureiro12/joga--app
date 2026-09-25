@@ -14,6 +14,9 @@ import { LetterGrid } from '@/features/bomb/components/LetterGrid';
 import { useBombSound } from '@/features/bomb/useBombSound';
 
 import { MatchTopRow } from '../../components/MatchMenu';
+import { exitAfterMatch } from '@/features/ads/exitAfterMatch';
+import { getGameByEngine } from '@/features/catalog/data/games';
+
 import { leaveMatch } from '../../hooks/leaveMatch';
 import { roomActions } from '../../hooks/roomActions';
 import { useBombRoomMatch } from '../../store/matchStore';
@@ -76,7 +79,7 @@ export function BombRoomScreen() {
   const shakeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value * 14 }] }));
 
   if (!match) return null;
-  const { phase, activeId, alphabet, challenge, isHost, displayName, player, roundIndex, totalRounds } = match;
+  const { phase, activeId, alphabet, challenge, isHost, displayName, player, roundIndex, totalRounds, room } = match;
   const active = player(activeId);
   const rodada = totalRounds ? `Rodada ${roundIndex} de ${totalRounds}` : `Rodada ${roundIndex}`;
 
@@ -226,7 +229,7 @@ export function BombRoomScreen() {
         )}
 
         {isHost ? <Button label="Jogar de novo" onPress={() => roomActions.playAgain()} /> : <WaitingButton label="Aguardando o host" />}
-        <Button label="Escolher outro jogo" variant="tertiary" onPress={() => leaveMatch(routes.explore)} />
+        <Button label="Escolher outro jogo" variant="tertiary" onPress={() => exitAfterMatch(getGameByEngine(room.gameId)?.id, () => leaveMatch(routes.explore))} />
       </Screen>
     );
   }

@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useScreenLogger } from '@/core/logging/useScreenLogger';
+import { startServices } from '@/services';
 import { colors, fontAssets } from '@/core/theme';
 import { ToastHost } from '@/core/ui';
 import { useAuthSync } from '@/features/auth/useAuthSync';
@@ -26,6 +27,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded || error) SplashScreen.hideAsync().catch(() => {});
   }, [loaded, error]);
+
+  // Anúncios e afins: sobem uma vez, sem segurar a primeira tela e sem poder derrubar o app.
+  useEffect(() => {
+    void startServices();
+  }, []);
 
   if (!loaded && !error) return null;
 

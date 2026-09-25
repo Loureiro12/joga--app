@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { toast } from '@/core/ui/toast';
+import { adsState } from '@/features/ads/adsStore';
 import { services } from '@/services';
 
 import type { ConnectionState, GameView, Player, PlayerId, RoomSnapshot } from '@jogae/engine';
@@ -23,6 +24,10 @@ services.room.subscribe((snapshot) => {
   const previous = useMatchStore.getState().snapshot;
   useMatchStore.setState({ snapshot });
   if (!previous || !snapshot || previous.room.code !== snapshot.room.code) return;
+
+  // A partida acabou de verdade. É aqui que ela conta para os anúncios — e não na saída, senão
+  // um grupo que joga cinco seguidas e sai uma vez teria jogado "uma partida".
+  if (previous.room.phase !== 'finished' && snapshot.room.phase === 'finished') adsState.countMatch();
 
   // Migração de host: alguém precisa saber que agora é ele quem conduz.
   if (previous.room.hostId !== snapshot.room.hostId) {

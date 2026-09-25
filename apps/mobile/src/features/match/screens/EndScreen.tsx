@@ -6,7 +6,9 @@ import { Trophy } from '@/core/illustrations';
 import { colors } from '@/core/theme';
 import { Button, Chip, Display, Overline, Screen, Txt, WaitingButton } from '@/core/ui';
 import { formatPoints, plural } from '@/core/utils/format';
-import { getGame } from '@/features/catalog/data/games';
+import { getGame, getGameByEngine } from '@/features/catalog/data/games';
+
+import { exitAfterMatch } from '@/features/ads/exitAfterMatch';
 
 import { leaveMatch } from '../hooks/leaveMatch';
 import { roomActions } from '../hooks/roomActions';
@@ -52,7 +54,7 @@ export function EndScreen() {
       ) : (
         <WaitingButton label="Aguardando o host" />
       )}
-      <Button label="Escolher outro jogo" variant="translucent" onPress={() => leaveMatch(routes.explore)} />
+      <Button label="Escolher outro jogo" variant="translucent" onPress={() => exitAfterMatch(getGameByEngine(room.gameId)?.id, () => leaveMatch(routes.explore))} />
     </Screen>
   );
 }

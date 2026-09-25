@@ -10,4 +10,15 @@ export const features = {
    * entradas: Home, Perfil, Configurações e Criar partida.
    */
   premium: false,
+  /**
+   * Anúncios (AdMob).
+   *
+   * Desligada até existir conta no AdMob com os ids do app. Ligar antes disso não é só inútil:
+   * o SDK do Google **derruba o app na subida** quando o app id está ausente ou inválido.
+   *
+   * Para ligar: criar o app no AdMob, instalar `react-native-google-mobile-ads`, pôr o config
+   * plugin com os dois ids no `app.json`, definir as variáveis `EXPO_PUBLIC_ADMOB_*` e trocar
+   * este `false` por `true`. Sem SDK presente, o serviço vira um nada e o app segue funcionando.
+   */
+  ads: false,
 } as const;

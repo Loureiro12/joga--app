@@ -6,6 +6,9 @@ import { colors, radii } from '@/core/theme';
 import { Button, Display, Overline, Screen, Txt, WaitingButton } from '@/core/ui';
 import { formatPoints, plural } from '@/core/utils/format';
 
+import { exitAfterMatch } from '@/features/ads/exitAfterMatch';
+import { getGameByEngine } from '@/features/catalog/data/games';
+
 import { leaveMatch } from '../../hooks/leaveMatch';
 import { roomActions } from '../../hooks/roomActions';
 import { useSecretMatch } from '../../store/matchStore';
@@ -25,7 +28,7 @@ const LINHA: Record<string, { emoji: string; texto: string; cor: string }> = {
 export function SecretEndScreen() {
   const match = useSecretMatch();
   if (!match?.summary) return null;
-  const { summary, competitive, isHost, displayName } = match;
+  const { summary, competitive, isHost, displayName, room } = match;
   const cumpriram = summary.players.filter((p) => p.status === 'validada').length;
   const pegos = summary.players.filter((p) => p.status === 'pego').length;
 
@@ -89,7 +92,7 @@ export function SecretEndScreen() {
       </View>
 
       {isHost ? <Button label="Nova rodada de missões" onPress={() => roomActions.playAgain()} /> : <WaitingButton label="Aguardando o host" />}
-      <Button label="Escolher outro jogo" variant="tertiary" onPress={() => leaveMatch(routes.explore)} />
+      <Button label="Escolher outro jogo" variant="tertiary" onPress={() => exitAfterMatch(getGameByEngine(room.gameId)?.id, () => leaveMatch(routes.explore))} />
     </Screen>
   );
 }

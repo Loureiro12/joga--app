@@ -1,3 +1,6 @@
+import { MockAdsService, type AdsService } from '@/features/ads/AdsService';
+import { GoogleAdsService } from '@/features/ads/GoogleAdsService';
+import { adsState } from '@/features/ads/adsStore';
 import { MockAiGameService, type AiGameService } from '@/features/ai/AiGameService';
 import { MockAuthService, type AuthService } from '@/features/auth/AuthService';
 import { platformAuth } from '@/features/auth/platformAuth';
@@ -16,6 +19,8 @@ import { SupabaseSocialService } from '@/features/social/SupabaseSocialService';
 
 import { AppState } from 'react-native';
 
+import { features } from '@/core/config/features';
+
 import { createSupabaseClient, isSupabaseConfigured } from './supabase/client';
 
 /**
@@ -33,6 +38,7 @@ export type Services = {
   social: SocialService;
   history: HistoryService;
   profile: ProfileService;
+  ads: AdsService;
 };
 
 const supabase = isSupabaseConfigured ? createSupabaseClient() : null;
@@ -59,7 +65,15 @@ export const services: Services = {
   ai: new MockAiGameService(),
   social: supabase ? new SupabaseSocialService(supabase, friendInviteLink) : new MockSocialService(),
   history: supabase ? new SupabaseHistoryService(supabase) : new MockHistoryService(),
+  // Sem a flag (ou sem o SDK nativo), o simulado só registra no log de dev onde o anúncio cairia.
+  ads: features.ads ? new GoogleAdsService() : new MockAdsService(),
 };
+
+/** Sobe o que precisa acontecer uma vez, na abertura do app. Nunca lança. */
+export async function startServices(): Promise<void> {
+  await adsState.load();
+  await services.ads.start().catch(() => {});
+}
 
 export const backendMode: 'supabase' | 'mock' = supabase ? 'supabase' : 'mock';
 export const roomMode: 'remote' | 'mock' = supabase && roomServerUrl ? 'remote' : 'mock';

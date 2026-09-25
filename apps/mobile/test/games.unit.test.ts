@@ -324,3 +324,56 @@ test('a vibração de "é a sua vez" são duas batidas, e respeita a configuraç
   // Passa pelo `run`, que é quem respeita o ajuste "Vibração" do app.
   assert.ok(src.includes('config.isEnabled()'), 'a vibração deixou de respeitar a configuração');
 });
+
+/**
+ * Anúncio dentro de uma rodada é o erro caro deste app: os celulares estão sincronizados pelo
+ * servidor, e na Bomba-Relógio o pavio continua queimando atrás da tela cheia — a pessoa
+ * perderia a rodada por causa do Jogaê.
+ *
+ * O teste varre as telas: só as de FIM podem citar o módulo de anúncios.
+ */
+test('nenhuma tela de jogo chama anúncio fora do fim da partida', async () => {
+  const { readFile, readdir } = await import('node:fs/promises');
+  const base = new URL('../src/features/', import.meta.url);
+
+  const telas: string[] = [];
+  const varrer = async (dir: string) => {
+    for (const entrada of await readdir(new URL(dir, base), { withFileTypes: true })) {
+      const caminho = `${dir}${entrada.name}`;
+      if (entrada.isDirectory()) await varrer(`${caminho}/`);
+      else if (entrada.name.endsWith('.tsx')) telas.push(caminho);
+    }
+  };
+  for (const feature of ['match/', 'bomb/', 'couple/']) await varrer(feature);
+  assert.ok(telas.length > 20, 'a varredura não achou as telas');
+
+  // Quem pode: as telas de fim de partida, e só elas.
+  const podeSair = /End(Screen)?\.tsx$|BombRoomScreen\.tsx$/;
+
+  for (const tela of telas) {
+    const src = await readFile(new URL(tela, base), 'utf8');
+    if (!src.includes('exitAfterMatch') && !src.includes('exitLocalMatch') && !src.includes('services.ads')) continue;
+    assert.ok(podeSair.test(tela), `${tela} chama anúncio e não é tela de fim de partida`);
+  }
+
+  // E a do Entre Nós não chama nem no fim: a decisão está escrita lá e aqui.
+  const casal = await readFile(new URL('couple/screens/CoupleEndScreen.tsx', base), 'utf8');
+  assert.ok(!casal.includes('exitAfterMatch') && !casal.includes('exitLocalMatch'), 'o Entre Nós passou a mostrar anúncio');
+  assert.ok(casal.includes('Sem anúncio aqui'), 'sumiu o comentário que explica por que o Entre Nós não tem anúncio');
+});
+
+/**
+ * O SDK do AdMob derruba o app na subida quando o app id está ausente ou inválido. Enquanto não
+ * houver conta, a flag precisa continuar desligada — e o serviço simulado no lugar dele.
+ */
+test('anúncios ficam desligados enquanto não houver conta no AdMob', async () => {
+  const { features } = await import('../src/core/config/features');
+  const { readFile } = await import('node:fs/promises');
+
+  assert.equal(features.ads, false, 'ligar a flag sem os ids do AdMob derruba o app na abertura');
+
+  // O SDK é carregado por require preguiçoso: sem o módulo, o app segue funcionando.
+  const google = await readFile(new URL('../src/features/ads/GoogleAdsService.ts', import.meta.url), 'utf8');
+  assert.ok(google.includes("require('react-native-google-mobile-ads')"), 'o SDK deixou de ser opcional');
+  assert.ok(google.includes('__DEV__'), 'sumiu a trava que impede anúncio real em desenvolvimento');
+});

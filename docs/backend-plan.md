@@ -367,6 +367,30 @@ As duas bombas passaram a jogar também com cada um no seu celular. O grupo esco
 
 **Verificado no navegador:** as duas variantes, com cinco bots — a bomba dando a volta na mesa, o botão de passar só no celular da vez, o aviso de passagem falando diferente em quem recebeu, a grade de letras compartilhada e o "não é a sua vez". Sem erro de console.
 
+### Anúncios (2026-09-24)
+
+Entraram sem o premium, por decisão de produto. O código já está pronto para o dia em que ele existir: `isPremium` está na política desde agora, então "sem anúncios" passa a valer sem tocar em tela nenhuma.
+
+**A regra que decide tudo:** *o anúncio só entra quando o grupo já se desfez.* Nunca durante uma partida, nunca entre rodadas — só depois que ela acabou e alguém está saindo para o catálogo.
+
+O motivo é que este app não é jogado sozinho. Em cinco jogos os celulares estão sincronizados pelo servidor: uma tela cheia no meu aparelho enquanto os outros avançam me devolve numa tela diferente da de todo mundo. E na Bomba-Relógio seria pior que chato — **o pavio é um instante absoluto e continua queimando atrás do anúncio**, então a pessoa perderia a rodada por causa do Jogaê. Um teste varre as telas de `match/`, `bomb/` e `couple/` e reprova qualquer uma que chame anúncio sem ser tela de fim.
+
+**A política mora em `adPolicy.ts`**, pura, sem React e sem SDK — como `matchPhase.ts`. É a parte que erra feio, então é a parte que dá para testar sem carregar nada. As regras: assinante não vê; sem resposta ao consentimento não mostra; as duas primeiras partidas são limpas (a primeira impressão do app não pode ser um anúncio); três minutos de intervalo entre dois; e o **Entre Nós nunca**, em lugar nenhum — o casal acabou de falar de coisa pessoal, e nenhuma receita paga o que um anúncio quebraria ali.
+
+**O contador conta onde o fato acontece**, na transição para `finished`, e não na saída. Um grupo que joga cinco seguidas e sai uma vez jogou cinco, não uma.
+
+**A ordem da saída não é detalhe:** primeiro sai da sala, depois o anúncio. Ao contrário, o jogador ficaria ocupando a vaga dele enquanto assiste, com o resto do grupo esperando alguém que já foi embora.
+
+**O SDK é carregado por `require` preguiçoso.** Sem o módulo — Expo Go, web, build sem o config plugin — o serviço vira um nada e o app segue funcionando. É o que mantém o Expo Go vivo no desenvolvimento e o harness web funcionando.
+
+**`features.ads` continua `false`, e isso é proposital:** o SDK do Google **derruba o app na subida** quando o app id está ausente ou inválido. Ligar antes de existir conta no AdMob não é só inútil, é uma tela preta na loja. Um teste trava a flag em `false` justamente para ninguém ligar sem os ids.
+
+**Verificado no navegador**, em modo dev, com três partidas locais seguidas: a 1ª recusada ("só a partir da 2ª partida"), a 2ª mostrando, a 3ª recusada pelo intervalo — e o contador sobrevivendo ao recarregamento da página.
+
+**Falta, e só o dono da conta pode fazer:** criar o app no AdMob (um id por plataforma), instalar `react-native-google-mobile-ads`, pôr o config plugin com os dois ids no `app.json`, definir `EXPO_PUBLIC_ADMOB_*` no EAS e virar a flag. Do lado das lojas: formulário de Segurança de Dados no Play, texto do ATT no `Info.plist` e a política de privacidade do site citando o SDK.
+
+**Fica de fora:** banner na Home e no Explorar, anúncio premiado ("assista e libere a categoria 🔥") e mediação. Os dois primeiros valem quando houver volume; o terceiro, só bem depois.
+
 ### Passo 6 — Assinatura
 
 - RevenueCat com o id do usuário do Supabase; webhook → `entitlements`.
@@ -383,7 +407,7 @@ Decisões que o backend força e que ainda não foram tomadas:
 
 1. ~~Excluir conta~~ — resolvido no passo 2 (a tela de confirmação não veio do design; segue o padrão do modal de sair da partida).
 2. **Jogos criados por IA não têm tela para serem jogados.** O handoff gera "12 perguntas · 8 desafios · 3 especiais", mas "Começar" abre o Impostor. Sem esse fluxo desenhado, o passo 7 não tem o que alimentar.
-3. **Limite do plano grátis.** "Partidas ilimitadas" é benefício premium, mas nada define o limite de quem não paga.
+3. ~~Limite do plano grátis~~ — resolvido em 2026-09-24 pelos anúncios: em vez de barrar a quinta partida do grupo, o app mostra um anúncio quando ela acabou. Ninguém fica sem jogar. O texto "Partidas ilimitadas" na paywall precisa virar "Sem anúncios" quando o premium entrar.
 4. ~~Regras de pontuação do Impostor~~ — confirmadas em 2026-09-19: +200 por inocente quando o grupo acerta, +300 para o impostor que escapa, +50 por voto certo, empate = impostor escapa. Cobertas por teste em `packages/engine/test`.
 5. **LGPD.** Usuários brasileiros, possivelmente menores (existe a categoria Família): política de privacidade, base legal e fluxo de exclusão de dados.
 6. ~~Host caiu~~ — decidido em 2026-09-20: outro jogador assume (o mais antigo na sala que esteja conectado).
