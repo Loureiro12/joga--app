@@ -363,19 +363,42 @@ test('nenhuma tela de jogo chama anúncio fora do fim da partida', async () => {
 });
 
 /**
- * O SDK do AdMob derruba o app na subida quando o app id está ausente ou inválido. Enquanto não
- * houver conta, a flag precisa continuar desligada — e o serviço simulado no lugar dele.
+ * O SDK do AdMob **derruba o app na subida** quando o app id está ausente ou inválido. Com a flag
+ * ligada, os dois ids precisam estar no config plugin — e precisam ser app ids (`~`), não blocos
+ * de anúncio (`/`). Trocar um pelo outro é o erro mais comum, e o sintoma seria o app não abrir.
  */
-test('anúncios ficam desligados enquanto não houver conta no AdMob', async () => {
+test('com anúncios ligados, os ids do app estão no lugar e no formato certo', async () => {
   const { features } = await import('../src/core/config/features');
   const { readFile } = await import('node:fs/promises');
+  if (!features.ads) return;
 
-  assert.equal(features.ads, false, 'ligar a flag sem os ids do AdMob derruba o app na abertura');
+  const appJson = JSON.parse(await readFile(new URL('../app.json', import.meta.url), 'utf8'));
+  const plugin = appJson.expo.plugins.find((p: unknown) => Array.isArray(p) && p[0] === 'react-native-google-mobile-ads');
+  assert.ok(plugin, 'a flag está ligada e o config plugin não está no app.json: o app não abre');
 
-  // O SDK é carregado por require preguiçoso: sem o módulo, o app segue funcionando.
+  for (const chave of ['androidAppId', 'iosAppId']) {
+    const id = plugin[1][chave];
+    assert.match(id ?? '', /^ca-app-pub-\d+~\d+$/, `${chave} precisa ser um app id ("~"), não um bloco de anúncio ("/")`);
+  }
+  // O iOS precisa dos dois para servir anúncio decente: a permissão e a rede de atribuição.
+  assert.ok(plugin[1].userTrackingUsageDescription, 'sem o texto do ATT a App Store recusa o build');
+  assert.ok((plugin[1].skAdNetworkItems ?? []).length > 0, 'sem SKAdNetwork o iOS não atribui a instalação');
+});
+
+test('as unidades de anúncio são blocos ("/") e o teste é forçado em desenvolvimento', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL('../src/features/ads/adUnits.ts', import.meta.url), 'utf8');
+
+  for (const id of src.match(/ca-app-pub-[\d~/]+/g) ?? []) {
+    assert.match(id, /^ca-app-pub-\d+\/\d+$/, `"${id}" não é um bloco de anúncio`);
+  }
+  // Um clique num anúncio real em dev conta como clique inválido e suspende a conta.
+  assert.match(src, /if \(__DEV__\) return TESTE/, 'sumiu a trava que força anúncio de teste em desenvolvimento');
+
   const google = await readFile(new URL('../src/features/ads/GoogleAdsService.ts', import.meta.url), 'utf8');
-  assert.ok(google.includes("require('react-native-google-mobile-ads')"), 'o SDK deixou de ser opcional');
-  assert.ok(google.includes('__DEV__'), 'sumiu a trava que impede anúncio real em desenvolvimento');
+  // Quem decide se pode pedir anúncio é o UMP, não "o formulário apareceu".
+  assert.ok(google.includes('canRequestAds'), 'o consentimento voltou a ser dado por resolvido sem o veredito do UMP');
+  assert.ok(google.includes('requestNonPersonalizedAdsOnly: !this.personalizado'), 'o app voltou a pedir sempre anúncio genérico');
 });
 
 /**
@@ -396,4 +419,35 @@ test('nos jogos locais, jogar de novo navega — senão a tela fica parada no fi
   const casal = await readFile(new URL('../src/features/couple/screens/CoupleEndScreen.tsx', import.meta.url), 'utf8');
   const maisUma = casal.slice(casal.indexOf('label="Mais uma rodada"'));
   assert.ok(maisUma.slice(0, maisUma.indexOf('/>')).includes('router.replace'), 'o "mais uma rodada" parou de navegar');
+});
+
+/**
+ * `react-native-google-mobile-ads` chama `TurboModuleRegistry.getEnforcing(...)` no topo do
+ * módulo. Basta ele ser avaliado onde não há ponte nativa para a página morrer inteira com
+ * "__fbBatchedBridgeConfig is not set" — tela branca, antes de qualquer tela.
+ *
+ * O `sdk.web.ts` é o que mantém o pacote fora do bundle do navegador. Ele parece um arquivo
+ * inútil de três linhas, e é exatamente por isso que precisa de um teste explicando o contrário.
+ */
+test('o SDK de anúncios nunca entra no bundle da web', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const base = new URL('../src/features/ads/', import.meta.url);
+
+  // Comentários falam do pacote o tempo todo; o que não pode é código importá-lo.
+  const semComentarios = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+
+  const web = semComentarios(await readFile(new URL('sdk.web.ts', base), 'utf8'));
+  assert.ok(!web.includes('react-native-google-mobile-ads'), 'a versão web do carregador voltou a tocar no SDK');
+  assert.match(web, /export const loadAdsSdk/, 'o Metro precisa do mesmo nome exportado nos dois arquivos');
+
+  const nativo = await readFile(new URL('sdk.ts', base), 'utf8');
+  assert.ok(nativo.includes("require('react-native-google-mobile-ads')"), 'o carregador nativo parou de carregar o SDK');
+
+  // E só o par sdk.ts/sdk.web.ts pode citar o pacote: qualquer outro import o traria de volta.
+  const { readdir } = await import('node:fs/promises');
+  for (const arquivo of await readdir(base)) {
+    if (arquivo.startsWith('sdk.')) continue;
+    const src = semComentarios(await readFile(new URL(arquivo, base), 'utf8'));
+    assert.ok(!src.includes('react-native-google-mobile-ads'), `${arquivo} importa o SDK direto e quebraria a web`);
+  }
 });

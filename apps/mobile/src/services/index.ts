@@ -17,7 +17,7 @@ import { friendInviteLink, MockSocialService } from '@/features/social/MockSocia
 import type { SocialService } from '@/features/social/SocialService';
 import { SupabaseSocialService } from '@/features/social/SupabaseSocialService';
 
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { features } from '@/core/config/features';
 
@@ -65,8 +65,9 @@ export const services: Services = {
   ai: new MockAiGameService(),
   social: supabase ? new SupabaseSocialService(supabase, friendInviteLink) : new MockSocialService(),
   history: supabase ? new SupabaseHistoryService(supabase) : new MockHistoryService(),
-  // Sem a flag (ou sem o SDK nativo), o simulado só registra no log de dev onde o anúncio cairia.
-  ads: features.ads ? new GoogleAdsService() : new MockAdsService(),
+  // A web não tem SDK de anúncio, e o harness do navegador roda em cima dela: o simulado só
+  // registra no log de dev onde o anúncio cairia.
+  ads: features.ads && Platform.OS !== 'web' ? new GoogleAdsService() : new MockAdsService(),
 };
 
 /** Sobe o que precisa acontecer uma vez, na abertura do app. Nunca lança. */

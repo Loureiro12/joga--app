@@ -97,7 +97,19 @@
         }
       ],
       "expo-web-browser",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-4825299331683087~9857069401",
+          "iosAppId": "ca-app-pub-4825299331683087~4279465784",
+          "userTrackingUsageDescription": "O Jogaê usa isso para mostrar anúncios mais relevantes. Você pode recusar — o app funciona igual, só com anúncios genéricos.",
+          "skAdNetworkItems": [
+            "cstr6suwn9.skadnetwork"
+          ]
+        }
+      ],
+      "expo-tracking-transparency"
     ],
     "extra": {
       "router": {},

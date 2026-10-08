@@ -13,12 +13,12 @@ export const features = {
   /**
    * Anúncios (AdMob).
    *
-   * Desligada até existir conta no AdMob com os ids do app. Ligar antes disso não é só inútil:
-   * o SDK do Google **derruba o app na subida** quando o app id está ausente ou inválido.
+   * Os ids do app vivem no config plugin em `app.json` — o SDK do Google **derruba o app na
+   * subida** sem eles, e é por isso que a flag só pode estar ligada com o plugin configurado.
    *
-   * Para ligar: criar o app no AdMob, instalar `react-native-google-mobile-ads`, pôr o config
-   * plugin com os dois ids no `app.json`, definir as variáveis `EXPO_PUBLIC_ADMOB_*` e trocar
-   * este `false` por `true`. Sem SDK presente, o serviço vira um nada e o app segue funcionando.
+   * Em Expo Go e na web o módulo nativo não existe: o serviço vira um nada e o app roda normal,
+   * sem anúncio. Em desenvolvimento, os ids de teste do Google são forçados — um clique seu num
+   * anúncio de verdade conta como clique inválido e o AdMob suspende a conta.
    */
-  ads: false,
+  ads: true,
 } as const;

@@ -4,7 +4,9 @@ import { logger } from '@/core/logging/logger';
 
 import type { AdsService } from './AdsService';
 import { canShowAd, type AdPlacement } from './adPolicy';
+import { interstitialUnitId } from './adUnits';
 import { adsState } from './adsStore';
+import { loadAdsSdk } from './sdk';
 
 /**
  * O AdMob de verdade.
@@ -19,36 +21,15 @@ import { adsState } from './adsStore';
  * clique inválido.
  */
 
-/** Ids de teste do próprio Google. Servem anúncio falso, sem risco de clique inválido. */
-const TESTE = {
-  android: 'ca-app-pub-3940256099942544/1033173712',
-  ios: 'ca-app-pub-3940256099942544/4411468910',
-};
-
-const unidadeIntersticial = (): string => {
-  const real = Platform.OS === 'ios' ? process.env.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL : process.env.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL;
-  // Em dev, o id real é ignorado de propósito. Um clique seu num anúncio de verdade derruba a conta.
-  if (!real || __DEV__) return Platform.OS === 'ios' ? TESTE.ios : TESTE.android;
-  return real;
-};
-
-/**
- * `require` em vez de `import`: o módulo pode não existir (Expo Go, web, build sem o plugin),
- * e nesse caso o app precisa seguir funcionando sem anúncio nenhum.
- */
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
-function carregarSdk(): any | null {
-  try {
-    return require('react-native-google-mobile-ads');
-  } catch {
-    return null;
-  }
-}
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const carregarSdk = (): any | null => loadAdsSdk() as any;
 
 export class GoogleAdsService implements AdsService {
   private sdk: any = null;
   private anuncio: any = null;
   private carregando = false;
+  /** O usuário consentiu com anúncio personalizado (UMP e, no iOS, também o ATT)? */
+  private personalizado = false;
 
   async start(): Promise<void> {
     const sdk = carregarSdk();
@@ -69,22 +50,46 @@ export class GoogleAdsService implements AdsService {
   }
 
   /**
-   * Consentimento (LGPD/GDPR) e, no iOS, o pedido de rastreamento.
+   * Consentimento, em duas perguntas que são de donos diferentes.
    *
-   * Sem resposta do usuário a política não mostra nada — é ela que garante que nenhum anúncio
-   * aparece antes de o app ter perguntado.
+   * 1. **UMP** (LGPD/GDPR): quem decide é o Google, pela região do usuário. Fora da Europa
+   *    normalmente não há formulário nenhum — e aí `canRequestAds` já vem verdadeiro.
+   * 2. **ATT** (só iOS): a permissão da Apple para usar o identificador de anúncio. Sem ela, o
+   *    iOS serve só anúncio genérico, que paga bem menos. Vem DEPOIS do UMP porque é essa a
+   *    ordem que o Google recomenda: o formulário dele é que explica para que serve.
+   *
+   * Quem manda no fim é o `canRequestAds` do UMP, e não "o formulário apareceu": é o sinal que
+   * o próprio Google criou para dizer "pode pedir anúncio". Recusa vira ausência de anúncio,
+   * em vez de anúncio servido assim mesmo.
    */
   private async resolverConsentimento(): Promise<void> {
     const { AdsConsent } = this.sdk;
+    let podePedir = false;
     try {
-      const info = await AdsConsent.requestInfoUpdate();
-      if (info.isConsentFormAvailable) await AdsConsent.showFormIfRequired();
+      const info = await AdsConsent.gatherConsent();
+      podePedir = Boolean(info?.canRequestAds);
+      this.personalizado = info?.status === 'OBTAINED';
     } catch (e) {
       logger.line(`📺 consentimento não concluído: ${String(e)}`);
-    } finally {
-      // Mesmo sem formulário (fora da UE, por exemplo) o fluxo está resolvido: segue com
-      // anúncio não personalizado, que é o padrão sem consentimento explícito.
-      adsState.setConsentResolved(true);
+    }
+
+    if (Platform.OS === 'ios' && podePedir) await this.pedirRastreamento();
+    adsState.setConsentResolved(podePedir);
+    if (!podePedir) logger.line('📺 sem consentimento para pedir anúncio');
+  }
+
+  /**
+   * O aviso da Apple. Recusar não tira o anúncio — tira só a personalização, e o app segue igual.
+   * É por isso que a recusa aqui não mexe no `consentResolved`.
+   */
+  private async pedirRastreamento(): Promise<void> {
+    try {
+      const { requestTrackingPermissionsAsync } = await import('expo-tracking-transparency');
+      const { status } = await requestTrackingPermissionsAsync();
+      if (status !== 'granted') this.personalizado = false;
+    } catch (e) {
+      logger.line(`📺 ATT não concluído: ${String(e)}`);
+      this.personalizado = false;
     }
   }
 
@@ -93,7 +98,9 @@ export class GoogleAdsService implements AdsService {
     if (!this.sdk || this.carregando) return;
     const { InterstitialAd, AdEventType } = this.sdk;
     this.carregando = true;
-    const anuncio = InterstitialAd.createForAdRequest(unidadeIntersticial(), { requestNonPersonalizedAdsOnly: true });
+    // Só pede genérico quando NÃO há consentimento. Pedir genérico sempre seria pagar o custo de
+    // perguntar e jogar fora a resposta.
+    const anuncio = InterstitialAd.createForAdRequest(interstitialUnitId(), { requestNonPersonalizedAdsOnly: !this.personalizado });
     anuncio.addAdEventListener(AdEventType.LOADED, () => {
       this.anuncio = anuncio;
       this.carregando = false;
@@ -127,4 +134,4 @@ export class GoogleAdsService implements AdsService {
     }
   }
 }
-/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
+/* eslint-enable @typescript-eslint/no-explicit-any */
