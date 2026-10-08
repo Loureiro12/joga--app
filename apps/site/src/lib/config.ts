@@ -18,6 +18,17 @@ export const stores = {
   android: env('PUBLIC_PLAY_STORE_URL') || 'https://play.google.com/store/apps/details?id=app.jogae&hl=pt_BR',
 };
 
+/**
+ * Linhas do `app-ads.txt`, servidas em `/app-ads.txt`.
+ *
+ * Cada linha autoriza uma rede a vender o inventário do app, no formato do IAB:
+ * `domínio_da_rede, id_do_publisher, DIRECT|RESELLER, id_de_certificação`.
+ *
+ * Ficam no código porque são declaração pública e permanente — e porque, esquecidas numa
+ * variável de ambiente, voltariam a sumir num deploy e derrubariam a receita sem avisar.
+ */
+export const adsTxtRecords = ['google.com, pub-4825299331683087, DIRECT, f08c47fec0942fa0'];
+
 /** Id numérico do app na App Store. É o que o Safari precisa para o banner nativo de instalação. */
 export const appleAppId = '6813219813';
 

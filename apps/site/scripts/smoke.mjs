@@ -94,6 +94,18 @@ try {
     assert.deepEqual(details.components, [{ '/': '/j/*' }, { '/': '/u/*' }]);
   });
 
+  await check('app-ads.txt: text/plain, no formato do IAB e sem redirect', async () => {
+    const file = await get(site.base, '/app-ads.txt');
+    assert.equal(file.status, 200, 'sem este arquivo boa parte dos compradores não dá lance no inventário');
+    assert.match(file.type, /^text\/plain/, 'o rastreador do Google ignora o que não for text/plain');
+    // Formato do IAB: domínio, publisher, DIRECT|RESELLER, id de certificação.
+    const linhas = file.body.trim().split('\n');
+    assert.ok(linhas.length >= 1);
+    for (const linha of linhas) {
+      assert.match(linha, /^[a-z0-9.-]+, *pub-\d+, *(DIRECT|RESELLER)(, *[a-f0-9]+)?$/i, `linha fora do formato: "${linha}"`);
+    }
+  });
+
   await check('assetlinks.json: pacote do app e todos os fingerprints', async () => {
     const file = await get(site.base, '/.well-known/assetlinks.json');
     assert.match(file.type, /^application\/json/);
