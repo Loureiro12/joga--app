@@ -94,6 +94,16 @@ try {
     assert.deepEqual(details.components, [{ '/': '/j/*' }, { '/': '/u/*' }]);
   });
 
+  await check('a política de privacidade fala dos anúncios — e não afirma o contrário', async () => {
+    const { body } = await get(site.base, '/privacidade');
+    // A frase "não exibimos publicidade de terceiros" ficou no ar depois de o AdMob entrar no app.
+    // Política que contradiz o app é motivo de recusa na loja e de reclamação na LGPD.
+    assert.ok(!/não exibimos publicidade/i.test(body), 'a política voltou a negar que o app exibe anúncio');
+    assert.ok(/AdMob/.test(body), 'a política não diz qual rede de anúncios é usada');
+    // O app aponta para cá a partir de Configurações; o caminho precisa constar.
+    assert.ok(/Opções de privacidade/i.test(body), 'a política não diz onde rever o consentimento');
+  });
+
   await check('app-ads.txt: text/plain, no formato do IAB e sem redirect', async () => {
     const file = await get(site.base, '/app-ads.txt');
     assert.equal(file.status, 200, 'sem este arquivo boa parte dos compradores não dá lance no inventário');

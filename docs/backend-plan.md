@@ -391,6 +391,20 @@ O motivo é que este app não é jogado sozinho. Em cinco jogos os celulares est
 
 **Fica de fora:** banner na Home e no Explorar, anúncio premiado ("assista e libere a categoria 🔥") e mediação. Os dois primeiros valem quando houver volume; o terceiro, só bem depois.
 
+#### AdMob ligado (2026-10-08)
+
+Conta criada, SDK instalado, os quatro ids no lugar — app id no config plugin (é ele que impede o SDK de derrubar o app na abertura) e as unidades em `adUnits.ts`, com os ids de teste **forçados em dev**: um clique num anúncio real conta como clique inválido e suspende a conta. Conferido gerando o nativo das duas plataformas: `APPLICATION_ID` no manifesto, `GADApplicationIdentifier` + ATT + `SKAdNetwork` no Info.plist.
+
+Três falhas da primeira implementação foram fechadas: o **ATT** passou a ser pedido no iOS depois do UMP (sem ele o iOS só serve anúncio genérico), o app **só pede genérico quando não há consentimento** — antes pedia sempre, pagando o custo de perguntar e jogando a resposta fora — e quem decide se pode pedir anúncio passou a ser o **`canRequestAds`** do UMP, e não "o formulário apareceu".
+
+**Um bug que só aparece com o pacote instalado:** `react-native-google-mobile-ads` chama `TurboModuleRegistry.getEnforcing(...)` no topo do módulo, e isso derrubava a **web inteira em tela branca** — mesmo com a flag desligada, só pela presença do pacote. O par `sdk.ts` / `sdk.web.ts` mantém o SDK fora do bundle do navegador. Parece um arquivo inútil de três linhas; tem teste explicando o contrário.
+
+**A política de privacidade dizia "não exibimos publicidade de terceiros".** Virou mentira no instante em que o AdMob entrou, e política que contradiz o app é motivo de recusa na loja e de reclamação na LGPD. Foi reescrita: seção própria sobre anúncios (quando aparecem, o que o Google recebe, o que ele **não** recebe, como mudar), o AdMob citado entre quem recebe dados, e os termos com a cláusula do plano gratuito. O smoke do site reprova se a frase antiga voltar. **A revisão jurídica continua obrigatória antes de publicar** — o texto é rascunho técnico, não parecer.
+
+O `app-ads.txt` está no ar em `/app-ads.txt`, validado linha a linha pelo smoke. Sem ele, boa parte dos compradores não dá lance no inventário.
+
+**Falta para o primeiro anúncio real:** formulário de Segurança de Dados no Play, rótulos de privacidade na App Store, e um teste em aparelho com os ids de teste.
+
 ### Passo 6 — Assinatura
 
 - RevenueCat com o id do usuário do Supabase; webhook → `entitlements`.

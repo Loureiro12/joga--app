@@ -17,6 +17,13 @@ export interface AdsService {
    * já está a caminho da próxima tela quando isto é chamado.
    */
   maybeShow(placement: AdPlacement, gameId: string | undefined): Promise<void>;
+  /**
+   * O usuário pode rever o consentimento depois? Só onde há formulário (a UE, hoje). Fora dali
+   * mostrar a opção seria oferecer uma tela que não abre.
+   */
+  hasPrivacyOptions(): boolean;
+  /** Reabre o formulário de consentimento. A política de privacidade aponta para cá. */
+  openPrivacyOptions(): Promise<void>;
 }
 
 /**
@@ -38,5 +45,13 @@ export class MockAdsService implements AdsService {
     if (!decisao.show) return logger.line(`📺 sem anúncio em "${placement}": ${decisao.reason}`);
     adsState.markShown(Date.now());
     logger.line(`📺 anúncio em "${placement}" (simulado)`);
+  }
+
+  hasPrivacyOptions(): boolean {
+    return false;
+  }
+
+  async openPrivacyOptions(): Promise<void> {
+    logger.line('📺 opções de privacidade (simulado)');
   }
 }

@@ -30,6 +30,8 @@ export class GoogleAdsService implements AdsService {
   private carregando = false;
   /** O usuário consentiu com anúncio personalizado (UMP e, no iOS, também o ATT)? */
   private personalizado = false;
+  /** Existe formulário para rever o consentimento? Só onde a lei exige — hoje, a UE. */
+  private podeReverConsentimento = false;
 
   async start(): Promise<void> {
     const sdk = carregarSdk();
@@ -69,6 +71,7 @@ export class GoogleAdsService implements AdsService {
       const info = await AdsConsent.gatherConsent();
       podePedir = Boolean(info?.canRequestAds);
       this.personalizado = info?.status === 'OBTAINED';
+      this.podeReverConsentimento = info?.privacyOptionsRequirementStatus === 'REQUIRED';
     } catch (e) {
       logger.line(`📺 consentimento não concluído: ${String(e)}`);
     }
@@ -115,6 +118,21 @@ export class GoogleAdsService implements AdsService {
       this.precarregar();
     });
     anuncio.load();
+  }
+
+  hasPrivacyOptions(): boolean {
+    return this.podeReverConsentimento;
+  }
+
+  async openPrivacyOptions(): Promise<void> {
+    try {
+      const info = await this.sdk?.AdsConsent?.showPrivacyOptionsForm();
+      // A resposta pode ter mudado: o próximo anúncio já sai do jeito novo.
+      this.personalizado = info?.status === 'OBTAINED';
+      adsState.setConsentResolved(Boolean(info?.canRequestAds));
+    } catch (e) {
+      logger.line(`📺 opções de privacidade não abriram: ${String(e)}`);
+    }
   }
 
   async maybeShow(placement: AdPlacement, gameId: string | undefined): Promise<void> {

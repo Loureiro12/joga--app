@@ -451,3 +451,18 @@ test('o SDK de anúncios nunca entra no bundle da web', async () => {
     assert.ok(!src.includes('react-native-google-mobile-ads'), `${arquivo} importa o SDK direto e quebraria a web`);
   }
 });
+
+/**
+ * A política de privacidade do site manda o usuário a "Perfil → Configurações → Opções de
+ * privacidade" para rever o consentimento de anúncio. Promessa em texto legal só vale se a tela
+ * existir — e ela mora noutro pacote, onde nenhum teste do app chega.
+ */
+test('Configurações oferece o caminho que a política de privacidade promete', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL('../src/features/settings/SettingsScreen.tsx', import.meta.url), 'utf8');
+
+  assert.ok(src.includes('Opções de privacidade'), 'sumiu o item que a política de privacidade promete');
+  assert.ok(src.includes('services.ads.openPrivacyOptions'), 'o item não reabre o formulário de consentimento');
+  // Só aparece onde há formulário: fora da UE seria um botão que não faz nada.
+  assert.ok(src.includes('services.ads.hasPrivacyOptions()'), 'o item deixou de ser condicional e vira botão morto');
+});

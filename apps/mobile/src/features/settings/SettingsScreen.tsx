@@ -12,6 +12,7 @@ import { useSessionStore } from '@/features/auth/sessionStore';
 import { authActions } from '@/features/auth/useAuthActions';
 import { usePremiumStore } from '@/features/premium/premiumStore';
 import { useProfileStore } from '@/features/profile/profileStore';
+import { services } from '@/services';
 
 import { useSettingsStore, type SettingKey } from './settingsStore';
 
@@ -106,6 +107,13 @@ export function SettingsScreen() {
         <Row emoji="🌎" title="Idioma" onPress={soon} right={<Txt size={14} color={colors.muted}>Português (BR) ›</Txt>} />
         {features.premium && <Row emoji="✨" title="Assinatura" onPress={() => router.push(routes.premium)} right={<Badge label={isPremium ? 'Premium' : 'Grátis'} kind={isPremium ? 'premium' : 'category'} />} />}
         <Row emoji="🔒" title="Privacidade" onPress={() => openSite(siteLinks.privacy)} right={<Chevron />} />
+        {/*
+          Só onde existe formulário para abrir — hoje, a Europa. Fora dali o item seria um botão
+          que não faz nada, e a própria política de privacidade aponta para cá.
+        */}
+        {services.ads.hasPrivacyOptions() && (
+          <Row emoji="📺" title="Opções de privacidade" detail="Anúncios personalizados" onPress={() => services.ads.openPrivacyOptions()} right={<Chevron />} />
+        )}
         <Row emoji="📄" title="Termos de uso" onPress={() => openSite(siteLinks.terms)} right={<Chevron />} />
         <Row emoji="💬" title="Ajuda e feedback" onPress={soon} right={<Chevron />} last />
       </Group>
