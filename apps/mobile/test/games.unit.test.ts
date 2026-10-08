@@ -377,3 +377,23 @@ test('anúncios ficam desligados enquanto não houver conta no AdMob', async () 
   assert.ok(google.includes("require('react-native-google-mobile-ads')"), 'o SDK deixou de ser opcional');
   assert.ok(google.includes('__DEV__'), 'sumiu a trava que impede anúncio real em desenvolvimento');
 });
+
+/**
+ * Os jogos locais não têm servidor para levar os celulares de uma tela à outra: quem navega é o
+ * botão. Um "jogar de novo" que só recria a partida deixa a pessoa parada na tela de fim, vendo
+ * a partida nova zerada — parece um botão morto, e foi assim que a bomba ficou.
+ */
+test('nos jogos locais, jogar de novo navega — senão a tela fica parada no fim', async () => {
+  const { readFile } = await import('node:fs/promises');
+
+  const bomba = await readFile(new URL('../src/features/bomb/screens/BombEndScreen.tsx', import.meta.url), 'utf8');
+  const botao = bomba.slice(bomba.indexOf('label="Jogar de novo"'));
+  const ateOFim = botao.slice(0, botao.indexOf('/>'));
+  assert.ok(ateOFim.includes('playAgain'), 'o botão deixou de recriar a partida');
+  assert.ok(ateOFim.includes('router.replace'), 'o botão recria a partida e não sai da tela de fim');
+
+  // O Entre Nós já navegava; o teste guarda os dois pelo mesmo motivo.
+  const casal = await readFile(new URL('../src/features/couple/screens/CoupleEndScreen.tsx', import.meta.url), 'utf8');
+  const maisUma = casal.slice(casal.indexOf('label="Mais uma rodada"'));
+  assert.ok(maisUma.slice(0, maisUma.indexOf('/>')).includes('router.replace'), 'o "mais uma rodada" parou de navegar');
+});

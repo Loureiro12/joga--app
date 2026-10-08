@@ -1,6 +1,8 @@
+import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Enter } from '@/core/animation/Enter';
+import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Display, Overline, Screen, Txt } from '@/core/ui';
 import { plural } from '@/core/utils/format';
@@ -99,7 +101,19 @@ export function BombEndScreen() {
         </View>
       )}
 
-      <Button label="Jogar de novo" variant="onColor" onPress={() => bombActions.playAgain(match.settings)} />
+      {/*
+        Sem sala, ninguém navega por nós: a partida local não tem o `useMatchNavigator` que leva
+        os celulares de uma fase para a outra. Recriar a partida sem sair daqui deixava a tela de
+        fim mostrando a partida nova zerada — o botão parecia morto.
+      */}
+      <Button
+        label="Jogar de novo"
+        variant="onColor"
+        onPress={() => {
+          bombActions.playAgain(match.settings);
+          router.replace(routes.bomb.round);
+        }}
+      />
       <Button
         label="Escolher outro jogo"
         variant="translucent"
