@@ -2,7 +2,7 @@
 import '../styles/global.css';
 import Logo from '../components/Logo.astro';
 import { footerLinks, navLinks } from '../data/content';
-import { plausibleDomain } from '../lib/config';
+import { appleAppId, plausibleDomain } from '../lib/config';
 
 interface Props {
   title: string;
@@ -46,6 +46,9 @@ const year = new Date().getFullYear();
     <meta property="og:image:height" content="630" />
     {path && <meta property="og:url" content={absolute(path)} />}
     <meta name="twitter:card" content="summary_large_image" />
+
+    {/* Banner nativo do Safari no iPhone: oferece abrir ou instalar o app sem o visitante procurar. */}
+    <meta name="apple-itunes-app" content={`app-id=${appleAppId}`} />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

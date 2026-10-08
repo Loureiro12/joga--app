@@ -4,10 +4,22 @@
  */
 const env = (key: string): string => (typeof process !== 'undefined' && process.env[key]) || (import.meta.env[key] as string | undefined) || '';
 
+/**
+ * Links das lojas.
+ *
+ * Ficam no código, e não só no ambiente, porque viraram fato público permanente quando o app foi
+ * aceito — não variam entre produção, preview e `npm run dev`. Deixá-los só em variável faria o
+ * site voltar a dizer "Em breve" em qualquer deploy que esquecesse de configurá-las.
+ *
+ * O ambiente ainda sobrescreve, para o caso de um link de campanha ou de um domínio de teste.
+ */
 export const stores = {
-  ios: env('PUBLIC_APP_STORE_URL'),
-  android: env('PUBLIC_PLAY_STORE_URL'),
+  ios: env('PUBLIC_APP_STORE_URL') || 'https://apps.apple.com/br/app/joga%C3%AA/id6813219813',
+  android: env('PUBLIC_PLAY_STORE_URL') || 'https://play.google.com/store/apps/details?id=app.jogae&hl=pt_BR',
 };
+
+/** Id numérico do app na App Store. É o que o Safari precisa para o banner nativo de instalação. */
+export const appleAppId = '6813219813';
 
 export const roomApiUrl = (env('ROOM_API_URL') || 'https://jogae.fly.dev').replace(/\/$/, '');
 export const plausibleDomain = env('PUBLIC_PLAUSIBLE_DOMAIN');

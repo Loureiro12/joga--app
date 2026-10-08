@@ -76,7 +76,13 @@ try {
     assert.equal(JSON.parse(body.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1])['@type'], 'SoftwareApplication');
     assert.equal(body.match(/<details/g)?.length, 5);
     assert.ok(!/<script[^>]+src="https?:/.test(body), 'sem Plausible configurado não pode haver script externo');
-    assert.ok(body.includes('Em breve na'), 'sem URL de loja o botão diz "Em breve"');
+    // O app está publicado: os links das lojas vêm do código e precisam estar em toda página
+    // que tem botão de baixar. Um site que diz "Em breve" com o app no ar perde o download.
+    assert.ok(!body.includes('Em breve'), 'o site ainda anuncia o app como "Em breve"');
+    assert.ok(body.includes('apps.apple.com'), 'faltou o link da App Store');
+    assert.ok(body.includes('play.google.com'), 'faltou o link do Google Play');
+    assert.match(body, /<meta name="apple-itunes-app" content="app-id=\d+"/, 'sem o banner nativo do Safari');
+    assert.deepEqual(JSON.parse(body.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1]).downloadUrl.length, 2);
   });
 
   await check('apple-app-site-association: 200, application/json, sem redirect, com o App ID certo', async () => {
@@ -132,6 +138,15 @@ try {
   await check('códigos e usernames inválidos dão 404 de verdade', async () => {
     for (const path of ['/j/123', '/j/12345', '/j/abcd', '/u/ab', '/u/Com-Maiuscula', '/u/' + 'x'.repeat(21), '/nao-existe']) {
       assert.equal((await get(site.base, path)).status, 404, path);
+    }
+  });
+
+  await check('as páginas de convite levam às lojas: é por elas que entra quem ainda não tem o app', async () => {
+    for (const caminho of ['/j/4827', '/u/andre']) {
+      const { body } = await get(site.base, caminho);
+      assert.ok(body.includes('apps.apple.com'), `${caminho} sem link da App Store`);
+      assert.ok(body.includes('play.google.com'), `${caminho} sem link do Google Play`);
+      assert.ok(!body.includes('Em breve'), `${caminho} ainda diz "Em breve"`);
     }
   });
 

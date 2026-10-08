@@ -1,6 +1,7 @@
 ---
 import PhoneHome from '../components/PhoneHome.astro';
 import StoreButtons from '../components/StoreButtons.astro';
+import { stores } from '../lib/config';
 import { faq, games, perks, premiumEnabled, steps } from '../data/content';
 import Base from '../layouts/Base.astro';
 
@@ -15,6 +16,8 @@ const jsonLd = {
   operatingSystem: 'iOS, Android',
   inLanguage: 'pt-BR',
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
+  // Com o app publicado, a ficha diz onde baixar — é o que o Google usa no resultado de busca.
+  downloadUrl: [stores.ios, stores.android],
 };
 ---
 

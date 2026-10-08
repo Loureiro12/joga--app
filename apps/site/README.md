@@ -44,6 +44,6 @@ Sem SDK de terceiros. Ao tocar num botão de loja, a página copia **só os 4 d�
 
 ## Variáveis de ambiente
 
-Todas opcionais — ver [.env.example](.env.example). Sem `PUBLIC_*_STORE_URL` os botões viram "Em breve"; sem `APPLE_TEAM_ID` / `ANDROID_SHA256_FINGERPRINTS` os `.well-known` saem válidos porém vazios.
+Todas opcionais — ver [.env.example](.env.example). Os links das lojas vivem no código (`src/lib/config.ts`) e as `PUBLIC_*_STORE_URL` só servem para sobrescrever; sem `APPLE_TEAM_ID` / `ANDROID_SHA256_FINGERPRINTS` os `.well-known` saem válidos porém vazios.
 
 Publicação: [docs/site.md](../../docs/site.md).
