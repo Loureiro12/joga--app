@@ -383,6 +383,21 @@ test('com anúncios ligados, os ids do app estão no lugar e no formato certo', 
   // O iOS precisa dos dois para servir anúncio decente: a permissão e a rede de atribuição.
   assert.ok(plugin[1].userTrackingUsageDescription, 'sem o texto do ATT a App Store recusa o build');
   assert.ok((plugin[1].skAdNetworkItems ?? []).length > 0, 'sem SKAdNetwork o iOS não atribui a instalação');
+
+  /*
+    O mesmo id precisa estar em DOIS lugares, e isso não é redundância à toa.
+
+    O `build.gradle` do pacote procura a chave `react-native-google-mobile-ads` no topo do
+    app.json. Quando não acha, ele cai num ramo que define a variável errada — `googleAdsJson`
+    em vez de `googleMobileAdsJson` — e o Gradle morre com "Cannot get property". É um bug do
+    pacote, e a chave de topo é o que desvia dele.
+
+    Se as duas fontes discordarem, o manifesto sai com um id e o Gradle com outro.
+  */
+  const raiz = appJson['react-native-google-mobile-ads'];
+  assert.ok(raiz, 'sem a chave de topo o Gradle do Android falha antes de compilar');
+  assert.equal(raiz.android_app_id, plugin[1].androidAppId, 'os dois lugares do app id do Android discordam');
+  assert.equal(raiz.ios_app_id, plugin[1].iosAppId, 'os dois lugares do app id do iOS discordam');
 });
 
 test('as unidades de anúncio são blocos ("/") e o teste é forçado em desenvolvimento', async () => {
