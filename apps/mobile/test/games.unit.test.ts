@@ -392,8 +392,13 @@ test('as unidades de anúncio são blocos ("/") e o teste é forçado em desenvo
   for (const id of src.match(/ca-app-pub-[\d~/]+/g) ?? []) {
     assert.match(id, /^ca-app-pub-\d+\/\d+$/, `"${id}" não é um bloco de anúncio`);
   }
-  // Um clique num anúncio real em dev conta como clique inválido e suspende a conta.
-  assert.match(src, /if \(__DEV__\) return TESTE/, 'sumiu a trava que força anúncio de teste em desenvolvimento');
+  // Um clique num anúncio real conta como clique inválido e suspende a conta. `__DEV__` sozinho
+  // não basta: o build de preview sai em release, e é nele que se testa em aparelho.
+  assert.match(src, /if \(modoTeste\(\)\) return TESTE/, 'sumiu a trava que força anúncio de teste');
+  assert.ok(src.includes('EXPO_PUBLIC_ADMOB_TEST'), 'o preview voltaria a servir anúncio de verdade para quem testa');
+
+  const eas = JSON.parse(await readFile(new URL('../eas.json', import.meta.url), 'utf8'));
+  assert.equal(eas.build.preview.env?.EXPO_PUBLIC_ADMOB_TEST, '1', 'o perfil de preview parou de forçar anúncio de teste');
 
   const google = await readFile(new URL('../src/features/ads/GoogleAdsService.ts', import.meta.url), 'utf8');
   // Quem decide se pode pedir anúncio é o UMP, não "o formulário apareceu".
