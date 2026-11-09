@@ -320,4 +320,74 @@ async function bombAlphabet() {
   await svc.leaveRoom();
 }
 
-host().then(guest).then(likely).then(secret).then(perfect).then(bomb).then(bombAlphabet).then(() => { console.log('SMOKE OK'); process.exit(0); }).catch((e) => { console.error('SMOKE FAIL', e); process.exit(1); });
+/**
+ * Quem Sou Eu? em sala: a inversão do segredo, de ponta a ponta.
+ *
+ * O que se checa aqui, e que nenhum teste de unidade pega: que a MINHA identidade não atravessa
+ * a rede até o meu aparelho, e que as dicas que eu não paguei também não. Um vazamento desses não
+ * dá vantagem a ninguém — mata a minha rodada em silêncio, e eu nem fico sabendo.
+ */
+async function whoami() {
+  const view = (x: RoomSnapshot) => x.game as Extract<RoomSnapshot['game'], { kind: 'whoami' }>;
+  const svc = new MockRoomService(fast);
+  await svc.createRoom({ gameId: 'whoami', category: 'Aleatório', totalRounds: 1, maxPlayers: 6, settings: { turnSeconds: 0, roundMinutes: 0 } }, me);
+  await until(svc, (x) => x.players.length >= 3, 'lobby');
+  await svc.startMatch();
+
+  let s = await until(svc, (x) => x.room.phase === 'guessing', 'rodada');
+  const v = view(s);
+  console.log('quem sou eu:', v.visibleIdentities.map((o) => `${o.emoji} ${o.name}`).join(' · '));
+  if (v.visibleIdentities.length !== s.players.length - 1) throw new Error('não recebi a identidade de todos os outros');
+  if (v.mine?.secret !== true || v.mine?.name !== null) throw new Error('a minha identidade veio no snapshot');
+  if (v.visibleIdentities.some((o) => !o.name || !o.emoji)) throw new Error('identidade de outro chegou incompleta');
+
+  // Pede uma dica na própria vez: só ela pode aparecer, e as outras duas nem saem do servidor.
+  s = await until(svc, (x) => view(x).turnId === 'me', 'minha vez', 20000);
+  await svc.takeHint();
+  s = await until(svc, (x) => (view(x).mine?.hints.length ?? 0) === 1, 'dica paga');
+  console.log('quem sou eu dica:', view(s).mine!.hints[0], '· restam', view(s).mine!.hintsLeft);
+  if (view(s).mine!.hints.length !== 1) throw new Error('veio mais dica do que foi pedida');
+
+  // Um chute errado custa a vez e some do meu alcance até a roda voltar.
+  await svc.guessIdentity('com certeza não é isso aqui');
+  s = await until(svc, (x) => (view(x).mine?.misses ?? 0) === 1, 'chute errado');
+  if (view(s).turnId === 'me') throw new Error('o chute errado não passou a vez');
+
+  // Acerta de verdade: a identidade é lida do que o motor guardou, porque do snapshot não dá.
+  const minha = (svc.peekEngineState().game as { whoami: { assigned: Record<string, { name: string }> } }).whoami.assigned.me.name;
+  s = await until(svc, (x) => view(x).turnId === 'me', 'minha vez de novo', 20000);
+  await svc.guessIdentity(minha);
+  s = await until(svc, (x) => view(x).mine?.found === true, 'acertei');
+  console.log('quem sou eu acertei:', view(s).mine!.name);
+
+  await svc.endRound();
+  s = await until(svc, (x) => x.room.phase === 'revealing', 'revelação');
+  const reveal = view(s).reveal!;
+  console.log('quem sou eu fim da rodada:', reveal.map((l) => `${l.found ? '✅' : '❌'}${l.points}`).join(' '));
+  if (reveal.length !== s.players.length) throw new Error('a revelação perdeu alguém');
+  if (!reveal.every((l) => l.identity.name)) throw new Error('a revelação veio sem nome');
+
+  await svc.nextRound();
+  s = await until(svc, (x) => x.room.phase === 'finished', 'fim');
+  const resumo = view(s).summary!;
+  console.log('quem sou eu placar:', resumo.standings.map((l) => `${l.position}º ${l.points}`).join(' '), '·', resumo.titles.length, 'títulos');
+  if (resumo.standings.length !== s.players.length) throw new Error('o placar perdeu alguém');
+  await svc.leaveRoom();
+}
+
+host()
+  .then(guest)
+  .then(likely)
+  .then(secret)
+  .then(perfect)
+  .then(bomb)
+  .then(bombAlphabet)
+  .then(whoami)
+  .then(() => {
+    console.log('SMOKE OK');
+    process.exit(0);
+  })
+  .catch((e) => {
+    console.error('SMOKE FAIL', e);
+    process.exit(1);
+  });

@@ -50,6 +50,14 @@ export const routes = {
     perfectEnd: '/match/perfect-end',
     /** Bomba-Relógio em sala: uma tela só para o fluxo inteiro, como na versão de um celular. */
     bombRoom: '/match/bomb',
+    /**
+     * Quem Sou Eu?: uma tela só para a rodada e para a revelação.
+     *
+     * As identidades dos outros continuam na tela nos dois momentos — o que muda é só a sua
+     * deixar de ser segredo. Navegar entre as duas faria a lista piscar sem motivo.
+     */
+    whoamiRound: '/match/whoami',
+    whoamiEnd: '/match/whoami-end',
   },
   /** Bomba-Relógio: um celular só, sem sala — por isso fora de `match`. */
   bomb: {

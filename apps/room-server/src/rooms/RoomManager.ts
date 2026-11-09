@@ -1,4 +1,4 @@
-import { RoomEngine, RoomError, type RoomPublicInfo, type CreateRoomInput, type EngineConfig, type PlayerAppearance, type PlayerId, type RoomCommand, type RoomSnapshot, type Scheduler } from '@jogae/engine';
+import { RoomEngine, RoomError, type RoomPublicInfo, type CreateRoomInput, type EngineConfig, type GameId, type PlayerAppearance, type PlayerId, type RoomCommand, type RoomSnapshot, type Scheduler } from '@jogae/engine';
 
 import { NullMatchRecorder, type MatchRecorder } from './MatchRecorder';
 import { NullRoomPresence, type PresenceRoom, type RoomPresence } from './RoomPresence';
@@ -25,6 +25,13 @@ export type RoomManagerOptions = {
   /** Sala sem ninguém conectado é descartada depois desse tempo parada. */
   idleRoomMs?: number;
   log?: (event: string, data?: Record<string, unknown>) => void;
+  /**
+   * Gera conteúdo para jogos que pedem (hoje: as identidades do "Quem Sou Eu?").
+   *
+   * Chamado no LOBBY, em segundo plano — ver `prepararConteudo`. `null` desliga a geração, e aí os
+   * jogos rodam com os bancos locais, que é o caminho normal em dev.
+   */
+  contentFor?: (gameId: GameId, settings: CreateRoomInput['settings']) => Promise<unknown>;
 };
 
 /** Sala encerrada (placar final) ou fechada não conta como "jogando agora". */
@@ -100,6 +107,29 @@ export class RoomManager {
 
   /* ------------------------------------------------------------------ requisições */
 
+  /**
+   * Pede conteúdo gerado para a sala, em segundo plano.
+   *
+   * O lobby é o tempo morto mais generoso do app: o host cria a sala, manda o código, e as pessoas
+   * entram uma por uma. Trinta a noventa segundos em que ninguém espera nada — e é por isso que
+   * neste jogo a geração por IA cabe inteira sem atrapalhar, ao contrário da bomba.
+   *
+   * Nunca lança e nunca é aguardado: se vier conteúdo, a sala ganha baralho novo e um snapshot; se
+   * não vier, a partida usa o banco local e ninguém percebe.
+   */
+  private prepararConteudo(code: string, input: CreateRoomInput): void {
+    const pedir = this.opts.contentFor;
+    if (!pedir) return;
+    void pedir(input.gameId, input.settings)
+      .then((content) => {
+        // A sala pode ter sido descartada, trocado de jogo ou já começado nesse meio-tempo.
+        const engine = this.rooms.get(code);
+        if (!engine || engine.phase !== 'lobby') return;
+        if (engine.provideContent(content)) this.opts.log?.('room_content_ready', { code, gameId: input.gameId });
+      })
+      .catch((e) => this.opts.log?.('room_content_failed', { code, error: String(e) }));
+  }
+
   create(userId: PlayerId, input: CreateRoomInput, me: PlayerAppearance): void {
     this.leave(userId);
     if (this.rooms.size >= MAX_ROOMS) throw new RoomError('rate_limited');
@@ -109,6 +139,7 @@ export class RoomManager {
     this.roomOfUser.set(userId, code);
     this.opts.log?.('room_created', { code, rooms: this.rooms.size });
     this.afterChange(code);
+    this.prepararConteudo(code, input);
   }
 
   join(userId: PlayerId, code: string, me: PlayerAppearance, ip: string): void {
@@ -144,6 +175,8 @@ export class RoomManager {
     const engine = this.roomFor(userId);
     if (!engine) throw new RoomError('not_in_room');
     engine.dispatch(userId, command);
+    // Sala aberta sem jogo e o host acabou de escolher: é aqui que o lobby começa a render.
+    if (command.type === 'setGame') this.prepararConteudo(this.roomOfUser.get(userId)!, command.input);
   }
 
   /** Para a página de convite do site. Só leitura e sem nada secreto. */

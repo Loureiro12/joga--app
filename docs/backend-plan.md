@@ -410,6 +410,37 @@ O `app-ads.txt` está no ar em `/app-ads.txt`, validado linha a linha pelo smoke
 - RevenueCat com o id do usuário do Supabase; webhook → `entitlements`.
 - O premium é conferido **no servidor** (sala, IA), nunca só no app.
 
+### Jogo 7 — Quem Sou Eu? (2026-11-09)
+
+Identidade secreta que todos veem, menos o dono. **A inversão que define o jogo:** em todos os
+outros, o segredo é meu e o filtro do snapshot serve para os outros não verem; aqui o filtro corta
+só a minha. Um vazamento não dá vantagem a ninguém — mata a rodada daquele jogador em silêncio, e
+ele nem fica sabendo. Daí os testes dedicados em `whoami-room.test.ts`.
+
+**Decisões de produto, com o usuário (2026-11-09):**
+
+- **As respostas são faladas.** O grupo responde "sim / não / talvez / não sei" em voz alta; o app
+  não coleta voto por pergunta. É a mesma escolha do Impostor, em que as pistas são faladas e o app
+  só conta o tempo. A §10 da spec previa a votação consolidada no celular; ficou de fora porque
+  custava ~7 toques por pergunta (≈140 na rodada) e exigia digitar a pergunta. Consequência: o jogo
+  não sabe quantas perguntas alguém fez, então o título de "detetive" (§27) mede quem descobriu sem
+  pedir dica — chamar de "melhores perguntas" seria inventar número.
+- **Só sala**, um celular por pessoa. O modo "papel na testa" (§18) e o de um aparelho ficam para
+  depois; o §17 (simultâneo) e o §19 (equipes) mudariam o turno e também ficaram fora.
+- **Clássico, Rápido e Hardcore são presets**, não motores: diferem só em tempo de turno, tempo de
+  rodada, dicas e faixa de dificuldade (`WHOAMI_PRESETS`).
+- **Uma tentativa por turno** (§13, a alternativa que a própria spec recomenda para o competitivo).
+
+**Um bug da spec, corrigido no desenho:** a §12 fala em "selecionar ou escrever" o palpite.
+Selecionar quebra o jogo — quem vê a identidade de todos os outros descobre a própria por
+eliminação, sem perguntar nada. Então a tentativa é **texto livre**, e `aliases` deixa de ser
+enfeite para virar peça central: é ele que faz "Spider-Man", "Peter Parker" e "homi aranha" valerem
+como acerto (`matchesIdentity`, com distância de edição tolerante ao tamanho do nome).
+
+**Fica de fora:** imagens nas identidades (§24 — exigiria buscar e hospedar imagem por identidade;
+emoji resolve quase o mesmo efeito por zero custo), identidades personalizadas pelo host (§23) e as
+respostas individuais visíveis da §10.
+
 ### Passo 7 — IA
 
 - **Feito para a Bomba-Relógio (2026-11-09).** Não como Edge Function: o endpoint é

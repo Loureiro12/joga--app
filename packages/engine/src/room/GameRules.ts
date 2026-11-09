@@ -64,6 +64,20 @@ export interface GameRules<S> {
   /** Voltar ao lobby mantendo a turma ("jogar de novo"). */
   reset(s: S, ctx: GameCtx): void;
 
+  /**
+   * Conteúdo gerado fora do motor (hoje: identidades do "Quem Sou Eu?" vindas da API do Claude).
+   *
+   * Opcional porque a maioria dos jogos não precisa. Recebe `unknown` de propósito: quem valida é
+   * o jogo, com a portaria dele, e assim este contrato não fica sabendo do formato de ninguém.
+   *
+   * **Não é um comando de protocolo, e isso é deliberado.** Só quem tem o objeto do motor na mão
+   * — o servidor — consegue chamar. Se fosse comando, qualquer cliente poderia empurrar conteúdo
+   * para dentro da sala, e a portaria passaria a ser a única linha de defesa em vez da segunda.
+   *
+   * Devolve `false` quando nada entrou, para a sala não emitir snapshot à toa.
+   */
+  receiveContent?(s: S, content: unknown): boolean;
+
   /** Prazos pendentes, em epoch ms. A sala arma o alarme para o mais próximo. */
   deadlines(s: S, ctx: GameCtx): number[];
   /** A parte da foto que é deste jogo — já filtrada para o que ESTE jogador pode ver. */

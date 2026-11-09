@@ -59,6 +59,8 @@ export type MockRoomConfig = {
   botAnswerMs: number;
   /** Bomba em sala: quanto o bot demora para acender e para passar adiante. */
   botArmMs: number;
+  /** Quanto um bot "pensa" antes de pedir dica e passar a vez no Quem Sou Eu?. */
+  botGuessMs: number;
   botPassMs: number;
 };
 
@@ -79,6 +81,7 @@ export const DEFAULT_MOCK_CONFIG: MockRoomConfig = {
   botPairMs: 1200,
   botAnswerMs: 1800,
   botArmMs: 1500,
+  botGuessMs: 1600,
   botPassMs: 3500,
 };
 
@@ -124,6 +127,7 @@ export class MockRoomService implements RoomService {
   private hostPlanKey = '';
   private secretPlanKey = '';
   private bombPlanKey = '';
+  private whoamiPlanKey = '';
 
   constructor(private readonly config: MockRoomConfig = DEFAULT_MOCK_CONFIG) {}
 
@@ -193,6 +197,10 @@ export class MockRoomService implements RoomService {
   armBomb = () => this.command({ type: 'armBomb' });
   passBomb = () => this.command({ type: 'passBomb' });
   useLetter = (letter: string) => this.command({ type: 'useLetter', letter });
+  guessIdentity = (guess: string) => this.command({ type: 'guessIdentity', guess });
+  takeHint = () => this.command({ type: 'takeHint' });
+  passTurn = () => this.command({ type: 'passTurn' });
+  endRound = () => this.command({ type: 'endRound' });
   ackRole = () => this.command({ type: 'ackRole' });
   setPaused = (paused: boolean) => this.command({ type: 'setPaused', paused });
 
@@ -272,6 +280,18 @@ export class MockRoomService implements RoomService {
     this.onEngineChange();
   }
 
+  /**
+   * O estado cru da sala, para o harness de fumaça.
+   *
+   * Existe por um motivo só: no "Quem Sou Eu?" a identidade do próprio jogador **não** trafega no
+   * snapshot (é o segredo do jogo), e o smoke precisa dela para provar que o acerto funciona. Fora
+   * do simulado não há equivalente — o servidor de verdade nunca expõe isto.
+   */
+  peekEngineState() {
+    if (!this.engine) throw new Error('sem sala');
+    return this.engine.serialize();
+  }
+
   /** Toda mudança da sala passa por aqui: avisa a UI e deixa os bots reagirem. */
   private onEngineChange() {
     this.emit();
@@ -286,6 +306,7 @@ export class MockRoomService implements RoomService {
     if (engine.phase === 'briefing' || engine.phase === 'mission' || engine.phase === 'verdict') this.planBotSecret();
     if (engine.phase === 'pairing' || engine.phase === 'answering') this.planBotPerfect();
     if (engine.phase === 'handoff' || engine.phase === 'armed') this.planBotBomb();
+    if (engine.phase === 'guessing') this.planBotWhoami();
     this.planBotHost();
   }
 
@@ -402,6 +423,39 @@ export class MockRoomService implements RoomService {
       if (atual.kind !== 'bomb' || atual.activeId !== activeId) return;
       const livre = atual.alphabet?.letters.split('').find((l) => !atual.alphabet!.used.some((u) => u.letter === l));
       this.tryDispatch(activeId, livre ? { type: 'useLetter', letter: livre } : { type: 'passBomb' });
+    });
+  }
+
+  /**
+   * Os bots jogando o "Quem Sou Eu?".
+   *
+   * Sem eles a rodada TRAVA: a vez é de um por vez, e um bot que não joga nunca passa a bola.
+   * Numa partida sem limite de tempo isso prende a mesa para sempre.
+   *
+   * Eles jogam mal de propósito, e isso é o desenho: pedem uma dica e passam a vez, sem nunca
+   * chutar. Um bot que acertasse a própria identidade tiraria a graça de quem está testando, e um
+   * bot que chutasse errado encheria o placar de pontos negativos sem ninguém entender por quê.
+   */
+  private planBotWhoami() {
+    const engine = this.engine;
+    if (!engine) return;
+    const snap = engine.snapshotFor(engine.hostId);
+    if (snap.game.kind !== 'whoami') return;
+    const { turnId, roundIndex } = snap.game;
+    if (!turnId || !isBot(turnId)) return;
+
+    // Sem esta chave, cada ação de bot re-armaria o plano e a vez passaria em cascata.
+    const key = `${roundIndex}|${turnId}`;
+    if (key === this.whoamiPlanKey) return;
+    this.whoamiPlanKey = key;
+
+    this.after('botWhoami', this.config.botGuessMs, () => {
+      const atual = this.engine;
+      if (atual?.phase !== 'guessing') return;
+      const view = atual.snapshotFor(atual.hostId).game;
+      if (view.kind !== 'whoami' || view.turnId !== turnId) return;
+      if (view.settings.hints) this.tryDispatch(turnId, { type: 'takeHint' });
+      this.tryDispatch(turnId, { type: 'passTurn' });
     });
   }
 
@@ -540,6 +594,7 @@ export class MockRoomService implements RoomService {
     this.hostPlanKey = '';
     this.secretPlanKey = '';
     this.bombPlanKey = '';
+    this.whoamiPlanKey = '';
     this.setConnection({ status: 'online' });
   }
 }

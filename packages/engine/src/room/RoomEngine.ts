@@ -17,6 +17,7 @@ import type { GameCtx, GameRules } from './GameRules';
 import { impostorGame, type ImpostorState } from './impostorGame';
 import { likelyGame, type LikelyState } from './likelyGame';
 import { bombGame, type RoomBombState } from './bombGame';
+import { whoamiGame, type RoomWhoamiState } from './whoamiGame';
 import { noGame, type NoGameState } from './noGame';
 import { perfectGame, type PerfectState } from './perfectGame';
 import { secretGame, type SecretState } from './secretGame';
@@ -71,7 +72,7 @@ export const realScheduler: Scheduler = {
 type EnginePlayer = Player & { disconnectedAt: number | null };
 
 /** Estado de um jogo, discriminado pelo `gameId` da sala. */
-export type GameState = NoGameState | ImpostorState | LikelyState | SecretState | PerfectState | RoomBombState;
+export type GameState = NoGameState | ImpostorState | LikelyState | SecretState | PerfectState | RoomBombState | RoomWhoamiState;
 
 /** Tudo que é preciso para recriar a sala em outro processo. JSON puro. */
 export type EngineState = {
@@ -103,6 +104,7 @@ const GAMES: Record<GameId, GameRules<never>> = {
   secret: secretGame as GameRules<never>,
   perfect: perfectGame as GameRules<never>,
   bomb: bombGame as GameRules<never>,
+  whoami: whoamiGame as GameRules<never>,
 };
 
 export const rulesFor = (gameId: GameId): GameRules<never> => GAMES[gameId] ?? GAMES.impostor;
@@ -295,6 +297,19 @@ export class RoomEngine {
   }
 
   /* ---------------------------------------------------------------- comandos */
+
+  /**
+   * Entrega ao jogo conteúdo gerado fora do motor. Devolve `false` quando nada entrou.
+   *
+   * Sem caminho de protocolo: quem chama é o processo que tem este objeto, não um cliente. Ver
+   * `GameRules.receiveContent`.
+   */
+  provideContent(content: unknown): boolean {
+    if (!this.game.receiveContent) return false;
+    const mudou = this.game.receiveContent(this.state.game as never, content);
+    if (mudou) this.changed();
+    return mudou;
+  }
 
   dispatch(playerId: PlayerId, command: RoomCommand): void {
     const s = this.state;

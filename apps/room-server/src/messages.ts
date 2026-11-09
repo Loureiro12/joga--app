@@ -1,5 +1,6 @@
 import {
   BOMB_CATEGORIES,
+  WHOAMI_CATEGORIES,
   PERFECT_CATEGORIES,
   PERFECT_TIMERS,
   PROTOCOL_VERSION,
@@ -49,7 +50,7 @@ function gameSettings(v: unknown): CreateRoomInput['settings'] {
     // Do Casal Perfeito. As categorias dele e as do outro jogo dividem o mesmo campo; cada motor
     // fica com o que reconhece e descarta o resto.
     timerSec: (PERFECT_TIMERS as readonly number[]).includes(v.timerSec as number) ? (v.timerSec as number) : undefined,
-    categories: list(v.categories, Math.max(12, PERFECT_CATEGORIES.length, BOMB_CATEGORIES.length)),
+    categories: list(v.categories, Math.max(12, PERFECT_CATEGORIES.length, BOMB_CATEGORIES.length, WHOAMI_CATEGORIES.length)),
     // Da Bomba-Relógio. O engine sanea de novo; aqui só barramos o que está fora de escala.
     variant: v.variant === 'alfabeto' || v.variant === 'classico' ? v.variant : undefined,
     mode: ['casual', 'eliminacao', 'pontos'].includes(v.mode as string) ? (v.mode as never) : undefined,
@@ -63,6 +64,10 @@ function gameSettings(v: unknown): CreateRoomInput['settings'] {
     allowSelfVote: bool(v.allowSelfVote),
     openVotes: bool(v.openVotes),
     competitive: bool(v.competitive),
+    // Do "Quem Sou Eu?". `hints` liga as dicas; os dois tempos vêm da tela de preparação.
+    turnSeconds: num(v.turnSeconds, 0, 120),
+    roundMinutes: num(v.roundMinutes, 0, 60),
+    hints: bool(v.hints),
   };
 }
 
@@ -70,7 +75,7 @@ function roomInput(v: unknown): CreateRoomInput | null {
   if (!isObject(v)) return null;
   // Jogos com regras no engine. Sem isto, uma sala nasceria sem motor e morreria no primeiro
   // comando. `none` é a sala criada antes de o grupo escolher o jogo.
-  const jogos: GameId[] = ['none', 'impostor', 'likely', 'secret', 'perfect', 'bomb'];
+  const jogos: GameId[] = ['none', 'impostor', 'likely', 'secret', 'perfect', 'bomb', 'whoami'];
   if (typeof v.gameId !== 'string' || !jogos.includes(v.gameId as GameId)) return null;
   const gameId = v.gameId as GameId;
   // A sala sem jogo não tem categoria: ela só aparece quando o jogo é escolhido.
@@ -107,6 +112,9 @@ function command(v: unknown): RoomCommand | null {
     case 'beginQuestions':
     case 'armBomb':
     case 'passBomb':
+    case 'takeHint':
+    case 'passTurn':
+    case 'endRound':
       return { type: v.type };
     case 'accuse':
       return typeof v.targetId === 'string' && v.targetId.length <= 80 && typeof v.missionId === 'string' && v.missionId.length <= 40
@@ -131,6 +139,10 @@ function command(v: unknown): RoomCommand | null {
       return typeof v.value === 'string' && v.value.length > 0 && v.value.length <= 40 ? { type: v.type, value: v.value } : null;
     case 'useLetter':
       return typeof v.letter === 'string' && v.letter.length === 1 ? { type: v.type, letter: v.letter } : null;
+    case 'guessIdentity':
+      // Texto livre, então é a entrada mais aberta do protocolo: o teto é curto porque nome de
+      // identidade não passa de algumas palavras.
+      return typeof v.guess === 'string' && v.guess.trim().length > 0 && v.guess.length <= 60 ? { type: v.type, guess: v.guess } : null;
     default:
       return null;
   }

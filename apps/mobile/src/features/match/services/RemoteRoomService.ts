@@ -186,6 +186,10 @@ export class RemoteRoomService implements RoomService {
   armBomb = () => this.command({ type: 'armBomb' });
   passBomb = () => this.command({ type: 'passBomb' });
   useLetter = (letter: string) => this.command({ type: 'useLetter', letter });
+  guessIdentity = (guess: string) => this.command({ type: 'guessIdentity', guess });
+  takeHint = () => this.command({ type: 'takeHint' });
+  passTurn = () => this.command({ type: 'passTurn' });
+  endRound = () => this.command({ type: 'endRound' });
   ackRole = () => this.command({ type: 'ackRole' });
   castVote = (targetId: PlayerId) => this.command({ type: 'castVote', targetId });
   setPaused = (paused: boolean) => this.command({ type: 'setPaused', paused });

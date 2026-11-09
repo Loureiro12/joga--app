@@ -71,4 +71,8 @@ export const roomActions = {
   ackRole: () => run(services.room.ackRole()),
   castVote: (targetId: PlayerId) => run(services.room.castVote(targetId)),
   setPaused: (paused: boolean) => run(services.room.setPaused(paused)),
+  guessIdentity: (guess: string) => run(services.room.guessIdentity(guess)),
+  takeHint: () => run(services.room.takeHint()),
+  passTurn: () => run(services.room.passTurn()),
+  endRound: () => run(services.room.endRound()),
 };

@@ -61,7 +61,19 @@ export type RoomCommand =
   /** Passa a bomba adiante. A responsabilidade muda no toque. */
   | { type: 'passBomb' }
   /** Alfabeto: tocar a letra é o que passa a bomba. */
-  | { type: 'useLetter'; letter: string };
+  | { type: 'useLetter'; letter: string }
+  /* Quem Sou Eu? */
+  /**
+   * "Acho que sou…". Texto livre de propósito: escolher de uma lista quebraria o jogo, porque quem
+   * vê a identidade de todos os outros descobriria a própria por eliminação.
+   */
+  | { type: 'guessIdentity'; guess: string }
+  /** Pede a próxima dica da própria identidade. Custa pontos no fim da rodada. */
+  | { type: 'takeHint' }
+  /** Passa a vez sem chutar. */
+  | { type: 'passTurn' }
+  /** Host encerra a rodada em curso e vai para a revelação (§26). */
+  | { type: 'endRound' };
 
 /** Nome e cor vêm do perfil do app; o id do jogador vem SEMPRE do token, nunca da mensagem. */
 export type PlayerAppearance = { name: string; color: string };

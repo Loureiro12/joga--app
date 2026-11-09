@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod/v4';
 
@@ -12,6 +11,8 @@ import {
 } from '@jogae/engine';
 
 import type { Config } from '../config';
+
+import { createClaude } from './claude';
 
 /**
  * Geração de conteúdo da Bomba-Relógio pela API do Claude.
@@ -122,15 +123,13 @@ export type ContentGenerator = {
  */
 const FOLGA = 1.6;
 
-/** O modelo não pode demorar mais que isso: o app desiste e usa o banco local, o que já é aceitável. */
-const TIMEOUT_MS = 25_000;
-
 const log = (fn: (event: string, data?: Record<string, unknown>) => void) => fn;
 
 export function createContentGenerator(config: Config, registrar: (event: string, data?: Record<string, unknown>) => void = () => {}): ContentGenerator | null {
-  if (!config.anthropicApiKey) return null;
+  const claude = createClaude(config);
+  if (!claude) return null;
   const registra = log(registrar);
-  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: TIMEOUT_MS, maxRetries: 1 });
+  const { client } = claude;
 
   const pedido = (request: BombContentRequest) => {
     const categorias = request.categories.length ? request.categories : [...(request.variant === 'alfabeto' ? ALPHABET_CATEGORIES : BOMB_CATEGORIES)];
@@ -149,12 +148,7 @@ export function createContentGenerator(config: Config, registrar: (event: string
     return linhas.join('\n');
   };
 
-  /**
-   * Esforço baixo, sem raciocínio estendido: escrever uma lista curta de frases simples não é
-   * tarefa difícil, e esforço alto aqui só custaria tempo de espera. A qualidade vem do prompt e
-   * da portaria, não de o modelo pensar mais.
-   */
-  const comum = { model: 'claude-opus-5-5', max_tokens: 4000, output_config: { effort: 'low' as const } };
+  const { comum } = claude;
 
   return {
     async generate(request) {

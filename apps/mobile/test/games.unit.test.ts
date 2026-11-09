@@ -12,10 +12,14 @@ import {
   PERFECT_LENGTHS,
   SECRET_CONTEXTS,
   SPICY_CATEGORY,
+  WHOAMI_CATEGORIES,
+  WHOAMI_RULES,
   categoryWords,
+  countIdentities,
   countMissions,
   countPerfectQuestions,
   sanitizePerfectSettings,
+  sanitizeWhoamiSettings,
   type RoomPhase,
   type SecretContext,
 } from '@jogae/engine';
@@ -651,4 +655,34 @@ test('o card avisa que o jogo é "em breve" antes de alguém abrir', async () =>
   // E o card grande não pode convidar a jogar o que ainda não dá.
   const hero = src.slice(src.indexOf('export function GameCardHero'));
   assert.ok(hero.includes("game.playable ? 'Jogar agora'"), 'o card grande promete "Jogar agora" num jogo em breve');
+});
+
+/* ───────────────────────── Quem Sou Eu? ───────────────────────── */
+
+test('as categorias do Quem Sou Eu? na tela são exatamente as do banco do engine', () => {
+  // Mesmo risco dos outros jogos, e tão silencioso: uma categoria que o engine não conhece faz o
+  // grupo jogar com outra, sorteada sem avisar. Aqui são 14 strings escritas à mão nos dois lados.
+  const jogo = getGame('quem-sou-eu')!;
+  const naTela = jogo.wordCategories.map((c) => c.id).filter((id) => id !== ALEATORIO);
+  assert.deepEqual([...naTela].sort(), [...WHOAMI_CATEGORIES].sort());
+});
+
+test('toda categoria do Quem Sou Eu? tem identidade de sobra para uma mesa cheia', () => {
+  // O catálogo diz 12 jogadores no máximo. Uma categoria com menos identidades que isso deixaria
+  // gente sem identidade própria — o motor recua para o baralho inteiro, mas a promessa da tela
+  // ("você escolheu Animais") deixaria de valer.
+  const jogo = getGame('quem-sou-eu')!;
+  for (const categoria of WHOAMI_CATEGORIES) {
+    const quantas = countIdentities(sanitizeWhoamiSettings({ categories: [categoria], difficulties: ['facil', 'medio', 'dificil'] }));
+    assert.ok(quantas >= jogo.maxPlayers, `${categoria} tem ${quantas} identidades para ${jogo.maxPlayers} jogadores`);
+  }
+});
+
+test('o Quem Sou Eu? é um jogo de sala, e os números da tela batem com os do motor', () => {
+  const jogo = getGame('quem-sou-eu')!;
+  assert.equal(jogo.engineId, 'whoami');
+  assert.equal(jogo.device, 'sala', 'o jogo precisa de um celular por pessoa: a identidade de cada um aparece nos outros');
+  assert.equal(jogo.minPlayers, WHOAMI_RULES.minPlayers);
+  assert.equal(jogo.maxPlayers, WHOAMI_RULES.maxPlayers);
+  assert.ok(jogo.playable);
 });

@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { MAX_CONTENT_COUNT, type BombContentRequest } from '@jogae/engine';
 
 import type { ContentGenerator } from '../src/content/bombContent';
-import { startServer } from './helpers';
+import { roomWith, sleep, startServer } from './helpers';
 
 /**
  * O endpoint que gera conteúdo da Bomba-Relógio.
@@ -168,6 +168,194 @@ test('o que o gerador devolve atravessa inteiro até o app', async () => {
   try {
     const res = await post(server.base, pedidoValido, comToken);
     assert.deepEqual(await res.json(), { challenges: [carta], themes: [] });
+  } finally {
+    await server.close();
+  }
+});
+
+/* ──────────────────── identidades do "Quem Sou Eu?" ──────────────────── */
+
+import type { IdentityGenerator } from '../src/content/whoamiContent';
+
+function spyIdentities(identities: Awaited<ReturnType<IdentityGenerator['generate']>>['identities'] = []) {
+  const pedidos: Parameters<IdentityGenerator['generate']>[0][] = [];
+  const generator: IdentityGenerator = {
+    async generate(request) {
+      pedidos.push(request);
+      return { identities };
+    },
+  };
+  return { generator, pedidos };
+}
+
+const postIdentidade = (base: string, body: unknown, headers: Record<string, string> = {}) =>
+  fetch(`${base}/api/whoami/content`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  });
+
+test('identidades: sem token não gera', async () => {
+  const { generator, pedidos } = spyIdentities();
+  const server = await startServer({}, { identityGenerator: generator });
+  try {
+    assert.equal((await postIdentidade(server.base, { count: 8 })).status, 401);
+    assert.equal(pedidos.length, 0, 'o gerador foi chamado sem autenticação');
+  } finally {
+    await server.close();
+  }
+});
+
+test('identidades: o pedido chega saneado ao gerador', async () => {
+  const { generator, pedidos } = spyIdentities();
+  const server = await startServer({}, { identityGenerator: generator });
+  try {
+    const res = await postIdentidade(
+      server.base,
+      { categories: ['Animais', 'Inventada'], difficulties: ['facil', 'impossivel'], count: 9_999, avoidNames: ['Leão', 42] },
+      comToken,
+    );
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { identities: [] });
+    assert.deepEqual(pedidos[0].categories, ['Animais']);
+    assert.deepEqual(pedidos[0].difficulties, ['facil']);
+    assert.deepEqual(pedidos[0].avoidNames, ['Leão']);
+    assert.ok(pedidos[0].count <= 30);
+  } finally {
+    await server.close();
+  }
+});
+
+test('identidades: corpo que não é JSON para antes do gerador', async () => {
+  const { generator, pedidos } = spyIdentities();
+  const server = await startServer({}, { identityGenerator: generator });
+  try {
+    assert.equal((await postIdentidade(server.base, '{isso nao e json', comToken)).status, 400);
+    assert.equal(pedidos.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('identidades: corpo literalmente `null` é recusado, e a requisição responde', async () => {
+  // `null` é JSON válido. Se o caminho comum usasse `null` como sinal de "erro já respondido", a
+  // requisição ficaria pendurada para sempre — sem status, sem corpo, sem log.
+  const { generator, pedidos } = spyIdentities();
+  const server = await startServer({}, { identityGenerator: generator });
+  try {
+    const res = await postIdentidade(server.base, 'null', comToken);
+    assert.equal(res.status, 400);
+    assert.deepEqual(await res.json(), { error: 'bad_request' });
+    assert.equal(pedidos.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('identidades: o mesmo limite de carteira vale para os dois endpoints juntos', async () => {
+  // O limite é por USUÁRIO, não por rota: alguém que gastou as seis gerações na bomba não ganha
+  // outras seis no Quem Sou Eu?.
+  const bomba = spyGenerator();
+  const identidades = spyIdentities();
+  const server = await startServer({}, { contentGenerator: bomba.generator, identityGenerator: identidades.generator });
+  try {
+    for (let i = 0; i < 6; i++) assert.equal((await post(server.base, pedidoValido, comToken)).status, 200);
+    assert.equal((await postIdentidade(server.base, { count: 8 }, comToken)).status, 429);
+    assert.equal(identidades.pedidos.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('identidades: sem chave de API, o app segue com as 168 do banco', async () => {
+  const server = await startServer({}, { identityGenerator: null });
+  try {
+    const res = await postIdentidade(server.base, { count: 8 }, comToken);
+    assert.equal(res.status, 503);
+    assert.deepEqual(await res.json(), { error: 'content_unavailable' });
+  } finally {
+    await server.close();
+  }
+});
+
+test('identidades: o que o gerador devolve atravessa inteiro até o app', async () => {
+  const identidade = {
+    id: 'ia-tatu-bola',
+    name: 'Tatu-bola',
+    emoji: '🦔',
+    category: 'Animais',
+    difficulty: 'facil' as const,
+    kind: 'animal' as const,
+    aliases: ['Tatu'],
+    hints: ['Me enrolo numa bola quando sinto perigo.', 'Fui mascote de uma Copa do Mundo.'] as [string, string],
+  };
+  const { generator } = spyIdentities([identidade]);
+  const server = await startServer({}, { identityGenerator: generator });
+  try {
+    const res = await postIdentidade(server.base, { count: 4 }, comToken);
+    assert.deepEqual(await res.json(), { identities: [identidade] });
+  } finally {
+    await server.close();
+  }
+});
+
+/* ──────────────── a geração que acontece no lobby ──────────────── */
+
+test('a sala pede identidades sozinha no lobby, sem ninguém esperar', async () => {
+  // A otimização central deste jogo não é a chamada ser rápida: é ela acontecer onde ninguém
+  // espera. O host cria a sala, manda o código, as pessoas entram — e a geração roda ali.
+  const identidade = {
+    name: 'Tatu-bola',
+    emoji: '🦔',
+    category: 'Animais',
+    difficulty: 'facil',
+    kind: 'animal',
+    aliases: ['Tatu'],
+    hints: ['Me enrolo numa bola fechada quando sinto perigo.', 'Fui o mascote de uma Copa do Mundo.'],
+  };
+  const pedidos: Parameters<IdentityGenerator['generate']>[0][] = [];
+  const comIdentidade: IdentityGenerator = { generate: async (r) => (pedidos.push(r), { identities: [identidade] as never }) };
+
+  const server = await startServer({}, { identityGenerator: comIdentidade });
+  try {
+    const { clients, host } = await roomWith(server.url, ['ana', 'bia', 'caio'], {
+      gameId: 'whoami',
+      category: 'Aleatório',
+      totalRounds: 1,
+      maxPlayers: 12,
+      settings: { categories: ['Animais'], difficulties: ['facil'] },
+    });
+    // A geração é assíncrona: espera o snapshot que ela provoca.
+    await sleep(120);
+    assert.equal(pedidos.length, 1, 'a sala não pediu identidades no lobby');
+    assert.deepEqual(pedidos[0].categories, ['Animais']);
+
+    await host.cmd({ type: 'startMatch' });
+    await Promise.all(clients.map((c) => c.untilSnapshot((s) => s.room.phase === 'guessing', 'rodada')));
+
+    // A partida começa normalmente com o conteúdo entregue. QUAIS identidades saem no sorteio é
+    // assunto do motor, e tem teste determinístico lá (`whoami-room.test.ts`) — aqui provar isso
+    // dependeria de sorte: a gerada disputa a vaga com as do banco.
+    const naMesa = (clients[0].snapshot!.game as { visibleIdentities: { name: string }[] }).visibleIdentities;
+    assert.equal(naMesa.length, 2, 'o jogador não recebeu as identidades dos outros dois');
+  } finally {
+    await server.close();
+  }
+});
+
+test('sem gerador, a sala do Quem Sou Eu? joga com o banco local e nada reclama', async () => {
+  const server = await startServer({}, { identityGenerator: null });
+  try {
+    const { clients, host } = await roomWith(server.url, ['ana', 'bia', 'caio'], {
+      gameId: 'whoami',
+      category: 'Aleatório',
+      totalRounds: 1,
+      maxPlayers: 12,
+    });
+    await host.cmd({ type: 'startMatch' });
+    await Promise.all(clients.map((c) => c.untilSnapshot((s) => s.room.phase === 'guessing', 'rodada')));
+    const naMesa = (clients[0].snapshot!.game as { visibleIdentities: { name: string }[] }).visibleIdentities;
+    assert.equal(naMesa.length, 2, 'o jogador não recebeu as identidades dos outros dois');
   } finally {
     await server.close();
   }

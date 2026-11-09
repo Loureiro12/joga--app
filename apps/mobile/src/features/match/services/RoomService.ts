@@ -49,6 +49,13 @@ export interface RoomService {
   armBomb(): Promise<void>;
   passBomb(): Promise<void>;
   useLetter(letter: string): Promise<void>;
+  /* Quem Sou Eu? */
+  /** Texto livre: escolher de uma lista entregaria a resposta por eliminação. */
+  guessIdentity(guess: string): Promise<void>;
+  takeHint(): Promise<void>;
+  passTurn(): Promise<void>;
+  /** Host encerra a rodada em curso e vai para a revelação. */
+  endRound(): Promise<void>;
 
   /* Quem é Mais Provável */
   endVoting(): Promise<void>;

@@ -12,6 +12,9 @@ export function routeForSnapshot(s: RoomSnapshot): string {
   const perfect = s.game.kind === 'perfect';
   // A bomba tem uma tela só: navegar entre as fases piscaria a tela na hora da tensão.
   const bomb = s.game.kind === 'bomb';
+  // O Quem Sou Eu? também: a tela é a mesma durante a rodada e na revelação, porque as
+  // identidades dos outros continuam ali — só a sua deixa de ser segredo.
+  const whoami = s.game.kind === 'whoami';
   switch (s.room.phase) {
     case 'lobby':
       return routes.match.lobby;
@@ -34,15 +37,19 @@ export function routeForSnapshot(s: RoomSnapshot): string {
       return routes.match.bombRoom;
     case 'answering':
       return routes.match.answer;
+    case 'guessing':
+      return routes.match.whoamiRound;
     case 'voting':
       if (!s.votes?.myVote) return likely ? routes.match.likelyVote : routes.match.vote;
       return likely ? routes.match.likelyWaiting : routes.match.waitingVotes;
     case 'revealing':
       if (bomb) return routes.match.bombRoom;
+      if (whoami) return routes.match.whoamiRound;
       if (perfect) return routes.match.matchReveal;
       return likely ? routes.match.likelyResult : routes.match.result;
     case 'finished':
       if (bomb) return routes.match.bombRoom;
+      if (whoami) return routes.match.whoamiEnd;
       if (secret) return routes.match.secretEnd;
       if (perfect) return routes.match.perfectEnd;
       return likely ? routes.match.likelyEnd : routes.match.end;

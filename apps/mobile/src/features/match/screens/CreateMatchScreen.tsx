@@ -11,7 +11,17 @@ import { usePremiumStore } from '@/features/premium/premiumStore';
 import { services } from '@/services';
 
 import type { BombMode, CreateRoomSettings, LikelyIntensity, SecretContext, SecretDifficulty } from '@jogae/engine';
-import { ALPHABET_CATEGORIES, BOMB_CATEGORIES, PERFECT_TIMERS, SECRET_LIMITS, countPerfectQuestions, sanitizePerfectSettings } from '@jogae/engine';
+import {
+  ALPHABET_CATEGORIES,
+  BOMB_CATEGORIES,
+  PERFECT_TIMERS,
+  SECRET_LIMITS,
+  applyPreset,
+  countIdentities,
+  countPerfectQuestions,
+  sanitizePerfectSettings,
+  type WhoamiPreset,
+} from '@jogae/engine';
 import { roomErrorMessage } from '../hooks/roomActions';
 import { getIdentity } from '../hooks/useIdentity';
 
@@ -28,6 +38,13 @@ const BOMB_MODES: { id: BombMode; emoji: string; label: string; hint: string }[]
   { id: 'casual', emoji: '😄', label: 'Casual', hint: 'Cada explosão é uma bomba no nome de quem segurava. Ninguém sai.' },
   { id: 'eliminacao', emoji: '💀', label: 'Eliminação', hint: 'Três vidas. Quem zera sai, e a partida vai até sobrar uma pessoa.' },
   { id: 'pontos', emoji: '🏆', label: 'Pontos', hint: 'Pontua quem passa a bomba e quem sobrevive à rodada.' },
+];
+
+/** Os três modos do Quem Sou Eu? (§16, §20, §21). São presets de opções, não motores separados. */
+const WHOAMI_MODES: { id: WhoamiPreset; emoji: string; label: string; hint: string }[] = [
+  { id: 'classico', emoji: '🕵️', label: 'Clássico', hint: '45s por vez, 10 min de rodada e três dicas liberadas. É o formato principal.' },
+  { id: 'rapido', emoji: '⚡', label: 'Rápido', hint: '20s por vez, 5 min de rodada e nenhuma dica. Mais pressão, menos conversa.' },
+  { id: 'hardcore', emoji: '🔥', label: 'Hardcore', hint: 'Só identidades difíceis, sem dica e com tempo curto. Para quem já jogou muito.' },
 ];
 
 const DIFFICULTY_LABELS: Record<SecretDifficulty, { emoji: string; label: string }> = {
@@ -72,8 +89,9 @@ export function CreateMatchScreen() {
   const isPerfect = game.engineId === 'perfect';
   /** As duas bombas usam o mesmo motor; a variante vem do catálogo. */
   const isBomb = game.engineId === 'bomb';
+  const isWhoami = game.engineId === 'whoami';
   /** Jogos em que a categoria não é uma só: marcar várias (ou nenhuma) é o normal. */
-  const multiCategoria = isLikely || isPerfect || isBomb;
+  const multiCategoria = isLikely || isPerfect || isBomb || isWhoami;
   const isPremium = usePremiumStore((s) => s.isPremium);
   const [players, setPlayers] = useState(game.defaults.players);
   const [category, setCategory] = useState(game.defaults.category);
@@ -87,6 +105,13 @@ export function CreateMatchScreen() {
   const [accusations, setAccusations] = useState(2);
   const [timerSec, setTimerSec] = useState(20);
   const [bombMode, setBombMode] = useState<BombMode>('casual');
+  /**
+   * O "modo" do Quem Sou Eu? é um preset, não um motor.
+   *
+   * Clássico, Rápido e Hardcore (§16, §20, §21) diferem só em tempo de turno, tempo de rodada,
+   * dicas e faixa de dificuldade. Um controle só evita quatro controles que ninguém mexeria.
+   */
+  const [whoamiPreset, setWhoamiPreset] = useState<WhoamiPreset>('classico');
   const [allowSelfVote, setAllowSelfVote] = useState(true);
   const [openVotes, setOpenVotes] = useState(true);
   const [competitive, setCompetitive] = useState(false);
@@ -116,7 +141,9 @@ export function CreateMatchScreen() {
         : isBomb
           ? // `totalRounds` não vai aqui: quantas rodadas é campo da sala, e o motor lê de lá.
             { variant: game.bombVariant ?? 'classico', categories, mode: bombMode }
-          : undefined;
+          : isWhoami
+            ? applyPreset(whoamiPreset, categories)
+            : undefined;
 
   const create = async () => {
     setLoading(true);
@@ -295,6 +322,25 @@ export function CreateMatchScreen() {
             font="display800"
             options={PERFECT_TIMERS.map((n) => ({ value: n, label: n === 0 ? '∞' : `${n}s` }))}
           />
+        </View>
+      )}
+
+      {isWhoami && (
+        <View>
+          <Txt font="body600" size={16} style={{ marginBottom: 10 }}>
+            Modo
+          </Txt>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {WHOAMI_MODES.map((m) => (
+              <Chip key={m.id} emoji={m.emoji} label={m.label} state={whoamiPreset === m.id ? 'selected' : 'default'} onPress={() => setWhoamiPreset(m.id)} />
+            ))}
+          </View>
+          <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: 8 }}>
+            {WHOAMI_MODES.find((m) => m.id === whoamiPreset)?.hint}
+          </Txt>
+          <Txt font="body400" size={12} lh={1.3} color={colors.muted} style={{ marginTop: 6 }}>
+            Essa seleção tem {countIdentities(applyPreset(whoamiPreset, categories))} identidades.
+          </Txt>
         </View>
       )}
 

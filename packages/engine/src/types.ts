@@ -10,12 +10,13 @@ import type { AlphabetRound } from './games/alphabet-types';
 import type { BombHighlight, BombMode, BombPhase, BombSettings, BombStanding, BombVariant } from './games/bomb-types';
 import type { PerfectCouple, PerfectPairingView, PerfectResultView, PerfectRoundPublic, PerfectSettings, PerfectSummary } from './games/perfect-types';
 import type { SecretContext, SecretHighlight, SecretMission, SecretReveal, SecretSettings, SecretStatus } from './games/secret-types';
+import type { WhoamiReveal, WhoamiSettings, WhoamiSummary } from './games/whoami-types';
 
 export type PlayerId = string;
 
 /** Jogos com fluxo de partida implementado. O catálogo do app tem outros, ainda "em breve". */
 /** `none` é a sala criada antes de o grupo escolher o jogo — ver `room/noGame.ts`. */
-export type GameId = 'none' | 'impostor' | 'likely' | 'secret' | 'perfect' | 'bomb';
+export type GameId = 'none' | 'impostor' | 'likely' | 'secret' | 'perfect' | 'bomb' | 'whoami';
 
 export type Player = {
   id: PlayerId;
@@ -59,7 +60,9 @@ export type RoomPhase =
   /** Bomba-Relógio em sala: é a vez de alguém, e a bomba ainda está apagada. */
   | 'handoff'
   /** Bomba-Relógio em sala: pavio correndo. */
-  | 'armed';
+  | 'armed'
+  /** Quem Sou Eu?: é a vez de alguém perguntar. As respostas acontecem na mesa, não no app. */
+  | 'guessing';
 
 export type ClosedReason = 'host_left' | 'not_enough_players';
 
@@ -195,6 +198,44 @@ export type GameView =
       highlights: BombHighlight[] | null;
     }
   | {
+      kind: 'whoami';
+      settings: WhoamiSettings;
+      totalRounds: number | null;
+      roundIndex: number;
+      /**
+       * A identidade de cada um dos OUTROS, por inteiro. É o coração do jogo: todo mundo vê a sua,
+       * menos você, e o filtro do snapshot roda ao contrário do resto do motor.
+       *
+       * O nome é comprido porque `others` já existe no `MatchView` do app querendo dizer "os outros
+       * jogadores" — duas coisas diferentes com o mesmo nome se atropelariam na tela.
+       */
+      visibleIdentities: { playerId: PlayerId; name: string; emoji: string; category: string; found: boolean }[];
+      /**
+       * A minha parte, **sem o nome da minha identidade** enquanto a rodada corre.
+       *
+       * `hints` traz só as dicas que eu já paguei; as outras nem saem do servidor. Mandar as três
+       * e esconder na tela entregaria o jogo a quem abrisse o WebSocket.
+       */
+      mine: {
+        secret: boolean;
+        /** Só depois de eu acertar, ou na revelação do fim da rodada. */
+        name: string | null;
+        emoji: string | null;
+        hints: string[];
+        hintsLeft: number;
+        misses: number;
+        found: boolean;
+      } | null;
+      /** De quem é a vez. `null` fora da fase de perguntas. */
+      turnId: PlayerId | null;
+      turnEndsAt: number | null;
+      roundEndsAt: number | null;
+      /** Quem já descobriu nesta rodada, na ordem. O primeiro leva o bônus de velocidade. */
+      found: PlayerId[];
+      reveal: WhoamiReveal[] | null;
+      summary: WhoamiSummary | null;
+    }
+  | {
       kind: 'perfect';
       /** Os casais da sala. Toda tela precisa: é por eles que o jogo fala, não por jogador. */
       couples: PerfectCouple[];
@@ -322,6 +363,7 @@ export type PlayerIdentity = { id: PlayerId; name: string; color: string };
 export type { LikelyIntensity, LikelySettings };
 export * from './games/perfect-types';
 export * from './games/secret-types';
+export * from './games/whoami-types';
 
 /**
  * As escolhas do host, do jeito que elas chegam pela rede.
@@ -332,7 +374,7 @@ export * from './games/secret-types';
  * filtra o que reconhece e descarta o resto.
  */
 export type CreateRoomSettings = Omit<
-  Partial<LikelySettings> & Partial<SecretSettings> & Partial<PerfectSettings> & Partial<BombSettings>,
+  Partial<LikelySettings> & Partial<SecretSettings> & Partial<PerfectSettings> & Partial<BombSettings> & Partial<WhoamiSettings>,
   'categories' | 'difficulties'
 > & {
   categories?: string[];

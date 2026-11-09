@@ -7,6 +7,7 @@ import {
   PROTOCOL_VERSION,
   RoomError,
   sanitizeContentRequest,
+  sanitizeIdentityRequest,
   type ClientMessage,
   type EngineConfig,
   type Scheduler,
@@ -17,6 +18,7 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { createTokenVerifier, type TokenVerifier } from './auth';
 import type { Config } from './config';
 import { createContentGenerator, type ContentGenerator } from './content/bombContent';
+import { createIdentityGenerator, type IdentityGenerator } from './content/whoamiContent';
 import { parseClientMessage } from './messages';
 import { createMatchRecorder, type MatchRecorder } from './rooms/MatchRecorder';
 import { RoomManager } from './rooms/RoomManager';
@@ -27,6 +29,7 @@ export type RoomServerOptions = {
   verifyToken?: TokenVerifier;
   /** Injetado nos testes para não gastar chamada de API de verdade. */
   contentGenerator?: ContentGenerator | null;
+  identityGenerator?: IdentityGenerator | null;
   recorder?: MatchRecorder;
   presence?: RoomPresence;
   engineConfig?: Partial<EngineConfig>;
@@ -57,8 +60,28 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
   const log = options.log ?? (config.env === 'test' ? () => {} : (event, data) => console.log(JSON.stringify({ at: new Date().toISOString(), event, ...data })));
   const verifyToken = options.verifyToken ?? createTokenVerifier(config, fetch, log);
   const contentGenerator = options.contentGenerator !== undefined ? options.contentGenerator : createContentGenerator(config, log);
+  const identityGenerator = options.identityGenerator !== undefined ? options.identityGenerator : createIdentityGenerator(config, log);
   const manager = new RoomManager({
     store: config.storeDir ? new FileRoomStore(config.storeDir) : new MemoryRoomStore(),
+    /**
+     * Conteúdo gerado para a sala, pedido no lobby.
+     *
+     * Hoje só o "Quem Sou Eu?" usa: ele é o único jogo com tempo morto de verdade antes de
+     * começar, e o único cujo conteúdo (nome, aliases e duas dicas por identidade) é caro o
+     * bastante para a geração valer a chamada. Os outros rodam com os bancos locais.
+     */
+    contentFor: async (gameId, settings) => {
+      if (gameId !== 'whoami' || !identityGenerator) return null;
+      const request = sanitizeIdentityRequest({
+        categories: settings?.categories ?? [],
+        difficulties: settings?.difficulties ?? [],
+        count: 24,
+        avoidNames: [],
+      });
+      if (!request) return null;
+      const { identities } = await identityGenerator.generate(request);
+      return identities;
+    },
     recorder: options.recorder ?? createMatchRecorder(config, log),
     presence: options.presence ?? createRoomPresence(config, log),
     engineConfig: options.engineConfig,
@@ -83,6 +106,17 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
      */
     if (req.method === 'POST' && req.url?.split('?')[0] === '/api/bomb/content') {
       return void handleContentRequest(req, json);
+    }
+
+    /**
+     * Identidades novas para o "Quem Sou Eu?".
+     *
+     * O app pede isto **no lobby**, enquanto as pessoas entram na sala. É o tempo morto mais
+     * generoso que o app tem, e por isso este é o jogo em que a geração cabe inteira sem ninguém
+     * esperar. Vazio continua não sendo erro: o banco local tem 168 identidades.
+     */
+    if (req.method === 'POST' && req.url?.split('?')[0] === '/api/whoami/content') {
+      return void handleIdentityRequest(req, json);
     }
     if (req.method === 'GET' && req.url === '/healthz') {
       return json(200, {
@@ -132,39 +166,62 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
     return recent.length <= MAX_CONTENT_PER_10MIN;
   };
 
-  async function handleContentRequest(req: IncomingMessage, json: (status: number, body: unknown) => void): Promise<void> {
-    if (!contentGenerator) return json(503, { error: 'content_unavailable' });
-
+  /**
+   * O que os dois endpoints de conteúdo têm em comum: token, limite de carteira e corpo.
+   *
+   * Devolve `{ ok: false }` quando já respondeu um erro. **Não** devolve o corpo em caso de
+   * falha e não usa `null` como sinal: um corpo que é literalmente `null` é JSON válido, e
+   * confundir os dois deixaria a requisição pendurada sem resposta nenhuma.
+   *
+   * A ordem importa: o corpo é lido ANTES de autenticar, para não deixar uma conexão pendurada
+   * mandando bytes enquanto se consulta o Auth.
+   */
+  async function lerPedido(req: IncomingMessage, json: (status: number, body: unknown) => void): Promise<{ ok: true; body: unknown } | { ok: false }> {
     const token = /^Bearer (.+)$/.exec(String(req.headers.authorization ?? ''))?.[1];
-    if (!token) return json(401, { error: 'unauthenticated' });
+    if (!token) return json(401, { error: 'unauthenticated' }), { ok: false };
 
-    // Corpo primeiro, para não deixar uma conexão pendurada mandando bytes enquanto se autentica.
     let corpo = '';
     try {
       for await (const chunk of req) {
         corpo += chunk;
-        if (corpo.length > MAX_CONTENT_BODY_BYTES) return json(413, { error: 'too_large' });
+        if (corpo.length > MAX_CONTENT_BODY_BYTES) return json(413, { error: 'too_large' }), { ok: false };
       }
     } catch {
-      return json(400, { error: 'bad_request' });
+      return json(400, { error: 'bad_request' }), { ok: false };
     }
 
     const userId = await verifyToken(token);
-    if (!userId) return json(401, { error: 'unauthenticated' });
-    if (!contentLimiter(userId)) return json(429, { error: 'rate_limited' });
+    if (!userId) return json(401, { error: 'unauthenticated' }), { ok: false };
+    if (!contentLimiter(userId)) return json(429, { error: 'rate_limited' }), { ok: false };
 
-    let bruto: unknown;
     try {
-      bruto = JSON.parse(corpo);
+      return { ok: true, body: JSON.parse(corpo) };
     } catch {
-      return json(400, { error: 'bad_request' });
+      return json(400, { error: 'bad_request' }), { ok: false };
     }
-    const variante = (bruto as { variant?: unknown })?.variant;
-    const request = sanitizeContentRequest(bruto, variante === 'alfabeto' ? ALPHABET_CATEGORIES : BOMB_CATEGORIES);
+  }
+
+  async function handleContentRequest(req: IncomingMessage, json: (status: number, body: unknown) => void): Promise<void> {
+    if (!contentGenerator) return json(503, { error: 'content_unavailable' });
+    const lido = await lerPedido(req, json);
+    if (!lido.ok) return;
+
+    const variante = (lido.body as { variant?: unknown })?.variant;
+    const request = sanitizeContentRequest(lido.body, variante === 'alfabeto' ? ALPHABET_CATEGORIES : BOMB_CATEGORIES);
     if (!request) return json(400, { error: 'bad_request' });
 
-    const content = await contentGenerator.generate(request);
-    json(200, content);
+    json(200, await contentGenerator.generate(request));
+  }
+
+  async function handleIdentityRequest(req: IncomingMessage, json: (status: number, body: unknown) => void): Promise<void> {
+    if (!identityGenerator) return json(503, { error: 'content_unavailable' });
+    const lido = await lerPedido(req, json);
+    if (!lido.ok) return;
+
+    const request = sanitizeIdentityRequest(lido.body);
+    if (!request) return json(400, { error: 'bad_request' });
+
+    json(200, await identityGenerator.generate(request));
   }
 
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES });

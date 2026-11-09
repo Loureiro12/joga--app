@@ -97,6 +97,10 @@ test('todo comando do protocolo passa pelo validador do servidor', () => {
     armBomb: { type: 'armBomb' },
     passBomb: { type: 'passBomb' },
     useLetter: { type: 'useLetter', letter: 'A' },
+    guessIdentity: { type: 'guessIdentity', guess: 'Homem-Aranha' },
+    takeHint: { type: 'takeHint' },
+    passTurn: { type: 'passTurn' },
+    endRound: { type: 'endRound' },
   };
 
   for (const [tipo, cmd] of Object.entries(exemplos)) {
