@@ -544,3 +544,26 @@ test('não há mais entrada sem login, e o convidado antigo ainda vira conta', a
   const config = await readFile(new URL('settings/SettingsScreen.tsx', base), 'utf8');
   assert.ok(config.includes('Criar conta e salvar progresso'), 'sumiu a saída para quem já é convidado');
 });
+
+/**
+ * No fim de cada rodada a mesa para e pergunta "como é que tá?". O placar precisa estar ali, nas
+ * duas telas de fim de rodada (explosão e desarme) e nos dois modos — um celular só e em sala.
+ */
+test('a bomba mostra o placar entre as rodadas, nos dois modos', async () => {
+  const { readFile } = await import('node:fs/promises');
+
+  const local = await readFile(new URL('../src/features/bomb/screens/BombRoundScreen.tsx', import.meta.url), 'utf8');
+  const sala = await readFile(new URL('../src/features/match/screens/bomb/BombRoomScreen.tsx', import.meta.url), 'utf8');
+
+  for (const [nome, src] of [['um celular', local], ['em sala', sala]] as const) {
+    // Duas vezes: uma na explosão, outra no desarme do Alfabeto.
+    const usos = (src.match(/<RoundScoreboard/g) ?? []).length;
+    assert.equal(usos, 2, `${nome}: o placar precisa aparecer na explosão e no desarme (achei ${usos})`);
+    // E quem levou a bomba vem destacado — é a linha que o grupo procura.
+    assert.ok(src.includes('highlightId'), `${nome}: quem levou a bomba deixou de ser destacado`);
+  }
+
+  // Durante a rodada, placar nenhum: ali a tela é de tensão, e um placar entregaria o ritmo.
+  const naRodada = local.slice(local.indexOf('/* ---------------------------------------------------------- bomba ativa */'));
+  assert.ok(!naRodada.includes('<RoundScoreboard'), 'o placar apareceu com a bomba acesa');
+});

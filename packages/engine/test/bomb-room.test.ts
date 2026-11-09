@@ -267,6 +267,34 @@ test('rodada seguinte e fim de partida', () => {
   assert.ok(fim.highlights !== null, 'o fim não trouxe os destaques');
 });
 
+/**
+ * Entre uma rodada e a outra o grupo para e pergunta "como é que tá?". Sem o placar no snapshot,
+ * a resposta só apareceria no fim da partida — quando já não dá para fazer nada a respeito.
+ */
+test('o placar chega a todos entre uma rodada e a outra, não só no fim', () => {
+  const r = acesa(3, { minSeconds: 20, maxSeconds: 20, totalRounds: 3 });
+  // Enquanto a bomba queima, placar nenhum: ali a tela é de tensão.
+  assert.equal(r.view(r.host).standings, null);
+
+  r.clock.advance(21_000);
+  const quem = r.view(r.host).loserId!;
+  for (const id of r.all) {
+    const placar = r.view(id).standings;
+    assert.ok(placar, `${id} não recebeu o placar depois da explosão`);
+    assert.equal(placar!.length, 3, 'o placar precisa trazer a mesa inteira');
+    // Quem levou a bomba aparece com ela contada — é o que o grupo quer ver nesse instante.
+    assert.equal(placar!.find((l) => l.playerId === quem)!.bombs, 1);
+    // E vem ordenado: menos bombas na frente.
+    assert.equal(placar![0].position, 1);
+    assert.ok(placar![0].bombs <= placar![placar!.length - 1].bombs);
+  }
+
+  // Na rodada seguinte, com a bomba acesa de novo, some.
+  r.engine.dispatch(r.host, { type: 'nextRound' });
+  r.engine.dispatch(r.view(r.host).activeId, { type: 'armBomb' });
+  assert.equal(r.view(r.host).standings, null, 'o placar ficou na tela durante a rodada');
+});
+
 test('só o host passa de rodada', () => {
   const r = acesa(3, { minSeconds: 20, maxSeconds: 20 });
   r.clock.advance(21_000);

@@ -11,6 +11,7 @@ import { haptics } from '@/core/utils/haptics';
 import { BurningFuse, useBombPulse } from '@/features/bomb/components/BurningFuse';
 import { HandoffFlash } from '@/features/bomb/components/HandoffFlash';
 import { LetterGrid } from '@/features/bomb/components/LetterGrid';
+import { RoundScoreboard } from '@/features/bomb/components/RoundScoreboard';
 import { useBombSound } from '@/features/bomb/useBombSound';
 
 import { MatchTopRow } from '../../components/MatchMenu';
@@ -144,6 +145,7 @@ export function BombRoomScreen() {
             Ninguém perdeu esta rodada.
           </Txt>
         </Enter>
+        <RoundScoreboard standings={match.standings ?? []} mode={match.mode} name={displayName} compact />
         <Avancar isHost={isHost} semLimite={!totalRounds} />
       </Screen>
     );
@@ -182,6 +184,7 @@ export function BombRoomScreen() {
             </Txt>
           )}
         </Enter>
+        <RoundScoreboard standings={match.standings ?? []} mode={match.mode} name={displayName} highlightId={match.loserId} compact />
         <Avancar isHost={isHost} semLimite={!totalRounds} />
       </Screen>
     );

@@ -188,6 +188,8 @@ export const bombGame: GameRules<RoomBombState> = {
     }
 
     const acabou = bomb.phase === 'finished';
+    // O placar também vai no fim de cada rodada: é ali que a mesa para e pergunta "como é que tá?".
+    const entreRodadas = bomb.phase === 'exploded' || bomb.phase === 'disarmed';
     return {
       kind: 'bomb',
       variant: bomb.settings.variant,
@@ -213,7 +215,7 @@ export const bombGame: GameRules<RoomBombState> = {
       lives: bomb.settings.mode === 'eliminacao' ? bomb.lives : {},
       bombs: bomb.bombs,
       eliminated: bomb.eliminated,
-      standings: acabou ? standings(bomb) : null,
+      standings: acabou || entreRodadas ? standings(bomb) : null,
       highlights: acabou ? highlights(bomb) : null,
     };
   },

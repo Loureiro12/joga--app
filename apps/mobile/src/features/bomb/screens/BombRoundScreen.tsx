@@ -13,8 +13,9 @@ import { haptics } from '@/core/utils/haptics';
 import { BurningFuse, useBombPulse } from '../components/BurningFuse';
 import { HandoffFlash } from '../components/HandoffFlash';
 import { LetterGrid } from '../components/LetterGrid';
+import { RoundScoreboard } from '../components/RoundScoreboard';
 import { useBombSound } from '../useBombSound';
-import { remainingLetters } from '@jogae/engine';
+import { remainingLetters, standings } from '@jogae/engine';
 
 import { bombActions, useBombMatch } from '../bombStore';
 
@@ -200,6 +201,7 @@ export function BombRoundScreen() {
             Ninguém perdeu esta rodada.
           </Txt>
         </Enter>
+        <RoundScoreboard standings={standings(match)} mode={match.settings.mode} name={(id) => player(id)?.name ?? '—'} />
         <Button label="Próxima rodada" variant="onColor" onPress={bombActions.nextRound} />
         {match.settings.totalRounds === 0 && <Button label="Encerrar partida" variant="translucent" onPress={bombActions.endMatch} />}
       </Screen>
@@ -243,6 +245,7 @@ export function BombRoundScreen() {
             </Txt>
           )}
         </Enter>
+        <RoundScoreboard standings={standings(match)} mode={match.settings.mode} name={(id) => player(id)?.name ?? '—'} highlightId={match.loserId} />
         <Button label="Próxima rodada" variant="onColor" onPress={bombActions.nextRound} />
         {match.settings.totalRounds === 0 && <Button label="Encerrar partida" variant="translucent" onPress={bombActions.endMatch} />}
       </Screen>
