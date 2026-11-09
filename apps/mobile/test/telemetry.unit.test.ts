@@ -278,6 +278,43 @@ test('o Firebase fica no caminho CocoaPods, porque o AdMob não convive com SPM'
   assert.equal(appJson.expo.ios.googleServicesFile, './GoogleService-Info.plist');
 });
 
+/**
+ * A segunda armadilha do iOS, descoberta num build que falhou.
+ *
+ * Com o Firebase em CocoaPods e o Podfile do Expo usando bibliotecas estáticas, o `pod install`
+ * para com:
+ *
+ * > The Swift pod `FirebaseCoreInternal` depends upon `GoogleUtilities`, which does not define
+ * > modules. To opt into those targets generating module maps […] you may set
+ * > `use_modular_headers!` globally in your Podfile, or specify `:modular_headers => true` for
+ * > particular dependencies.
+ *
+ * Os pods Swift do Firebase precisam importar dependências em Objective-C que não geram module
+ * map. A saída global (`use_modular_headers!`) mudaria a compilação de TODOS os pods do app; a
+ * cirúrgica liga o module map só nos quatro culpados, e é essa que está aqui.
+ *
+ * Quatro e não um: `GoogleUtilities` aparece no erro do `FirebaseCoreInternal`, mas
+ * `FirebaseCrashlytics` e `FirebaseSessions` também precisam de `GoogleDataTransport` e `nanopb`,
+ * e `FirebaseRemoteConfig` (que vem junto com o Performance) precisa de `FirebaseABTesting`.
+ */
+test('os pods em Objective-C do Firebase ganham module map, senão o pod install falha', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const appJson = JSON.parse(await readFile(new URL('../app.json', import.meta.url), 'utf8'));
+
+  const plugin = appJson.expo.plugins.find((p: unknown) => Array.isArray(p) && p[0] === 'expo-build-properties');
+  assert.ok(plugin, 'o expo-build-properties saiu do app.json e o pod install volta a falhar');
+
+  const pods: { name: string; modular_headers?: boolean }[] = plugin[1]?.ios?.extraPods ?? [];
+  for (const nome of ['GoogleUtilities', 'GoogleDataTransport', 'nanopb', 'FirebaseABTesting']) {
+    const pod = pods.find((x) => x.name === nome);
+    assert.ok(pod, `${nome} saiu dos extraPods: o pod install falha com "cannot yet be integrated as static libraries"`);
+    assert.equal(pod.modular_headers, true, `${nome} está sem modular_headers, que é o motivo de ele estar na lista`);
+  }
+
+  // E o oposto: ligar frameworks aqui recriaria o conflito com o AdMob, que é estático.
+  assert.equal(plugin[1]?.ios?.useFrameworks, undefined, 'useFrameworks voltou; com o AdMob estático no app, isso quebra o pod install');
+});
+
 test('os plugins de Crashlytics e Performance estão no app.json', async () => {
   // Analytics funciona só com o pacote; Crashlytics e Performance precisam dos plugins do Gradle,
   // e sem eles o relatório simplesmente nunca chega — sem erro nenhum no caminho.

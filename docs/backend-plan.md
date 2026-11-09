@@ -506,6 +506,16 @@ estático do Google Mobile Ads, que este app já publica. O `pod install` recusa
 escape de voltar para CocoaPods (`disableSPM`) foi removido na 27. Então: 26.4.1 + `disableSPM:
 true` no plugin, que é a última versão do Firebase distribuída em CocoaPods.
 
+**A segunda armadilha do iOS (2026-11-09, num build que falhou).** Ficar em CocoaPods resolve o
+conflito com o AdMob e cria outro: os pods Swift do Firebase importam dependências em Objective-C
+que não geram module map, e o `pod install` para com "The following Swift pods cannot yet be
+integrated as static libraries". A correção é `:modular_headers => true` nos quatro culpados
+(`GoogleUtilities`, `GoogleDataTransport`, `nanopb`, `FirebaseABTesting`), via
+`expo-build-properties → ios.extraPods` — e não `use_modular_headers!` global, que mudaria a
+compilação de todos os pods do app. Há teste cobrando os quatro. Validado com `expo prebuild -p
+ios` + `pod install` local: 137 pods, Firebase 12.19.3 e Google-Mobile-Ads 13.6.0 no mesmo
+lockfile.
+
 **Ordem de subida.** A telemetria sobe **antes** dos outros serviços em `startServices()`. É o que
 faz o Crashlytics capturar uma falha na inicialização do AdMob ou do Supabase — subindo por
 último, justamente as falhas mais graves não apareceriam em relatório nenhum.

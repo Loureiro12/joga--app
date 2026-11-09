@@ -180,6 +180,42 @@ plugin, que é o que o `app.json` faz. Há teste cobrando as duas coisas.
 Se um dia o AdMob sair do app, ou o `react-native-google-mobile-ads` passar a suportar frameworks
 dinâmicos, aí vale subir — e o caminho é `expo-build-properties` com `ios.useFrameworks: "dynamic"`.
 
+### A segunda armadilha: module maps
+
+Ficar em CocoaPods resolve o conflito com o AdMob e cria outro. O `pod install` falha com:
+
+```
+[!] The following Swift pods cannot yet be integrated as static libraries:
+The Swift pod `FirebaseCoreInternal` depends upon `GoogleUtilities`, which does not define
+modules. […] you may set `use_modular_headers!` globally in your Podfile, or specify
+`:modular_headers => true` for particular dependencies.
+```
+
+Os pods Swift do Firebase precisam importar dependências em Objective-C que não geram module map.
+Há duas saídas, e a diferença entre elas importa:
+
+- `use_modular_headers!` global mudaria a compilação de **todos** os pods do app — inclusive os do
+  React Native e os do AdMob. Blast radius grande para resolver quatro pods.
+- `:modular_headers => true` em cada culpado. É a que está no `app.json`, via
+  `expo-build-properties → ios.extraPods`.
+
+São quatro, e não um: `GoogleUtilities` é o do erro mais visível, mas `FirebaseCrashlytics` e
+`FirebaseSessions` também precisam de `GoogleDataTransport` e `nanopb`, e `FirebaseRemoteConfig`
+(que entra junto com o Performance) precisa de `FirebaseABTesting`. Há teste cobrando os quatro.
+
+### Reproduzir localmente antes de gastar um build
+
+Um build iOS no EAS leva uns 20 minutos para dizer que o `pod install` falhou. Localmente leva dois:
+
+```bash
+cd /Users/loureiro/project/joga--app/apps/mobile
+npx expo prebuild -p ios --clean --no-install
+cd ios && pod install
+```
+
+`Pod installation complete!` no fim significa que o EAS vai passar nessa etapa. A pasta `ios/` é
+gerada e está no `.gitignore` — dá para apagar depois sem perder nada.
+
 ---
 
 ## 5. O que falta fora do código

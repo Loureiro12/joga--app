@@ -82,6 +82,31 @@
       "output": "single"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "extraPods": [
+              {
+                "name": "GoogleUtilities",
+                "modular_headers": true
+              },
+              {
+                "name": "GoogleDataTransport",
+                "modular_headers": true
+              },
+              {
+                "name": "nanopb",
+                "modular_headers": true
+              },
+              {
+                "name": "FirebaseABTesting",
+                "modular_headers": true
+              }
+            ]
+          }
+        }
+      ],
       "expo-router",
       "expo-font",
       [
