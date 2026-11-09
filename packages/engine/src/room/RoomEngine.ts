@@ -17,6 +17,7 @@ import type { GameCtx, GameRules } from './GameRules';
 import { impostorGame, type ImpostorState } from './impostorGame';
 import { likelyGame, type LikelyState } from './likelyGame';
 import { bombGame, type RoomBombState } from './bombGame';
+import { noGame, type NoGameState } from './noGame';
 import { perfectGame, type PerfectState } from './perfectGame';
 import { secretGame, type SecretState } from './secretGame';
 import type { RoomCommand } from './protocol';
@@ -70,7 +71,7 @@ export const realScheduler: Scheduler = {
 type EnginePlayer = Player & { disconnectedAt: number | null };
 
 /** Estado de um jogo, discriminado pelo `gameId` da sala. */
-export type GameState = ImpostorState | LikelyState | SecretState | PerfectState | RoomBombState;
+export type GameState = NoGameState | ImpostorState | LikelyState | SecretState | PerfectState | RoomBombState;
 
 /** Tudo que é preciso para recriar a sala em outro processo. JSON puro. */
 export type EngineState = {
@@ -96,6 +97,7 @@ export type RoomEngineDeps = {
 
 /** Os jogos com partida implementada. O catálogo do app tem outros, ainda "em breve". */
 const GAMES: Record<GameId, GameRules<never>> = {
+  none: noGame as GameRules<never>,
   impostor: impostorGame as GameRules<never>,
   likely: likelyGame as GameRules<never>,
   secret: secretGame as GameRules<never>,
@@ -106,7 +108,7 @@ const GAMES: Record<GameId, GameRules<never>> = {
 export const rulesFor = (gameId: GameId): GameRules<never> => GAMES[gameId] ?? GAMES.impostor;
 
 /** Comandos que a sala trata sozinha, antes de chegar ao jogo. */
-const ROOM_COMMANDS = new Set<RoomCommand['type']>(['startMatch', 'playAgain']);
+const ROOM_COMMANDS = new Set<RoomCommand['type']>(['startMatch', 'playAgain', 'setGame']);
 
 const newScore = (playerId: PlayerId): Score => ({ playerId, points: 0, lastDelta: 0 });
 
@@ -116,7 +118,11 @@ export class RoomEngine {
   private readonly rng: () => number;
   private readonly config: EngineConfig;
   private readonly onChange: () => void;
-  private readonly game: GameRules<never>;
+  /**
+   * Mutável porque a sala pode trocar de jogo no lobby: o grupo se reúne primeiro e decide
+   * depois. Fora do lobby isto nunca muda — `setGame` recusa em qualquer outra fase.
+   */
+  private game: GameRules<never>;
   private alarm: unknown = null;
   private disposed = false;
 
@@ -298,8 +304,26 @@ export class RoomEngine {
     const ctx = this.ctx();
 
     switch (command.type) {
+      case 'setGame': {
+        // Só no lobby: trocar o jogo com a partida andando jogaria fora o que o grupo já jogou.
+        if (s.room.phase !== 'lobby') throw new RoomError('invalid_phase');
+        if (command.input.gameId === 'none') throw new RoomError('bad_request');
+        this.game = rulesFor(command.input.gameId);
+        Object.assign(s.room, {
+          gameId: command.input.gameId,
+          category: command.input.category,
+          totalRounds: command.input.totalRounds,
+          maxPlayers: command.input.maxPlayers,
+        });
+        // Estado do jogo anterior não serve ao novo: nasce do zero, como numa sala recém-criada.
+        s.game = this.game.initial(command.input, this.ctx()) as GameState;
+        s.scores = Object.fromEntries(s.players.map((p) => [p.id, newScore(p.id)]));
+        break;
+      }
       case 'startMatch': {
         if (s.room.phase !== 'lobby') throw new RoomError('invalid_phase');
+        // Sala sem jogo não começa: a mensagem diz o que falta, em vez de um erro genérico.
+        if (s.room.gameId === 'none') throw new RoomError('bad_request');
         if (s.players.filter((p) => p.connected).length < this.game.minPlayers) throw new RoomError('not_enough_players');
         s.matchId = this.newId();
         s.matchStartedAt = ctx.now;

@@ -7,6 +7,7 @@ import { routes } from '@/core/navigation/routes';
 import { colors } from '@/core/theme';
 import { Avatar, Badge, Chip, Display, ListCard, Screen, Txt } from '@/core/ui';
 import { greeting } from '@/core/utils/format';
+import { criarSalaVazia } from '@/features/match/hooks/roomActions';
 import { useProfileStore } from '@/features/profile/profileStore';
 
 import { GameCardHero, GameCardMedium } from '../components/GameCards';
@@ -23,6 +24,9 @@ export function HomeScreen() {
   const { name, color } = useProfileStore();
   const [hero, ...rest] = GAMES;
   const open = (id: string) => router.push(routes.game(id));
+  const abrirSala = async () => {
+    if (await criarSalaVazia()) router.push(routes.match.lobby);
+  };
 
   return (
     <Screen
@@ -50,6 +54,15 @@ export function HomeScreen() {
           <GameCardMedium key={g.id} game={g} onPress={() => open(g.id)} />
         ))}
       </View>
+
+      {/* Abrir a sala antes de decidir: a galera entra enquanto vocês escolhem o que jogar. */}
+      <ListCard
+        icon={<Txt size={22}>🎲</Txt>}
+        title="Abrir uma sala"
+        subtitle="Chame a galera primeiro, escolham o jogo depois."
+        right={<Txt size={18} color={colors.muted}>→</Txt>}
+        onPress={abrirSala}
+      />
 
       <ListCard
         icon={<QrIcon />}

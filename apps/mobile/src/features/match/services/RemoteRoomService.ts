@@ -169,6 +169,7 @@ export class RemoteRoomService implements RoomService {
   openVoting = () => this.command({ type: 'openVoting' });
   nextRound = () => this.command({ type: 'nextRound' });
   playAgain = () => this.command({ type: 'playAgain' });
+  setGame = (input: CreateRoomInput) => this.command({ type: 'setGame', input });
   endVoting = () => this.command({ type: 'endVoting' });
   skipQuestion = () => this.command({ type: 'skipQuestion' });
   endMatch = () => this.command({ type: 'endMatch' });

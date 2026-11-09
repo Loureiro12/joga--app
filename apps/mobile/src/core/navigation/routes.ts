@@ -13,6 +13,8 @@ export const routes = {
   profile: '/(tabs)/profile',
   game: (gameId: string) => `/game/${gameId}` as const,
   createMatch: (gameId: string) => `/create-match?gameId=${gameId}` as const,
+  /** Mesma tela, outro fim: a sala já existe e o host está escolhendo (ou trocando) o jogo. */
+  chooseGame: (gameId: string) => `/create-match?gameId=${gameId}&modo=escolher` as const,
   join: '/join',
   ai: '/ai',
   premium: '/premium',

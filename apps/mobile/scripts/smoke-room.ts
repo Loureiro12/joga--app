@@ -232,7 +232,10 @@ async function perfect() {
   const resumo = perfectView(s).summary!;
   console.log('perfect fim:', resumo.standings.map((l) => `${l.matches}/${l.rounds}`).join(' '), '·', resumo.percent + '% coincidiram ·', resumo.titles.length, 'títulos');
   if (!resumo.mine) throw new Error('o resumo não trouxe o casal de quem está olhando');
-  if (resumo.mine.rounds !== 3 && resumo.mine.rounds !== 4) throw new Error('o resumo perdeu rodadas: ' + resumo.mine.rounds);
+  // 3 perguntas, mais quantas o desempate precisar — e ele pode empatar de novo. O que não pode
+  // é o resumo contar menos do que foi jogado, nem o casal de quem olha ficar de fora do placar.
+  if (resumo.mine.rounds < 3) throw new Error('o resumo perdeu rodadas: ' + resumo.mine.rounds);
+  if (resumo.mine.rounds !== s.room.roundIndex) throw new Error(`o resumo diz ${resumo.mine.rounds} rodadas e a sala jogou ${s.room.roundIndex}`);
   await svc.leaveRoom();
 }
 

@@ -369,6 +369,16 @@ export const GAMES: GameDefinition[] = [
 
 export const getGame = (id: string | undefined) => GAMES.find((g) => g.id === id);
 
+/**
+ * Os jogos que uma sala pode receber.
+ *
+ * Só os de sala: os locais (as bombas num celular só, o Entre Nós) não têm o que fazer com um
+ * código e cinco pessoas conectadas — escolhê-los no lobby criaria uma sala que ninguém usa.
+ * As bombas aparecem porque elas **também** jogam em sala; quem oferece os dois modos é a tela
+ * do jogo, e no lobby só cabe o de sala.
+ */
+export const gamesForRoom = (): GameDefinition[] => GAMES.filter((g) => g.playable && Boolean(g.engineId));
+
 /** O snapshot traz o id do MOTOR (`impostor`, `likely`), que nem sempre é o id do catálogo. */
 export const getGameByEngine = (engineId: string | undefined) => GAMES.find((g) => g.engineId === engineId);
 

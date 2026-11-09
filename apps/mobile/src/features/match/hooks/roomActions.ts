@@ -1,7 +1,9 @@
-import { RoomError, type PlayerId, type RoomErrorCode } from '@jogae/engine';
+import { RoomError, type CreateRoomInput, type PlayerId, type RoomErrorCode } from '@jogae/engine';
 
 import { toast } from '@/core/ui/toast';
 import { services } from '@/services';
+
+import { getIdentity } from './useIdentity';
 
 export const ROOM_ERROR_MESSAGES: Partial<Record<RoomErrorCode, string>> = {
   room_not_found: 'Sala não encontrada. Confira o código com o host.',
@@ -28,7 +30,22 @@ const run = (promise: Promise<void>) =>
     toast(roomErrorMessage(e), 'error');
   });
 
+/**
+ * Abre uma sala **sem jogo**: o grupo se reúne primeiro e decide depois, que é como as coisas
+ * acontecem numa mesa de verdade. O jogo é escolhido no lobby, por `setGame`.
+ */
+export async function criarSalaVazia(): Promise<boolean> {
+  try {
+    await services.room.createRoom({ gameId: 'none', category: '', totalRounds: 0, maxPlayers: 12 }, getIdentity());
+    return true;
+  } catch (e) {
+    toast(roomErrorMessage(e, 'Não deu para abrir a sala. Tente de novo.'), 'error');
+    return false;
+  }
+}
+
 export const roomActions = {
+  setGame: (input: CreateRoomInput) => run(services.room.setGame(input)),
   startMatch: () => run(services.room.startMatch()),
   setTimerRunning: (running: boolean) => run(services.room.setTimerRunning(running)),
   resetTimer: () => run(services.room.resetTimer()),

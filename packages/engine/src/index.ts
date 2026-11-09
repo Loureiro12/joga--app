@@ -17,5 +17,6 @@ export * from './games/perfect';
 export * from './room/protocol';
 export * from './room/RoomEngine';
 export * from './room/bombGame';
+export * from './room/noGame';
 export * from './room/perfectGame';
 export * from './room/secretGame';

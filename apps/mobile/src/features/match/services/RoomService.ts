@@ -25,6 +25,8 @@ export interface RoomService {
   retryConnection(): void;
 
   /* comandos do host */
+  /** Escolhe (ou troca) o jogo de uma sala que ainda está no lobby. */
+  setGame(input: CreateRoomInput): Promise<void>;
   startMatch(): Promise<void>;
   setTimerRunning(running: boolean): Promise<void>;
   resetTimer(): Promise<void>;

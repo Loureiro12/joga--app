@@ -16,6 +16,8 @@ export const PROTOCOL_VERSION = 2;
 
 /** O que um jogador pode pedir à sala. O engine decide se pode (host, fase). */
 export type RoomCommand =
+  /** Host escolhe (ou troca) o jogo da sala. Só no lobby. */
+  | { type: 'setGame'; input: CreateRoomInput }
   | { type: 'startMatch' }
   | { type: 'setTimerRunning'; running: boolean }
   | { type: 'resetTimer' }

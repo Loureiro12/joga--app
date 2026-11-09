@@ -68,17 +68,23 @@ function gameSettings(v: unknown): CreateRoomInput['settings'] {
 
 function roomInput(v: unknown): CreateRoomInput | null {
   if (!isObject(v)) return null;
-  // Jogos com regras no engine. Sem isto, uma sala nasceria sem motor e morreria no primeiro comando.
-  const jogos: GameId[] = ['impostor', 'likely', 'secret', 'perfect', 'bomb'];
+  // Jogos com regras no engine. Sem isto, uma sala nasceria sem motor e morreria no primeiro
+  // comando. `none` é a sala criada antes de o grupo escolher o jogo.
+  const jogos: GameId[] = ['none', 'impostor', 'likely', 'secret', 'perfect', 'bomb'];
   if (typeof v.gameId !== 'string' || !jogos.includes(v.gameId as GameId)) return null;
   const gameId = v.gameId as GameId;
-  if (typeof v.category !== 'string' || v.category.length < 1 || v.category.length > 30) return null;
+  // A sala sem jogo não tem categoria: ela só aparece quando o jogo é escolhido.
+  if (typeof v.category !== 'string' || v.category.length > 30) return null;
+  if (gameId !== 'none' && v.category.length < 1) return null;
   // `totalRounds: 0` é a partida sem limite do "Quem é Mais Provável?" e a ausência de rodada no
   // Desafio Secreto, que dura o rolê inteiro. Só o Impostor exige pelo menos uma.
   const minRounds = gameId === 'impostor' ? 1 : 0;
   // O teto da sala pode ser 2: o mínimo é técnico, não recomendação — quem decide o tamanho é o host.
   if (!isInt(v.totalRounds, minRounds, 30) || !isInt(v.maxPlayers, 2, 20)) return null;
-  return { gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers, settings: gameSettings(v.settings) };
+  const settings = gameSettings(v.settings);
+  // Sem opções, a chave nem aparece: assim a mensagem que chega ao engine é eco fiel do que foi
+  // enviado, e o teste de ida e volta dos comandos continua valendo como comparação literal.
+  return { gameId, category: v.category, totalRounds: v.totalRounds, maxPlayers: v.maxPlayers, ...(settings ? { settings } : {}) };
 }
 
 function command(v: unknown): RoomCommand | null {
@@ -112,6 +118,12 @@ function command(v: unknown): RoomCommand | null {
       return typeof v.running === 'boolean' ? { type: v.type, running: v.running } : null;
     case 'setPaused':
       return typeof v.paused === 'boolean' ? { type: v.type, paused: v.paused } : null;
+    case 'setGame': {
+      // O payload é o mesmo de criar sala, e passa pela mesma validação — é por ele que entram
+      // categoria, rodadas e as opções do jogo escolhido.
+      const input = roomInput(v.input);
+      return input && input.gameId !== 'none' ? { type: v.type, input } : null;
+    }
     case 'castVote':
     case 'pairWith':
       return typeof v.targetId === 'string' && v.targetId.length <= 80 ? { type: v.type, targetId: v.targetId } : null;

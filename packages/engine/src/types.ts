@@ -14,7 +14,8 @@ import type { SecretContext, SecretHighlight, SecretMission, SecretReveal, Secre
 export type PlayerId = string;
 
 /** Jogos com fluxo de partida implementado. O catálogo do app tem outros, ainda "em breve". */
-export type GameId = 'impostor' | 'likely' | 'secret' | 'perfect' | 'bomb';
+/** `none` é a sala criada antes de o grupo escolher o jogo — ver `room/noGame.ts`. */
+export type GameId = 'none' | 'impostor' | 'likely' | 'secret' | 'perfect' | 'bomb';
 
 export type Player = {
   id: PlayerId;
@@ -130,6 +131,10 @@ export type ImpostorSummary = { winnerId: PlayerId; impostorsCaught: number };
  * (jogadores, votos em andamento, placar) fica fora, porque vale para todos os jogos.
  */
 export type GameView =
+  | {
+      /** A sala existe, o jogo ainda não foi escolhido. O lobby mostra a escolha. */
+      kind: 'none';
+    }
   | {
       kind: 'impostor';
       round: ImpostorRoundPublic | null;

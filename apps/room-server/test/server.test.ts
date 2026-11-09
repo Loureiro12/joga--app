@@ -71,6 +71,7 @@ test('mensagens: entrada malformada ou fora dos limites é rejeitada', () => {
  */
 test('todo comando do protocolo passa pelo validador do servidor', () => {
   const exemplos: Record<RoomCommand['type'], RoomCommand> = {
+    setGame: { type: 'setGame', input: { gameId: 'impostor', category: 'Comidas', totalRounds: 3, maxPlayers: 8 } },
     startMatch: { type: 'startMatch' },
     setTimerRunning: { type: 'setTimerRunning', running: true },
     resetTimer: { type: 'resetTimer' },
@@ -106,6 +107,9 @@ test('todo comando do protocolo passa pelo validador do servidor', () => {
 
   // E o que tem payload continua sendo conferido.
   assert.equal(parseClientMessage(JSON.stringify({ t: 'cmd', id: 1, cmd: { type: 'useLetter', letter: 'AB' } })), null);
+  // "Nenhum jogo" não é um jogo que dá para escolher.
+  const semJogo = { type: 'setGame', input: { gameId: 'none', category: '', totalRounds: 0, maxPlayers: 8 } };
+  assert.equal(parseClientMessage(JSON.stringify({ t: 'cmd', id: 1, cmd: semJogo })), null);
   assert.equal(parseClientMessage(JSON.stringify({ t: 'cmd', id: 1, cmd: { type: 'submitAnswer', value: '' } })), null);
   assert.equal(parseClientMessage(JSON.stringify({ t: 'cmd', id: 1, cmd: { type: 'pairWith', targetId: 42 } })), null);
 });

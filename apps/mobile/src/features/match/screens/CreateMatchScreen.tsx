@@ -60,7 +60,12 @@ function OptionRow({ title, hint, value, onToggle }: { title: string; hint: stri
 
 /** Tela 8: Criar partida. Meta do design: começar em menos de 30 s. */
 export function CreateMatchScreen() {
-  const { gameId } = useLocalSearchParams<{ gameId?: string }>();
+  const { gameId, modo } = useLocalSearchParams<{ gameId?: string; modo?: string }>();
+  /**
+   * `escolher`: a sala já existe e está no lobby, e o host está definindo o jogo dela. A tela é
+   * a mesma porque as opções são as mesmas — muda só o que acontece no botão do fim.
+   */
+  const escolhendo = modo === 'escolher';
   const game = getGame(gameId) ?? getGame('impostor')!;
   const isLikely = game.engineId === 'likely';
   const isSecret = game.engineId === 'secret';
@@ -117,10 +122,17 @@ export function CreateMatchScreen() {
     setLoading(true);
     try {
       const input = { gameId: game.engineId ?? 'impostor', category: isLikely ? ANY : category, totalRounds: rounds, maxPlayers: players, settings };
+      if (escolhendo) {
+        // A sala já existe: o host só está dizendo o que o grupo vai jogar. Volta para o lobby,
+        // onde todo mundo vê a escolha chegar no mesmo instante.
+        await services.room.setGame(input);
+        router.back();
+        return;
+      }
       await services.room.createRoom(input, getIdentity());
       router.push(routes.match.lobby);
     } catch (e) {
-      toast(roomErrorMessage(e, 'Não deu para criar a sala. Tente de novo.'), 'error');
+      toast(roomErrorMessage(e, escolhendo ? 'Não deu para escolher o jogo. Tente de novo.' : 'Não deu para criar a sala. Tente de novo.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -135,7 +147,7 @@ export function CreateMatchScreen() {
   const modoResumo = isBomb ? ` · ${BOMB_MODES.find((m) => m.id === bombMode)?.label.toLowerCase()}` : '';
 
   return (
-    <Screen gap={22} header={<StackHeader title="Criar partida" onBack={() => router.back()} />}>
+    <Screen gap={22} header={<StackHeader title={escolhendo ? 'Escolher o jogo' : 'Criar partida'} onBack={() => router.back()} />}>
       <View
         style={{
           backgroundColor: colors.surface,
@@ -357,7 +369,7 @@ export function CreateMatchScreen() {
           Com menos de {game.recommendedPlayers} o jogo fica previsível — mas a sala abre do mesmo jeito.
         </Txt>
       )}
-      <Button label="Criar sala" loading={loading} onPress={create} />
+      <Button label={escolhendo ? 'Escolher este jogo' : 'Criar sala'} loading={loading} onPress={create} />
     </Screen>
   );
 }

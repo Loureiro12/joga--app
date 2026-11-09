@@ -567,3 +567,40 @@ test('a bomba mostra o placar entre as rodadas, nos dois modos', async () => {
   const naRodada = local.slice(local.indexOf('/* ---------------------------------------------------------- bomba ativa */'));
   assert.ok(!naRodada.includes('<RoundScoreboard'), 'o placar apareceu com a bomba acesa');
 });
+
+/**
+ * A sala pode nascer sem jogo, e o grupo escolhe depois. O seletor do lobby só pode oferecer
+ * **jogos de sala**: os locais não têm o que fazer com um código e cinco pessoas conectadas, e
+ * escolhê-los ali criaria uma sala que ninguém usa.
+ */
+test('o seletor do lobby oferece só os jogos que precisam de sala', async () => {
+  const { gamesForRoom } = await import('../src/features/catalog/data/games');
+  const oferecidos = gamesForRoom();
+
+  assert.ok(oferecidos.length >= 4, 'o seletor ficou sem jogos');
+  for (const jogo of oferecidos) {
+    assert.ok(jogo.engineId, `${jogo.id} não tem motor de sala e não pode estar no seletor`);
+    assert.ok(jogo.playable, `${jogo.id} ainda não é jogável`);
+  }
+
+  // Os só-locais ficam de fora; as bombas entram porque jogam dos dois jeitos.
+  const ids = oferecidos.map((g) => g.id);
+  assert.ok(!ids.includes('entre-nos'), 'um jogo de um celular só entrou no seletor de sala');
+  assert.ok(ids.includes('bomba-relogio'), 'a bomba joga em sala e sumiu do seletor');
+
+  // E todo jogo de sala do catálogo aparece: um jogo novo não pode nascer invisível aqui.
+  const { GAMES } = await import('../src/features/catalog/data/games');
+  const esperados = GAMES.filter((g) => g.playable && g.engineId).map((g) => g.id);
+  assert.deepEqual(ids.sort(), esperados.sort());
+});
+
+test('a sala sem jogo não começa, e o lobby diz o que falta', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const lobby = await readFile(new URL('../src/features/match/screens/LobbyScreen.tsx', import.meta.url), 'utf8');
+
+  assert.ok(lobby.includes("room.gameId === 'none'"), 'o lobby deixou de reconhecer a sala sem jogo');
+  // O botão de começar precisa estar travado — o motor recusaria, e o erro seria genérico.
+  assert.ok(lobby.includes('disabled={semJogo || !canStart}'), 'dá para tentar começar uma sala sem jogo');
+  // E quem não é host precisa saber o que está acontecendo, em vez de olhar um lobby parado.
+  assert.ok(lobby.includes('está decidindo o que vocês vão jogar'), 'o convidado ficou sem explicação');
+});

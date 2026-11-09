@@ -1,13 +1,16 @@
 import * as Clipboard from 'expo-clipboard';
+import { router } from 'expo-router';
 import { Pressable, Share, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
+import { routes } from '@/core/navigation/routes';
 import { colors, radii } from '@/core/theme';
 import { Avatar, Button, Chip, Display, Overline, Screen, Spacer, Txt, WaitingButton, toast } from '@/core/ui';
 import { plural } from '@/core/utils/format';
 import { siteLinks } from '@/core/utils/site';
 import { getGameByEngine } from '@/features/catalog/data/games';
 
+import { GamePicker } from '../components/GamePicker';
 import { PlayerCard, WaitingSlot } from '../components/cards';
 import { leaveMatch } from '../hooks/leaveMatch';
 import { roomActions } from '../hooks/roomActions';
@@ -21,6 +24,8 @@ export function LobbyScreen() {
   if (!match) return null;
   const { room, players, me, host, isHost, connectedPlayers } = match;
   const game = getGameByEngine(room.gameId);
+  /** A sala nasceu sem jogo e o grupo ainda não decidiu. */
+  const semJogo = room.gameId === 'none';
   const connected = connectedPlayers.length;
   // O mínimo é técnico (abaixo dele a votação travaria); o recomendado é sugestão, e não trava nada.
   const minimo = game?.minPlayers ?? 2;
@@ -73,13 +78,30 @@ export function LobbyScreen() {
               Sala do {host?.name ?? 'host'}
             </Txt>
             <Txt font="body400" size={12} color={colors.muted}>
-              {game?.name} · {room.category} · {room.totalRounds} rodadas
+              {semJogo ? 'O host está escolhendo o jogo' : `${game?.name} · ${room.category} · ${room.totalRounds} rodadas`}
             </Txt>
           </View>
           <Display size={26} ls={2} color={colors.accent}>
             {room.code}
           </Display>
         </View>
+      )}
+
+      {semJogo && isHost && <GamePicker />}
+      {semJogo && !isHost && (
+        <View style={{ backgroundColor: colors.surface, borderRadius: radii.card, padding: 16, gap: 4 }}>
+          <Display size={18}>🎲 Escolhendo o jogo</Display>
+          <Txt font="body400" size={13} lh={1.4} color={colors.muted}>
+            {host?.name ?? 'O host'} está decidindo o que vocês vão jogar. Pode ir chamando mais gente.
+          </Txt>
+        </View>
+      )}
+      {!semJogo && isHost && (
+        <Pressable accessibilityRole="button" onPress={() => router.push(routes.chooseGame(game?.id ?? 'impostor'))} style={{ alignSelf: 'flex-start' }}>
+          <Txt font="body600" size={13} color={colors.accent}>
+            {game?.name} · trocar jogo
+          </Txt>
+        </Pressable>
       )}
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -104,12 +126,16 @@ export function LobbyScreen() {
       {isHost ? (
         <>
           <Button
-            label={canStart ? 'Começar partida' : `Chame mais ${minimo - connected}`}
-            disabled={!canStart}
+            label={semJogo ? 'Escolha o jogo acima' : canStart ? 'Começar partida' : `Chame mais ${minimo - connected}`}
+            disabled={semJogo || !canStart}
             onPress={() => roomActions.startMatch()}
           />
           <Txt font="body400" size={12} color={colors.muted} center>
-            {canStart && poucos ? `Dá para começar, mas ${game?.name ?? 'o jogo'} rende mais com ${recomendado}+` : 'Só o host pode iniciar'}
+            {semJogo
+              ? 'A sala já está de pé — o código funciona enquanto vocês decidem.'
+              : canStart && poucos
+                ? `Dá para começar, mas ${game?.name ?? 'o jogo'} rende mais com ${recomendado}+`
+                : 'Só o host pode iniciar'}
           </Txt>
         </>
       ) : (

@@ -54,7 +54,9 @@ function bot(index: number, onCode?: (code: string) => void) {
             ? (game.mine?.status ?? '-')
             : game.kind === 'perfect'
               ? `${game.round?.questionId ?? '-'}|${game.couples.length}`
-              : `${game.activeId}|${game.alarmCount}`;
+              : game.kind === 'bomb'
+                ? `${game.activeId}|${game.alarmCount}`
+                : 'sem-jogo';
     const stage = game.kind === 'impostor' || game.kind === 'likely' || game.kind === 'perfect' ? (game.result?.stage ?? '-') : '-';
     const key = `${s.room.phase}|${deal}|${stage}|${iAmHost}|${s.players.filter((p) => p.connected).length}`;
     if (key === acted) return;
