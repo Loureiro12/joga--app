@@ -325,3 +325,79 @@ test('as opções do host são entrada de rede: vêm saneadas ou não vêm', () 
   // 'media' é do Desafio Secreto; a bomba usa 'medio'. O sanitizador descarta e cai no padrão.
   assert.deepEqual(salvo.settings.difficulties, ['facil', 'medio']);
 });
+
+/* --------------------------------------------- a memória da sala ------ */
+
+/**
+ * A sala lembra o que já gastou.
+ *
+ * No celular único quem lembra é o aparelho (`bombContentStore`), que conhece a turma. Numa sala
+ * não há aparelho comum, então quem lembra é a sala — enquanto ela existir. Sem isso, o grupo que
+ * aperta "jogar de novo" reencontra as mesmas cartas, e com uma categoria marcada são 15 no total.
+ *
+ * Nada de IA aqui: `startMatch` é síncrono e nenhuma partida pode esperar uma chamada de API para
+ * começar. A sala joga com o banco local, só sem repetir.
+ */
+
+/**
+ * Joga a partida inteira a vapor e devolve os enunciados que apareceram, na ordem.
+ *
+ * Usa pavio fixo (`PAVIO_FIXO`) para o avanço do relógio ser determinístico: aqui não se testa o
+ * sorteio do pavio, e sim quais cartas saem.
+ */
+function enunciados(r: ReturnType<typeof sala>): string[] {
+  r.engine.dispatch(r.host, { type: 'startMatch' });
+  const vistos: string[] = [];
+  for (let guarda = 0; guarda < 20; guarda++) {
+    const v = r.view(r.host);
+    if (v.phase === 'finished') break;
+    if (v.challenge && !vistos.includes(v.challenge.text)) vistos.push(v.challenge.text);
+    if (v.phase === 'handoff') r.engine.dispatch(v.activeId, { type: 'armBomb' });
+    r.clock.advance(21_000);
+    const depois = r.view(r.host).phase;
+    if (depois === 'exploded' || depois === 'disarmed') r.engine.dispatch(r.host, { type: 'nextRound' });
+  }
+  return vistos;
+}
+
+/** Faixa de um segundo só: o pavio deixa de ser sorteio e o relógio do teste fica previsível. */
+const PAVIO_FIXO = { minSeconds: 20, maxSeconds: 20 } as const;
+
+test('"jogar de novo" na mesma sala não reencontra as cartas da partida anterior', () => {
+  const r = sala(3, { ...PAVIO_FIXO, variant: 'classico', categories: ['Festa'], totalRounds: 3 }, 13);
+  const primeira = enunciados(r);
+  assert.ok(primeira.length >= 2, `a primeira partida rendeu só ${primeira.length} cartas`);
+
+  r.engine.dispatch(r.host, { type: 'playAgain' });
+  const guardado = (r.engine.serialize().game as { seenIds?: string[] }).seenIds ?? [];
+  assert.ok(guardado.length >= primeira.length, `a sala esqueceu o que gastou (${guardado.length} ids)`);
+
+  const segunda = enunciados(r);
+  const repetidas = segunda.filter((t) => primeira.includes(t));
+  assert.deepEqual(repetidas, [], `a segunda partida da sala repetiu: ${repetidas.join(' · ')}`);
+});
+
+test('a memória da sala não vaza no snapshot, e sobrevive a um reinício do servidor', () => {
+  const r = sala(3, { ...PAVIO_FIXO, variant: 'classico', categories: ['Festa'], totalRounds: 2 }, 17);
+  enunciados(r);
+  r.engine.dispatch(r.host, { type: 'playAgain' });
+
+  // Não é segredo de jogo, mas é peso à toa em cada atualização que vai para todo mundo.
+  for (const id of r.all) assert.ok(!JSON.stringify(r.engine.snapshotFor(id)).includes('seenIds'), `o snapshot de ${id} carrega a memória da sala`);
+
+  // O servidor grava e recarrega as salas; a memória tem de atravessar isso.
+  const salvo = r.engine.serialize();
+  const voltou = RoomEngine.restore(salvo, { scheduler: r.clock.scheduler, rng: seeded(17) });
+  assert.deepEqual((voltou.serialize().game as { seenIds?: string[] }).seenIds, (salvo.game as { seenIds?: string[] }).seenIds);
+});
+
+test('sala restaurada de uma versão antiga, sem o campo, não quebra', () => {
+  // Salas gravadas em disco antes desta feature não têm `seenIds`. Elas voltam e jogam.
+  const r = sala(3, { ...PAVIO_FIXO, variant: 'classico', totalRounds: 2 }, 19);
+  const salvo = r.engine.serialize();
+  delete (salvo.game as { seenIds?: string[] }).seenIds;
+
+  const voltou = RoomEngine.restore(salvo, { scheduler: r.clock.scheduler, rng: seeded(19) });
+  voltou.dispatch(r.host, { type: 'startMatch' });
+  assert.ok((voltou.snapshotFor(r.host).game as BombView).challenge, 'a sala restaurada abriu sem desafio');
+});

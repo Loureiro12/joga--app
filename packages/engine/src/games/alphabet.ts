@@ -1,5 +1,6 @@
 import { THEMES } from './alphabet-themes';
-import type { AlphabetTheme } from './alphabet-types';
+import { ALPHABET_RULES, FULL_ALPHABET, type AlphabetTheme } from './alphabet-types';
+import { EMPTY_BOMB_CONTENT, type BombContent } from './bomb-content';
 import type { BombSettings, BombState } from './bomb-types';
 
 /**
@@ -12,19 +13,6 @@ import type { BombSettings, BombState } from './bomb-types';
  * que torna a jogada instantânea — e, como cada letra só serve uma vez, a rodada aperta sozinha.
  */
 
-export const ALPHABET_RULES = {
-  /** Um tema com menos que isto trava o grupo no meio da rodada. */
-  minLetters: 14,
-  /** Mais folga que no clássico: com as letras sumindo, pensar demora (§10). */
-  safetySeconds: 10,
-  points: { letter: 10, disarm: 50 },
-} as const;
-
-export const FULL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-/** As categorias dos temas, na ordem em que aparecem na tela. */
-export const ALPHABET_CATEGORIES = ['Natureza', 'Comida', 'Lugares', 'Cultura', 'Dia a dia', 'Diversão'] as const;
-
 const pick = <T>(list: T[], rng: () => number): T => list[Math.floor(rng() * list.length)];
 
 function matches(theme: AlphabetTheme, settings: BombSettings): boolean {
@@ -32,15 +20,34 @@ function matches(theme: AlphabetTheme, settings: BombSettings): boolean {
   return categoriaOk && settings.difficulties.includes(theme.difficulty);
 }
 
-/** Quantos temas existem para uma configuração — é o teto de rodadas sem repetir. */
-export const countThemes = (settings: BombSettings): number => THEMES.filter((t) => matches(t, settings)).length;
+/** Os temas da partida: o banco local mais os gerados para este grupo. */
+const deckDe = (content: BombContent): AlphabetTheme[] => (content.themes.length ? [...THEMES, ...content.themes] : THEMES);
 
-export function pickTheme(settings: BombSettings, usedIds: Set<string>, rng: () => number = Math.random): AlphabetTheme {
-  const elegiveis = THEMES.filter((t) => matches(t, settings));
+/**
+ * Quantos temas existem para uma configuração — é o teto de rodadas sem repetir.
+ *
+ * É o número que a tela de preparação mostra, e era o mais magro do jogo: o banco local tem 18
+ * temas, 3 por categoria. Um grupo que marcava uma categoria só esgotava tudo em 3 rodadas, e a
+ * partida padrão tem 5 — ou seja, repetia dentro dela mesma. Daí a geração.
+ */
+export const countThemes = (settings: BombSettings, content: BombContent = EMPTY_BOMB_CONTENT): number =>
+  deckDe(content).filter((t) => matches(t, settings)).length;
+
+/** Mesmos três níveis de recuo do clássico: inédito, não usado hoje, e por fim o baralho inteiro. */
+export function pickTheme(
+  settings: BombSettings,
+  usedIds: Set<string>,
+  rng: () => number = Math.random,
+  content: BombContent = EMPTY_BOMB_CONTENT,
+): AlphabetTheme {
+  const deck = deckDe(content);
+  const elegiveis = deck.filter((t) => matches(t, settings));
   // Configuração impossível: cai no baralho inteiro em vez de deixar a rodada sem tema.
-  const baralho = elegiveis.length ? elegiveis : THEMES;
-  const novos = baralho.filter((t) => !usedIds.has(t.id));
-  return pick(novos.length ? novos : baralho, rng);
+  const baralho = elegiveis.length ? elegiveis : deck;
+  const naoUsados = baralho.filter((t) => !usedIds.has(t.id));
+  const vistos = new Set(content.seenIds);
+  const ineditos = naoUsados.filter((t) => !vistos.has(t.id));
+  return pick(ineditos.length ? ineditos : naoUsados.length ? naoUsados : baralho, rng);
 }
 
 /**
@@ -66,8 +73,8 @@ export function canUseLetter(state: BombState, letter: string): boolean {
 }
 
 /** Monta o tema da rodada. Chamado por `bomb.ts` ao abrir cada rodada do Alfabeto. */
-export function startAlphabetRound(settings: BombSettings, usedThemeIds: Set<string>, rng: () => number) {
-  const theme = pickTheme(settings, usedThemeIds, rng);
+export function startAlphabetRound(settings: BombSettings, usedThemeIds: Set<string>, rng: () => number, content: BombContent = EMPTY_BOMB_CONTENT) {
+  const theme = pickTheme(settings, usedThemeIds, rng, content);
   return { theme, round: { themeId: theme.id, name: theme.name, emoji: theme.emoji, letters: lettersFor(theme, settings), used: [] } };
 }
 

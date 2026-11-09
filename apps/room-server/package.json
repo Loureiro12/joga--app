@@ -15,14 +15,16 @@
     "start:prod": "node --enable-source-maps dist/server.cjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
     "@jogae/engine": "*",
-    "ws": "^8.21.3"
+    "ws": "^8.21.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",
     "@types/ws": "^8.18.1",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.13",
-    "typescript": "~6.0.3",
-    "esbuild": "^0.28.2"
+    "typescript": "~6.0.3"
   }
 }

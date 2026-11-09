@@ -22,6 +22,18 @@ import type { BombChallenge } from "./bomb-types";
  *   sexo explícito ou política partidária. Álcool só em `Festa`, de forma leve.
  * - Nenhum enunciado cita pessoa real ou marca específica (o jogador pode
  *   responder marcas; a pergunta não entrega nenhuma).
+ *
+ * ## Este banco não está mais sozinho
+ *
+ * Desde a geração por IA (`bomb-content.ts`), a partida pode receber cartas feitas na hora para
+ * as opções que o grupo marcou. Duas coisas a saber ao editar aqui:
+ *
+ * - **Estes critérios são a régua da geração.** O prompt do servidor
+ *   (`apps/room-server/src/content/bombContent.ts`) é este comentário em outra voz, e
+ *   `sanitizeGeneratedChallenges` é a parte dele que é verificada carta por carta. Mudar um
+ *   critério aqui sem mudar lá faz os dois bancos divergirem.
+ * - **O banco continua sendo o chão.** Sem rede, sem login ou sem chave de API, é só ele que
+ *   joga — e isso tem de continuar sendo um jogo completo, não um modo degradado.
  */
 export const CHALLENGES: BombChallenge[] = [
   // Conhecimentos gerais — mundo, natureza, objetos, profissões

@@ -2,6 +2,8 @@ import { create } from 'zustand';
 
 import { adsState } from '@/features/ads/adsStore';
 
+import { bombContent } from './bombContentStore';
+
 import {
   armBomb,
   bombTick,
@@ -23,6 +25,9 @@ import {
  *
  * Nada é persistido de propósito: a partida acontece com todo mundo junto, na mesma mesa.
  * Recuperar uma partida velha ao reabrir o app só confundiria quem está na frente dele.
+ *
+ * A única coisa que atravessa o fim da partida é o CONTEÚDO (`bombContentStore`): o que o grupo
+ * já viu, para não ver de novo, e as cartas geradas para ele. Partida é do momento; baralho não.
  */
 type BombStoreState = {
   /** Lista em edição na tela de preparação, antes de a partida existir. */
@@ -38,9 +43,18 @@ export const useBombRoster = () => useBombStore((s) => s.roster);
 /** Paleta do app; a cor é só para distinguir as pessoas na tela. */
 const COLORS = ['#7C3AED', '#FACC15', '#22C55E', '#EF4444', '#A78BFA', '#27272F'];
 
-/** A partida acabou agora? Então ela conta para o ritmo dos anúncios. */
+/**
+ * A partida acabou agora? Então ela conta para o ritmo dos anúncios — e as cartas que ela usou
+ * entram na memória do grupo, para a próxima partida não repetir.
+ *
+ * No fim, e não a cada rodada: uma partida abandonada no meio não deveria queimar cartas que o
+ * grupo mal viu.
+ */
 function contando(antes: BombState, depois: BombState): BombState {
-  if (antes.phase !== 'finished' && depois.phase === 'finished') adsState.countMatch();
+  if (antes.phase !== 'finished' && depois.phase === 'finished') {
+    adsState.countMatch();
+    bombContent.remember(depois);
+  }
   return depois;
 }
 
@@ -61,7 +75,8 @@ export const bombActions = {
 
   start(settings: Partial<BombSettings>) {
     const { roster } = useBombStore.getState();
-    useBombStore.setState({ match: createBombMatch(roster, sanitizeBombSettings(settings), Date.now()) });
+    const limpas = sanitizeBombSettings(settings);
+    useBombStore.setState({ match: createBombMatch(roster, limpas, Date.now(), Math.random, bombContent.contentFor(limpas)) });
   },
 
   /** "Estou pronto": só aqui a bomba começa a contar. */
@@ -97,7 +112,10 @@ export const bombActions = {
   playAgain(settings: Partial<BombSettings>) {
     const { match } = useBombStore.getState();
     if (!match) return;
-    useBombStore.setState({ match: createBombMatch(match.players, sanitizeBombSettings(settings), Date.now()) });
+    const limpas = sanitizeBombSettings(settings);
+    // `contentFor` é lido de novo: se a busca de fundo chegou durante a partida anterior, a
+    // próxima já joga com as cartas novas — e a memória do que acabou de ser usado também entrou.
+    useBombStore.setState({ match: createBombMatch(match.players, limpas, Date.now(), Math.random, bombContent.contentFor(limpas)) });
   },
   leave() {
     useBombStore.setState({ match: null });

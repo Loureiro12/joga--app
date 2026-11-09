@@ -15,6 +15,13 @@ export type Config = {
   supabaseServiceRoleKey: string | null;
   /** Pasta onde o estado das salas é gravado para sobreviver a reinícios. `null` = só memória. */
   storeDir: string | null;
+  /**
+   * Chave da API do Claude, usada para gerar desafios e temas da Bomba-Relógio.
+   *
+   * Mora aqui, e não no app, porque qualquer `EXPO_PUBLIC_*` entra no bundle que a loja distribui.
+   * `null` desliga a geração: o jogo segue com o banco local, que é o caminho normal em dev.
+   */
+  anthropicApiKey: string | null;
 };
 
 export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
@@ -32,5 +39,14 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   // Token de dev é "confie em mim, eu sou o usuário X": jamais em produção.
   if (env === 'production' && authMode !== 'supabase') throw new Error('Em produção AUTH_MODE tem que ser "supabase"');
 
-  return { port, env, authMode, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey: source.SUPABASE_SERVICE_ROLE_KEY || null, storeDir: source.ROOM_STORE_DIR || null };
+  return {
+    port,
+    env,
+    authMode,
+    supabaseUrl,
+    supabaseAnonKey,
+    supabaseServiceRoleKey: source.SUPABASE_SERVICE_ROLE_KEY || null,
+    storeDir: source.ROOM_STORE_DIR || null,
+    anthropicApiKey: source.ANTHROPIC_API_KEY || null,
+  };
 }

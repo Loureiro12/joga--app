@@ -37,6 +37,17 @@ fly secrets set SUPABASE_SERVICE_ROLE_KEY="$(npx supabase projects api-keys --pr
 
 Sem ela o servidor funciona, mas a primeira linha do log avisa `histórico DESLIGADO`.
 
+Para a Bomba-Relógio gerar desafios e temas novos, o servidor precisa da chave da API do Claude
+([console.anthropic.com](https://console.anthropic.com/settings/keys)). Ela fica no servidor
+porque qualquer `EXPO_PUBLIC_*` entra no bundle que a loja distribui:
+
+```bash
+fly secrets set ANTHROPIC_API_KEY=sk-ant-xxx
+```
+
+Sem ela o endpoint `/api/bomb/content` responde `503` e o app joga com o banco local — que é um
+jogo completo, só com menos variedade. Nenhuma tela quebra, e nenhuma rodada espera por isso.
+
 Publicar e garantir **uma** máquina:
 
 ```bash

@@ -5,6 +5,20 @@
 
 export type BombDifficulty = 'facil' | 'medio' | 'dificil';
 
+/** As categorias dos desafios do clássico, na ordem em que aparecem na tela. */
+export const BOMB_CATEGORIES = [
+  'Conhecimentos gerais',
+  'Engraçado',
+  'Filmes e séries',
+  'Esportes',
+  'Música',
+  'Comida',
+  'Lugares',
+  'Games',
+  'Festa',
+  'Caos',
+] as const;
+
 /** Quantas respostas o desafio comporta: `alto` = dezenas · `medio` = ~15 · `baixo` = menos de 10. */
 export type BombPool = 'alto' | 'medio' | 'baixo';
 
@@ -18,6 +32,7 @@ export type BombChallenge = {
 };
 
 import type { AlphabetRound } from './alphabet-types';
+import type { BombContent } from './bomb-content';
 
 export * from './alphabet-types';
 
@@ -107,6 +122,14 @@ export type BombRoundLog = { round: number; challengeId: string; challenge: stri
 
 export type BombState = {
   settings: BombSettings;
+  /**
+   * Conteúdo injetado de fora: cartas geradas por IA e a memória do que o grupo já viu.
+   *
+   * Entra na partida no momento em que ela é criada e não muda mais. É de propósito: uma carta
+   * que chegasse no meio da rodada mudaria o baralho debaixo de um sorteio já feito, e a partida
+   * deixaria de ser reproduzível a partir do estado — que é o que permite testá-la.
+   */
+  content: BombContent;
   players: BombPlayer[];
   phase: BombPhase;
   roundIndex: number;

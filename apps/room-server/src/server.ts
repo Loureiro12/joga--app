@@ -1,10 +1,22 @@
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 
-import { IMPOSTOR_RULES, PROTOCOL_VERSION, RoomError, type ClientMessage, type EngineConfig, type Scheduler, type ServerMessage } from '@jogae/engine';
+import {
+  ALPHABET_CATEGORIES,
+  BOMB_CATEGORIES,
+  IMPOSTOR_RULES,
+  PROTOCOL_VERSION,
+  RoomError,
+  sanitizeContentRequest,
+  type ClientMessage,
+  type EngineConfig,
+  type Scheduler,
+  type ServerMessage,
+} from '@jogae/engine';
 import { WebSocketServer, type WebSocket } from 'ws';
 
 import { createTokenVerifier, type TokenVerifier } from './auth';
 import type { Config } from './config';
+import { createContentGenerator, type ContentGenerator } from './content/bombContent';
 import { parseClientMessage } from './messages';
 import { createMatchRecorder, type MatchRecorder } from './rooms/MatchRecorder';
 import { RoomManager } from './rooms/RoomManager';
@@ -13,6 +25,8 @@ import { FileRoomStore, MemoryRoomStore } from './rooms/RoomStore';
 
 export type RoomServerOptions = {
   verifyToken?: TokenVerifier;
+  /** Injetado nos testes para não gastar chamada de API de verdade. */
+  contentGenerator?: ContentGenerator | null;
   recorder?: MatchRecorder;
   presence?: RoomPresence;
   engineConfig?: Partial<EngineConfig>;
@@ -26,6 +40,15 @@ export type RoomServerOptions = {
 export type RoomServer = { http: Server; manager: RoomManager; close(): Promise<void> };
 
 const MAX_MESSAGE_BYTES = 8 * 1024;
+/** Corpo do pedido de conteúdo. A lista de "já vistos" é o que pesa, e 60 frases cabem folgado. */
+const MAX_CONTENT_BODY_BYTES = 16 * 1024;
+/**
+ * Gerações por usuário a cada 10 minutos.
+ *
+ * Uma partida pede uma vez, então 6 é folga para quem está jogando e teto para quem não está.
+ * Existe porque cada chamada custa dinheiro de verdade — é limite de carteira, não de abuso.
+ */
+const MAX_CONTENT_PER_10MIN = 6;
 /** Um cliente legítimo manda poucas mensagens por minuto; isso barra loop acidental e abuso. */
 const MAX_MESSAGES_PER_10S = 60;
 
@@ -33,6 +56,7 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
   const startedAt = Date.now();
   const log = options.log ?? (config.env === 'test' ? () => {} : (event, data) => console.log(JSON.stringify({ at: new Date().toISOString(), event, ...data })));
   const verifyToken = options.verifyToken ?? createTokenVerifier(config, fetch, log);
+  const contentGenerator = options.contentGenerator !== undefined ? options.contentGenerator : createContentGenerator(config, log);
   const manager = new RoomManager({
     store: config.storeDir ? new FileRoomStore(config.storeDir) : new MemoryRoomStore(),
     recorder: options.recorder ?? createMatchRecorder(config, log),
@@ -49,6 +73,17 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
       res.writeHead(status, { 'content-type': 'application/json' });
       res.end(JSON.stringify(body));
     };
+
+    /**
+     * Conteúdo novo para a Bomba-Relógio, gerado por IA.
+     *
+     * Fica no servidor pela chave da Anthropic, que não pode viajar dentro do bundle do app. Pede
+     * autenticação porque cada chamada custa, e responde `{ challenges, themes }` — possivelmente
+     * vazio. **Vazio não é erro:** o app sempre tem o banco local, e a rodada nunca espera por aqui.
+     */
+    if (req.method === 'POST' && req.url?.split('?')[0] === '/api/bomb/content') {
+      return void handleContentRequest(req, json);
+    }
     if (req.method === 'GET' && req.url === '/healthz') {
       return json(200, {
         status: 'ok',
@@ -86,6 +121,51 @@ export function createRoomServer(config: Config, options: RoomServerOptions = {}
     if (apiHits.size > 5000) apiHits.clear();
     return recent.length <= 60;
   };
+
+  const contentHits = new Map<string, number[]>();
+  const contentLimiter = (userId: string) => {
+    const now = Date.now();
+    const recent = (contentHits.get(userId) ?? []).filter((t) => now - t < 600_000);
+    recent.push(now);
+    contentHits.set(userId, recent);
+    if (contentHits.size > 5000) contentHits.clear();
+    return recent.length <= MAX_CONTENT_PER_10MIN;
+  };
+
+  async function handleContentRequest(req: IncomingMessage, json: (status: number, body: unknown) => void): Promise<void> {
+    if (!contentGenerator) return json(503, { error: 'content_unavailable' });
+
+    const token = /^Bearer (.+)$/.exec(String(req.headers.authorization ?? ''))?.[1];
+    if (!token) return json(401, { error: 'unauthenticated' });
+
+    // Corpo primeiro, para não deixar uma conexão pendurada mandando bytes enquanto se autentica.
+    let corpo = '';
+    try {
+      for await (const chunk of req) {
+        corpo += chunk;
+        if (corpo.length > MAX_CONTENT_BODY_BYTES) return json(413, { error: 'too_large' });
+      }
+    } catch {
+      return json(400, { error: 'bad_request' });
+    }
+
+    const userId = await verifyToken(token);
+    if (!userId) return json(401, { error: 'unauthenticated' });
+    if (!contentLimiter(userId)) return json(429, { error: 'rate_limited' });
+
+    let bruto: unknown;
+    try {
+      bruto = JSON.parse(corpo);
+    } catch {
+      return json(400, { error: 'bad_request' });
+    }
+    const variante = (bruto as { variant?: unknown })?.variant;
+    const request = sanitizeContentRequest(bruto, variante === 'alfabeto' ? ALPHABET_CATEGORIES : BOMB_CATEGORIES);
+    if (!request) return json(400, { error: 'bad_request' });
+
+    const content = await contentGenerator.generate(request);
+    json(200, content);
+  }
 
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES });
   http.on('upgrade', (req, socket, head) => {

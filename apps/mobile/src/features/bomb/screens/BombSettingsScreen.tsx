@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import { routes } from '@/core/navigation/routes';
@@ -17,6 +17,7 @@ import {
   type BombMode,
 } from '@jogae/engine';
 import { bombActions, useBombRoster } from '../bombStore';
+import { bombContent, useBombContentStore } from '../bombContentStore';
 
 /** `Aleatório` não é categoria: é a ausência de filtro. */
 const ANY = 'Aleatório';
@@ -80,7 +81,26 @@ export function BombSettingsScreen() {
     lives: 3,
     letterSet: hardcore ? ('hardcore' as const) : ('normal' as const),
   };
-  const disponiveis = alfabeto ? countThemes(settings) : countChallenges(settings);
+  // Observa o conteúdo guardado para o contador subir sozinho quando a busca de fundo chegar.
+  const guardado = useBombContentStore((s) => (alfabeto ? s.themes : s.challenges));
+  const conteudo = useMemo(() => bombContent.contentFor(settings), [alfabeto, categories, difficulties, guardado]);
+
+  // Dois números diferentes, e misturá-los seria um bug silencioso: `doBanco` é só o banco local,
+  // e é o que a decisão de buscar precisa (ela soma as geradas por conta própria); `disponiveis`
+  // é o baralho inteiro, e é o que a tela mostra.
+  const doBanco = alfabeto ? countThemes(settings) : countChallenges(settings);
+  const disponiveis = alfabeto ? countThemes(settings, conteudo) : countChallenges(settings, conteudo);
+
+  /**
+   * Busca conteúdo novo enquanto o grupo ainda está escolhendo.
+   *
+   * Este é o momento certo e o único: as opções acabaram de mudar, e ninguém está esperando nada.
+   * Não é `await`-ada — se der certo, a partida tem mais carta; se não, é a partida de sempre. A
+   * rodada nunca espera pela rede.
+   */
+  useEffect(() => {
+    void bombContent.prefetch(settings, doBanco);
+  }, [alfabeto, categories, difficulties, doBanco]);
   const modoAtual = MODES.find((m) => m.value === mode)!;
   const categoriasDaVez = alfabeto ? ALPHABET_CATEGORIES : BOMB_CATEGORIES;
   const emojiDe = (c: string) => (alfabeto ? ALPHABET_EMOJI[c] : CATEGORY_EMOJI[c]);

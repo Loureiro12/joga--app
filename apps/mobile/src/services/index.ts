@@ -2,6 +2,7 @@ import { MockAdsService, type AdsService } from '@/features/ads/AdsService';
 import { GoogleAdsService } from '@/features/ads/GoogleAdsService';
 import { adsState } from '@/features/ads/adsStore';
 import { MockAiGameService, type AiGameService } from '@/features/ai/AiGameService';
+import { MockBombContentService, RemoteBombContentService, type BombContentService } from '@/features/bomb/BombContentService';
 import { MockAuthService, type AuthService } from '@/features/auth/AuthService';
 import { platformAuth } from '@/features/auth/platformAuth';
 import { SupabaseAuthService } from '@/features/auth/SupabaseAuthService';
@@ -35,6 +36,8 @@ export type Services = {
   auth: AuthService;
   billing: BillingService;
   ai: AiGameService;
+  /** Desafios e temas da Bomba-Relógio gerados por IA. Simulado = só o banco local. */
+  bombContent: BombContentService;
   social: SocialService;
   history: HistoryService;
   profile: ProfileService;
@@ -63,6 +66,12 @@ export const services: Services = {
   profile: supabase ? new SupabaseProfileService(supabase) : new MockProfileService(),
   billing: new MockBillingService(),
   ai: new MockAiGameService(),
+  // A geração mora no servidor de salas, que é quem tem a chave da Anthropic. Sem ele (ou sem
+  // login), o jogo roda com o banco local — é o caminho normal em dev e quando a rede falha.
+  bombContent:
+    supabase && roomServerUrl
+      ? new RemoteBombContentService({ url: roomServerUrl, getToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null })
+      : new MockBombContentService(),
   social: supabase ? new SupabaseSocialService(supabase, friendInviteLink) : new MockSocialService(),
   history: supabase ? new SupabaseHistoryService(supabase) : new MockHistoryService(),
   // A web não tem SDK de anúncio, e o harness do navegador roda em cima dela: o simulado só

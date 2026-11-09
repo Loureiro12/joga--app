@@ -9,6 +9,13 @@ import type { AlphabetTheme } from './alphabet-types';
  * onde existe resposta de verdade (Kibon, Xuxa, Xadrez, Xícara, YouTube).
  * A dificuldade mede quantas respostas o tema comporta por letra, não o quanto
  * a pessoa precisa saber: Animais é fácil, Games é difícil.
+ *
+ * ## 18 temas é pouco, e era o defeito
+ *
+ * São 3 por categoria. Um grupo que marcava uma categoria só esgotava tudo em 3 rodadas, e a
+ * partida padrão tem 5 — repetia dentro dela mesma. Foi o número que motivou a geração por IA
+ * (`bomb-content.ts`): os temas gerados somam a este banco em vez de substituí-lo, e os
+ * critérios acima são a régua que o prompt do servidor repete e a portaria verifica.
  */
 export const THEMES: AlphabetTheme[] = [
   // ─── Natureza ───────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import {
   standings,
   useLetter,
 } from '../games/bomb';
+import { EMPTY_BOMB_CONTENT } from '../games/bomb-content';
 import type { BombHighlight, BombPhase, BombStanding, BombState } from '../games/bomb-types';
 import { RoomError, type GameView, type PlayerId, type VoteProgress } from '../types';
 
@@ -34,7 +35,21 @@ export type RoomBombState = {
   bomb: BombState | null;
   /** O que o host escolheu, guardado para quando a partida começar. */
   settings: BombState['settings'];
+  /**
+   * Cartas que ESTA sala já gastou, somando as partidas anteriores.
+   *
+   * No celular único quem lembra é o aparelho (`bombContentStore`), que conhece a turma. Numa sala
+   * não há aparelho comum, então quem lembra é a sala — e lembra enquanto ela existir. O grupo que
+   * aperta "jogar de novo" três vezes não reencontra as mesmas cartas nas três.
+   *
+   * Nada de IA aqui: o `startMatch` da sala é síncrono, e nenhuma partida pode ficar esperando uma
+   * chamada de API para começar. A sala joga com o banco local, só sem repetir.
+   */
+  seenIds?: string[];
 };
+
+/** Teto da memória da sala. Uma sala não vive tanto; o limite é contra estado que só cresce. */
+const MAX_SEEN_NA_SALA = 200;
 
 /** As fases do motor que viram fase de sala. */
 const ROOM_PHASE: Record<BombPhase, 'handoff' | 'armed' | 'revealing' | 'finished'> = {
@@ -57,16 +72,20 @@ export const bombGame: GameRules<RoomBombState> = {
     // Quantas rodadas é campo DA SALA, como em todos os outros jogos — e não das opções da bomba,
     // que tem um `totalRounds` próprio herdado da versão de um celular. Duas fontes para a mesma
     // coisa significaria a tela dizendo "rodada 2 de 2" e a partida seguindo até a décima.
-    return { bomb: null, settings: sanitizeBombSettings({ ...input.settings, totalRounds: input.totalRounds }) };
+    return { bomb: null, settings: sanitizeBombSettings({ ...input.settings, totalRounds: input.totalRounds }), seenIds: [] };
   },
 
   hydrate(state) {
-    return { bomb: state.bomb ?? null, settings: sanitizeBombSettings(state.settings) };
+    const seenIds = Array.isArray(state.seenIds) ? state.seenIds.filter((id): id is string => typeof id === 'string') : [];
+    return { bomb: state.bomb ?? null, settings: sanitizeBombSettings(state.settings), seenIds };
   },
 
   startMatch(s, ctx) {
     const jogadores = ctx.players.filter((p) => p.connected).map((p) => ({ id: p.id, name: p.name, color: p.color }));
-    s.bomb = createBombMatch(jogadores, s.settings, ctx.now, ctx.rng);
+    // O que a sala já gastou entra como "evite isto" — é o que faz a segunda partida da mesma
+    // sala não reencontrar as cartas da primeira.
+    const content = s.seenIds?.length ? { ...EMPTY_BOMB_CONTENT, seenIds: s.seenIds } : EMPTY_BOMB_CONTENT;
+    s.bomb = createBombMatch(jogadores, s.settings, ctx.now, ctx.rng, content);
     sincronizar(s, ctx);
   },
 
@@ -153,6 +172,8 @@ export const bombGame: GameRules<RoomBombState> = {
   },
 
   reset(s) {
+    // "Jogar de novo": a partida vai embora, a memória do que ela gastou fica.
+    if (s.bomb) s.seenIds = [...(s.seenIds ?? []).filter((id) => !s.bomb!.usedChallengeIds.includes(id)), ...s.bomb.usedChallengeIds].slice(-MAX_SEEN_NA_SALA);
     s.bomb = null;
   },
 

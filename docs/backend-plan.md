@@ -178,7 +178,7 @@ Cada passo termina trocando um mock por uma implementação real em `apps/mobile
 **Conteúdo do Impostor (2026-09-22).** O banco de palavras saiu de 40 para **210 palavras em 7 categorias** (as 4 do handoff mais Animais, Profissões e Objetos), 30 cada — o suficiente para uma partida de 10 rodadas, a maior que o app oferece, nunca repetir palavra. Critério, no comentário do próprio arquivo: substantivo concreto que um grupo brasileiro reconheça e consiga descrever sem dizer o nome, sem nome de pessoa real e sem palavra repetida entre categorias (`usedWords` é único por partida).
 
 - O catálogo do app e o banco do engine são listas separadas, e sair de sincronia falha em silêncio: quem escolhesse uma categoria desconhecida jogaria com outra, sorteada sem avisar. `apps/mobile/test/games.unit.test.ts` agora trava isso nos dois sentidos.
-- **As palavras moram no código, então mudá-las exige `fly deploy`** — numa partida real quem sorteia é o servidor. Quando o jogo estiver no ar e você quiser ajustar conteúdo sem publicar versão, o passo é mover o banco para uma tabela no Supabase, que o servidor carrega na subida. Gerar com IA é o passo 7, e o caminho seguro é gerar em lote, revisar e gravar no banco — não na hora da rodada.
+- **As palavras moram no código, então mudá-las exige `fly deploy`** — numa partida real quem sorteia é o servidor. Quando o jogo estiver no ar e você quiser ajustar conteúdo sem publicar versão, o passo é mover o banco para uma tabela no Supabase, que o servidor carrega na subida. (Isto continua valendo para o Impostor. Para a Bomba-Relógio, o passo 7 já resolveu de outro jeito — ver lá.)
 
 **Premium escondido (2026-09-21).** `apps/mobile/src/core/config/features.ts` (`premium: false`) tira da navegação a assinatura e o que depende dela (criar jogo com IA, categorias exclusivas); o site faz o mesmo com `premiumEnabled` em `src/data/content.ts`. Motivo: a compra ainda é simulada, e a App Store rejeita isso. Religar no passo 6.
 
@@ -412,8 +412,40 @@ O `app-ads.txt` está no ar em `/app-ads.txt`, validado linha a linha pelo smoke
 
 ### Passo 7 — IA
 
-- Edge Function com checagem de premium, limite de uso e saída validada por schema.
-- Bloqueado por design — ver pendência 2 abaixo.
+- **Feito para a Bomba-Relógio (2026-11-09).** Não como Edge Function: o endpoint é
+  `POST /api/bomb/content` no **servidor de salas**, que já estava no ar, já verificava token do
+  Supabase e já tinha limite por IP. Uma Edge Function significaria Deno, outro pipeline de
+  publicação e outro lugar para guardar segredo, sem nada em troca.
+- Ainda bloqueado para os **jogos criados por IA** — ver pendência 2 abaixo. São coisas
+  diferentes: gerar carta para um jogo que existe é o que foi feito; montar um jogo inteiro
+  continua sem tela para ser jogado.
+
+#### Por que não foi "gerar em lote e revisar à mão"
+
+O parágrafo do conteúdo do Impostor, acima, dizia que o caminho seguro era gerar em lote, revisar
+e gravar no banco. O que foi feito gera **na hora**, sem olho humano no meio. A troca se sustenta
+em três coisas, e sem qualquer uma delas ela não se sustentaria:
+
+1. **Portaria programática.** `packages/engine/src/games/bomb-content.ts` recebe cada carta como
+   `unknown` e exige forma, categoria, dificuldade, ausência de nome próprio e ausência de
+   assunto proibido. É pura e tem 28 testes — inclusive um que passa as 180 cartas humanas pela
+   lista de recusa, para garantir que ela não esteja larga demais e derrubando conteúdo bom em
+   silêncio. A revisão humana não desapareceu: ela virou código, uma vez, em vez de ser repetida
+   por lote.
+2. **O banco local é o chão, não o plano B.** Nada substitui as 180 cartas e os 18 temas. O
+   gerado **soma**. Sem rede, sem login, sem chave ou com a API fora do ar, o jogo é exatamente o
+   que era antes — e isso é o caminho normal no modo de um celular só.
+3. **A rodada nunca espera.** `contentFor` é síncrona e devolve o que já está no aparelho; quem
+   busca é um `prefetch` que roda enquanto o grupo ainda escolhe as opções e falha em silêncio.
+   Uma tela de "gerando desafios…" entre o grupo e a bomba seria uma piora, não uma melhora.
+
+#### E a repetição, que era a queixa original
+
+Metade do problema não era tamanho de banco, era memória: `usedChallengeIds` morria com a partida,
+então um grupo semanal recomeçava o sorteio do zero toda semana. `content.seenIds`
+(`apps/mobile/src/features/bomb/bombContentStore.ts`, em AsyncStorage) é a correção, e ela
+**funciona sem IA, offline e de graça** — é o maior ganho dos dois. A geração resolve a outra
+metade, que era mais grave no Alfabeto: 18 temas, 3 por categoria, contra 5 rodadas de partida.
 
 ## 5. Pendências de produto
 

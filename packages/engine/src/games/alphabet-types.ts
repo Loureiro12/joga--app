@@ -5,6 +5,19 @@
 
 export type AlphabetDifficulty = 'facil' | 'medio' | 'dificil';
 
+export const ALPHABET_RULES = {
+  /** Um tema com menos que isto trava o grupo no meio da rodada. */
+  minLetters: 14,
+  /** Mais folga que no clássico: com as letras sumindo, pensar demora (§10). */
+  safetySeconds: 10,
+  points: { letter: 10, disarm: 50 },
+} as const;
+
+export const FULL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/** As categorias dos temas, na ordem em que aparecem na tela. */
+export const ALPHABET_CATEGORIES = ['Natureza', 'Comida', 'Lugares', 'Cultura', 'Dia a dia', 'Diversão'] as const;
+
 /**
  * Um tema e as letras que valem nele.
  *

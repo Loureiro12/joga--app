@@ -1,6 +1,9 @@
-import { ALPHABET_CATEGORIES, ALPHABET_RULES, canUseLetter, remainingLetters, startAlphabetRound } from './alphabet';
+import { ALPHABET_CATEGORIES, ALPHABET_RULES } from './alphabet-types';
+import { canUseLetter, countThemes, remainingLetters, startAlphabetRound } from './alphabet';
 import { CHALLENGES } from './bomb-challenges';
+import { EMPTY_BOMB_CONTENT, type BombContent } from './bomb-content';
 import {
+  BOMB_CATEGORIES,
   DEFAULT_ALPHABET_SETTINGS,
   DEFAULT_BOMB_SETTINGS,
   type BombChallenge,
@@ -12,6 +15,7 @@ import {
   type BombState,
 } from './bomb-types';
 
+export * from './bomb-content';
 export * from './bomb-types';
 
 /**
@@ -39,19 +43,6 @@ export const BOMB_RULES = {
   fakeAlarmChance: 0.08,
 } as const;
 
-export const BOMB_CATEGORIES = [
-  'Conhecimentos gerais',
-  'Engraçado',
-  'Filmes e séries',
-  'Esportes',
-  'Música',
-  'Comida',
-  'Lugares',
-  'Games',
-  'Festa',
-  'Caos',
-] as const;
-
 const pick = <T>(list: T[], rng: () => number): T => list[Math.floor(rng() * list.length)];
 
 function matches(challenge: BombChallenge, settings: BombSettings): boolean {
@@ -59,15 +50,42 @@ function matches(challenge: BombChallenge, settings: BombSettings): boolean {
   return categoriaOk && settings.difficulties.includes(challenge.difficulty);
 }
 
-/** Quantos desafios existem para uma configuração — é o teto de rodadas sem repetir. */
-export const countChallenges = (settings: BombSettings): number => CHALLENGES.filter((c) => matches(c, settings)).length;
+/**
+ * O baralho da partida: o banco local mais o que foi gerado para este grupo.
+ *
+ * O motor não sabe de onde vieram as cartas extras — para ele são `BombChallenge` como as outras,
+ * e é isso que mantém o pacote puro: quem fala com a rede é o app, aqui só chega conteúdo pronto.
+ */
+const deckDe = (content: BombContent): BombChallenge[] => (content.challenges.length ? [...CHALLENGES, ...content.challenges] : CHALLENGES);
 
-export function pickChallenge(settings: BombSettings, usedIds: Set<string>, rng: () => number = Math.random): BombChallenge {
-  const elegiveis = CHALLENGES.filter((c) => matches(c, settings));
+/** Quantos desafios existem para uma configuração — é o teto de rodadas sem repetir. */
+export const countChallenges = (settings: BombSettings, content: BombContent = EMPTY_BOMB_CONTENT): number =>
+  deckDe(content).filter((c) => matches(c, settings)).length;
+
+/**
+ * Sorteia o desafio da rodada, com três níveis de recuo.
+ *
+ * 1. **Nunca visto**: nem nesta partida, nem nas anteriores. É o caso normal, e o que resolve a
+ *    repetição que o grupo sentia — o banco tem 180 cartas, mas quem joga toda semana via as
+ *    mesmas, porque a memória morria no fim de cada partida.
+ * 2. **Não usado nesta partida**: o grupo já viu em outro dia, mas não hoje. Melhor do que repetir
+ *    dentro da mesma partida, que é o que mais incomoda.
+ * 3. **O baralho inteiro**: só quando acabou tudo. Nunca deixa a rodada sem carta.
+ */
+export function pickChallenge(
+  settings: BombSettings,
+  usedIds: Set<string>,
+  rng: () => number = Math.random,
+  content: BombContent = EMPTY_BOMB_CONTENT,
+): BombChallenge {
+  const deck = deckDe(content);
+  const elegiveis = deck.filter((c) => matches(c, settings));
   // Configuração impossível: cai no baralho inteiro em vez de deixar a rodada sem desafio.
-  const baralho = elegiveis.length ? elegiveis : CHALLENGES;
-  const novos = baralho.filter((c) => !usedIds.has(c.id));
-  return pick(novos.length ? novos : baralho, rng);
+  const baralho = elegiveis.length ? elegiveis : deck;
+  const naoUsados = baralho.filter((c) => !usedIds.has(c.id));
+  const vistos = new Set(content.seenIds);
+  const ineditos = naoUsados.filter((c) => !vistos.has(c.id));
+  return pick(ineditos.length ? ineditos : naoUsados.length ? naoUsados : baralho, rng);
 }
 
 /**
@@ -110,11 +128,18 @@ function nextPlayerId(state: BombState, rng: () => number): string {
 }
 
 /** Estado inicial da partida, já na tela de "passe o celular para…" da primeira rodada. */
-export function createBombMatch(players: BombPlayer[], settings: Partial<BombSettings>, now: number, rng: () => number = Math.random): BombState {
+export function createBombMatch(
+  players: BombPlayer[],
+  settings: Partial<BombSettings>,
+  now: number,
+  rng: () => number = Math.random,
+  content: BombContent = EMPTY_BOMB_CONTENT,
+): BombState {
   const merged = { ...DEFAULT_BOMB_SETTINGS, ...settings };
   const zero = <T>(value: T) => Object.fromEntries(players.map((p) => [p.id, value]));
   const base: BombState = {
     settings: merged,
+    content,
     players,
     phase: 'handoff',
     roundIndex: 1,
@@ -146,13 +171,13 @@ export function createBombMatch(players: BombPlayer[], settings: Partial<BombSet
 /** Sorteia o que a rodada precisa: um desafio no clássico, um tema com letras no Alfabeto. */
 function drawRound(state: BombState, rng: () => number): void {
   if (state.settings.variant === 'alfabeto') {
-    const { theme, round } = startAlphabetRound(state.settings, new Set(state.usedChallengeIds), rng);
+    const { theme, round } = startAlphabetRound(state.settings, new Set(state.usedChallengeIds), rng, state.content);
     state.alphabet = round;
     state.challenge = null;
     if (!state.usedChallengeIds.includes(theme.id)) state.usedChallengeIds.push(theme.id);
     return;
   }
-  const challenge = pickChallenge(state.settings, new Set(state.usedChallengeIds), rng);
+  const challenge = pickChallenge(state.settings, new Set(state.usedChallengeIds), rng, state.content);
   state.challenge = challenge;
   state.alphabet = null;
   if (!state.usedChallengeIds.includes(challenge.id)) state.usedChallengeIds.push(challenge.id);
