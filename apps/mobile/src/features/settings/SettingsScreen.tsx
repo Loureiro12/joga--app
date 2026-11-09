@@ -106,6 +106,25 @@ export function SettingsScreen() {
       <Group title="Conta">
         <Row emoji="🌎" title="Idioma" onPress={soon} right={<Txt size={14} color={colors.muted}>Português (BR) ›</Txt>} />
         {features.premium && <Row emoji="✨" title="Assinatura" onPress={() => router.push(routes.premium)} right={<Badge label={isPremium ? 'Premium' : 'Grátis'} kind={isPremium ? 'premium' : 'category'} />} />}
+        {/*
+          O nome do interruptor é preciso de propósito. Ele controla USO E DESEMPENHO — não o
+          relatório de erro, que fica sempre ligado porque é o que mantém o app de pé. Chamar isto
+          de "ajudar a melhorar o app" e deixar o relatório de fora dele seria enganoso; o detalhe
+          abaixo diz o que vai e a política de privacidade diz o resto.
+        */}
+        <Row
+          emoji="📊"
+          title="Dados de uso"
+          detail="Quais jogos você abre e quanto cada coisa demora, para melhorar o app"
+          onPress={() => {
+            settings.toggle('telemetry');
+            // Aplica na hora: desligar e o evento seguinte ainda subir seria quebrar a promessa.
+            services.telemetry.applyConsent();
+            services.telemetry.setUserProps({ telemetria: !settings.telemetry });
+          }}
+          a11y={{ accessibilityRole: 'switch', accessibilityState: { checked: settings.telemetry } }}
+          right={<Toggle value={settings.telemetry} />}
+        />
         <Row emoji="🔒" title="Privacidade" onPress={() => openSite(siteLinks.privacy)} right={<Chevron />} />
         {/*
           Só onde existe formulário para abrir — hoje, a Europa. Fora dali o item seria um botão

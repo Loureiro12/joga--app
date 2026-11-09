@@ -35,6 +35,8 @@ export function JoinRoomScreen() {
     setError(false);
     try {
       await services.room.joinRoom(roomCode, getIdentity());
+      // O CÓDIGO da sala nunca vai no evento: ele identifica um grupo, e isso é dado deles.
+      services.telemetry.track({ name: 'sala_entrou' });
       router.push(routes.match.lobby);
     } catch (e) {
       if (e instanceof RoomError && e.code === 'room_not_found') {

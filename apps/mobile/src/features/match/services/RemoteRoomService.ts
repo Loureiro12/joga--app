@@ -12,6 +12,7 @@ import {
 } from '@jogae/engine';
 
 import { logWs } from '@/core/logging/logger';
+import type { TelemetryService } from '@/features/telemetry/TelemetryService';
 
 import type { RoomService, Unsubscribe } from './RoomService';
 
@@ -74,6 +75,13 @@ export type RemoteRoomOptions = {
    */
   connectTimeoutMs?: number;
   pingEveryMs?: number;
+  /**
+   * Telemetria, opcional e por injeção.
+   *
+   * Opcional porque os testes e o harness criam este serviço na mão. Por injeção porque
+   * `services/index.ts` importa esta classe — importar `@/services` de volta fecharia um ciclo.
+   */
+  telemetry?: Pick<TelemetryService, 'startTrace' | 'recordError'>;
 };
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
@@ -215,10 +223,19 @@ export class RemoteRoomService implements RoomService {
     return snapshot;
   }
 
+  /**
+   * Abre o socket e espera o `welcome`.
+   *
+   * O trace de desempenho começa aqui porque **este é o tempo que decide se entrar numa sala é
+   * agradável**. Ele cobre token, abertura do socket e o `hello`/`welcome` — tudo que a pessoa
+   * espera entre tocar "entrar" e ver o lobby. É a medição que faltaria para responder, com
+   * número, à única reclamação que um jogo de sala recebe: "demora para entrar".
+   */
   private connect(): Promise<void> {
     if (this.socket?.readyState === OPEN) return Promise.resolve();
     if (this.opening) return this.opening;
 
+    const fecharTrace = this.options.telemetry?.startTrace('sala_conectar') ?? (() => {});
     this.opening = (async () => {
       const token = await this.options.getToken();
       if (!token) throw new RoomError('unauthenticated');
@@ -260,7 +277,10 @@ export class RemoteRoomService implements RoomService {
           resolve();
         };
       });
-    })().finally(() => (this.opening = null));
+    })().finally(() => {
+      fecharTrace();
+      this.opening = null;
+    });
     return this.opening;
   }
 

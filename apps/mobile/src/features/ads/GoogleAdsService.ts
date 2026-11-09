@@ -2,6 +2,8 @@ import { AppState, Platform } from 'react-native';
 
 import { logger } from '@/core/logging/logger';
 
+import type { TelemetryService } from '@/features/telemetry/TelemetryService';
+
 import type { AdsService } from './AdsService';
 import { canShowAd, type AdPlacement } from './adPolicy';
 import { interstitialUnitId } from './adUnits';
@@ -53,6 +55,14 @@ function esperarAppAtivo(): Promise<void> {
 }
 
 export class GoogleAdsService implements AdsService {
+  /**
+   * A telemetria chega pelo construtor, e não por import.
+   *
+   * `services/index.ts` importa esta classe; importar `@/services` de volta aqui fecharia um ciclo
+   * que só quebra no build nativo — que é onde é mais caro descobrir.
+   */
+  constructor(private readonly telemetry: TelemetryService) {}
+
   private sdk: any = null;
   private anuncio: any = null;
   private carregando = false;
@@ -177,17 +187,25 @@ export class GoogleAdsService implements AdsService {
 
   async maybeShow(placement: AdPlacement, gameId: string | undefined): Promise<void> {
     const decisao = canShowAd(placement, adsState.gate(gameId));
-    if (!decisao.show) return logger.line(`📺 sem anúncio em "${placement}": ${decisao.reason}`);
+    if (!decisao.show) {
+      // O motivo vai para o Analytics porque é a única forma de responder, do lado de fora, "por
+      // que o anúncio não aparece?". Ele vem da política, que devolve texto curto e fechado.
+      this.telemetry.track({ name: 'anuncio_pulado', placement, motivo: decisao.reason });
+      return logger.line(`📺 sem anúncio em "${placement}": ${decisao.reason}`);
+    }
     if (!this.anuncio) {
       // Sem anúncio carregado o app não espera: a pessoa segue, e a próxima vez terá um pronto.
       this.precarregar();
+      this.telemetry.track({ name: 'anuncio_pulado', placement, motivo: 'nada carregado' });
       return logger.line(`📺 sem anúncio em "${placement}": nada carregado`);
     }
     try {
       adsState.markShown(Date.now());
       await this.anuncio.show();
+      this.telemetry.track({ name: 'anuncio_mostrado', placement, gameId });
       logger.line(`📺 anúncio em "${placement}"`);
     } catch (e) {
+      this.telemetry.recordError(e, 'anúncio: falha ao mostrar');
       logger.line(`📺 falha ao mostrar: ${String(e)}`);
     }
   }

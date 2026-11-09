@@ -21,4 +21,20 @@ export const features = {
    * anúncio de verdade conta como clique inválido e o AdMob suspende a conta.
    */
   ads: true,
+  /**
+   * Telemetria: Firebase Analytics, Crashlytics e Performance.
+   *
+   * Depende de dois arquivos que vêm do console do Firebase (`google-services.json` e
+   * `GoogleService-Info.plist`) e do config plugin em `app.json`. **Sem eles o build nativo
+   * falha** — o plugin do Google Services é obrigatório no Gradle —, então ligar esta flag sem os
+   * arquivos não é uma opção; ver `docs/firebase.md`.
+   *
+   * Em Expo Go e na web o módulo nativo não existe: o serviço vira o simulado, que em dev imprime
+   * cada evento no terminal. É assim que se confere o que o app manda sem build nativo e sem
+   * sujar o painel de verdade com dado de teste.
+   *
+   * O que o usuário controla em Ajustes é a coleta de **uso e desempenho**. Relatório de erro fica
+   * sempre ligado enquanto esta flag estiver: ver o comentário de `features/telemetry/consent.ts`.
+   */
+  telemetry: true,
 } as const;

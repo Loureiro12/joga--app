@@ -12,6 +12,8 @@
     "../src/features/profile/*.ts",
     "../src/features/match/services/*.ts",
     "../src/features/history/*.ts",
-    "../src/features/bomb/contentMemory.ts"
+    "../src/features/bomb/contentMemory.ts",
+    "../src/features/telemetry/events.ts",
+    "../src/features/telemetry/consent.ts"
   ]
 }

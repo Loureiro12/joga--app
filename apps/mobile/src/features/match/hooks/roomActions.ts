@@ -37,6 +37,7 @@ const run = (promise: Promise<void>) =>
 export async function criarSalaVazia(): Promise<boolean> {
   try {
     await services.room.createRoom({ gameId: 'none', category: '', totalRounds: 0, maxPlayers: 12 }, getIdentity());
+    services.telemetry.track({ name: 'sala_criada', gameId: 'none', players: 12 });
     return true;
   } catch (e) {
     toast(roomErrorMessage(e, 'Não deu para abrir a sala. Tente de novo.'), 'error');
@@ -45,7 +46,10 @@ export async function criarSalaVazia(): Promise<boolean> {
 }
 
 export const roomActions = {
-  setGame: (input: CreateRoomInput) => run(services.room.setGame(input)),
+  setGame: (input: CreateRoomInput) => {
+    services.telemetry.track({ name: 'jogo_escolhido', gameId: input.gameId });
+    return run(services.room.setGame(input));
+  },
   startMatch: () => run(services.room.startMatch()),
   setTimerRunning: (running: boolean) => run(services.room.setTimerRunning(running)),
   resetTimer: () => run(services.room.resetTimer()),

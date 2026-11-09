@@ -15,12 +15,16 @@ import { MockBillingService, type BillingService } from '@/features/premium/Bill
 import { MockProfileService, type ProfileService } from '@/features/profile/ProfileService';
 import { SupabaseProfileService } from '@/features/profile/SupabaseProfileService';
 import { friendInviteLink, MockSocialService } from '@/features/social/MockSocialService';
+import { FirebaseTelemetryService } from '@/features/telemetry/FirebaseTelemetryService';
+import { MockTelemetryService, type TelemetryService } from '@/features/telemetry/TelemetryService';
 import type { SocialService } from '@/features/social/SocialService';
 import { SupabaseSocialService } from '@/features/social/SupabaseSocialService';
 
 import { AppState, Platform } from 'react-native';
 
 import { features } from '@/core/config/features';
+
+import { telemetryOptedIn } from '@/features/settings/settingsStore';
 
 import { createSupabaseClient, isSupabaseConfigured } from './supabase/client';
 
@@ -42,6 +46,8 @@ export type Services = {
   history: HistoryService;
   profile: ProfileService;
   ads: AdsService;
+  /** Firebase Analytics, Crashlytics e Performance. Simulado = só log em dev. */
+  telemetry: TelemetryService;
 };
 
 const supabase = isSupabaseConfigured ? createSupabaseClient() : null;
@@ -54,11 +60,15 @@ function createRoomService(): RoomService {
   const remote = new RemoteRoomService({
     url: roomServerUrl,
     getToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
+    telemetry,
   });
   // O sistema costuma matar o socket com o app em segundo plano, às vezes sem avisar.
   AppState.addEventListener('change', (state) => state === 'active' && remote.notifyForeground());
   return remote;
 }
+
+/** Criada antes do objeto `services` porque o serviço de anúncios a recebe por construtor. */
+const telemetry: TelemetryService = features.telemetry && Platform.OS !== 'web' ? new FirebaseTelemetryService(telemetryOptedIn) : new MockTelemetryService();
 
 export const services: Services = {
   room: createRoomService(),
@@ -76,11 +86,23 @@ export const services: Services = {
   history: supabase ? new SupabaseHistoryService(supabase) : new MockHistoryService(),
   // A web não tem SDK de anúncio, e o harness do navegador roda em cima dela: o simulado só
   // registra no log de dev onde o anúncio cairia.
-  ads: features.ads && Platform.OS !== 'web' ? new GoogleAdsService() : new MockAdsService(),
+  ads: features.ads && Platform.OS !== 'web' ? new GoogleAdsService(telemetry) : new MockAdsService(),
+  // Mesma razão dos anúncios: o SDK é nativo e a web não tem ponte. O interruptor de Ajustes
+  // chega como função para o serviço não precisar importar o store na subida.
+  telemetry,
 };
 
-/** Sobe o que precisa acontecer uma vez, na abertura do app. Nunca lança. */
+/**
+ * Sobe o que precisa acontecer uma vez, na abertura do app. Nunca lança.
+ *
+ * **A telemetria vem primeiro, e isso não é arbitrário:** é o que faz o Crashlytics capturar uma
+ * falha que aconteça na subida do AdMob ou do Supabase. Se ela subisse por último, justamente as
+ * falhas mais graves — as de inicialização, que derrubam o app antes da primeira tela — não
+ * apareceriam em relatório nenhum.
+ */
 export async function startServices(): Promise<void> {
+  await services.telemetry.start().catch(() => {});
+  services.telemetry.setUserProps({ backend: backendMode, premium: false, telemetria: telemetryOptedIn() });
   await adsState.load();
   await services.ads.start().catch(() => {});
 }

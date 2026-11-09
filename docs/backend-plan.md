@@ -478,6 +478,47 @@ então um grupo semanal recomeçava o sorteio do zero toda semana. `content.seen
 **funciona sem IA, offline e de graça** — é o maior ganho dos dois. A geração resolve a outra
 metade, que era mais grave no Alfabeto: 18 temas, 3 por categoria, contra 5 rodadas de partida.
 
+### Telemetria — Firebase (2026-11-09)
+
+Crashlytics, Google Analytics for Firebase e Performance Monitoring. Guia operacional em
+[docs/firebase.md](firebase.md); aqui ficam as decisões.
+
+**O que o usuário controla.** Relatório de erro fica **sempre ligado** (é o que mantém o app de
+pé, não traça comportamento e não alimenta anúncio); **uso e desempenho são opcionais**, num
+interruptor em Ajustes → Dados de uso. A regra é pura e testada em
+`apps/mobile/src/features/telemetry/consent.ts`, e a **seção 6 da política de privacidade do site
+descreve exatamente ela** — há teste cobrando a correspondência, porque política que afirma o
+contrário do app é risco de recusa na loja e de reclamação na LGPD.
+
+Por que não um interruptor só chamado "ajudar a melhorar o app": ele controlaria uso e desempenho
+mas não o relatório de erro, e isso seria enganoso. O interruptor se chama "Dados de uso", que é o
+que ele faz, e a política explica o resto.
+
+**A regra dos eventos.** Nenhum leva nome, e-mail, código de sala ou conteúdo de partida. A defesa
+principal é o tipo `TelemetryEvent`: não existe campo onde um nome caiba. O caminho da tela também
+é tratado — `/j/4827` e `/u/andre` viram `j_id` e `u_id` antes de sair do aparelho, senão o painel
+de telas do Analytics viraria uma lista de salas ativas e de nomes de usuário.
+
+**O detalhe que custa um build quebrado, e por isso está em teste.** As versões do
+`@react-native-firebase` estão **fixas na 26.4.1**. O Firebase Apple SDK 13+ (que a 27 traz) saiu
+do CocoaPods, só existe em SPM, e o SPM exige frameworks dinâmicos — que não convivem com o SDK
+estático do Google Mobile Ads, que este app já publica. O `pod install` recusa a combinação, e o
+escape de voltar para CocoaPods (`disableSPM`) foi removido na 27. Então: 26.4.1 + `disableSPM:
+true` no plugin, que é a última versão do Firebase distribuída em CocoaPods.
+
+**Ordem de subida.** A telemetria sobe **antes** dos outros serviços em `startServices()`. É o que
+faz o Crashlytics capturar uma falha na inicialização do AdMob ou do Supabase — subindo por
+último, justamente as falhas mais graves não apareceriam em relatório nenhum.
+
+**Barreira de erro.** `core/ui/ErrorBoundary.tsx`, por fora do `Stack` (o erro pode estar na
+própria navegação). Sem ela, um erro de render vira tela preta sem relatório — erro de render não
+passa pelo handler global de JavaScript.
+
+**Fica fora:** Remote Config, A/B Testing, Firebase Messaging (o push é do servidor de salas, passo
+5c) e sourcemaps de produção no Crashlytics — hoje a pilha de JavaScript chega minificada, o que
+dá para investigar com a versão em mão, mas um upload de sourcemap no build deixaria isso bem
+melhor.
+
 ## 5. Pendências de produto
 
 Decisões que o backend força e que ainda não foram tomadas:

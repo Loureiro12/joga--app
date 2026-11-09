@@ -31,7 +31,8 @@
       "associatedDomains": [
         "applinks:jogaeapp.com.br",
         "applinks:www.jogaeapp.com.br"
-      ]
+      ],
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "app.jogae",
@@ -72,7 +73,8 @@
             "DEFAULT"
           ]
         }
-      ]
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -109,7 +111,18 @@
           ]
         }
       ],
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      [
+        "@react-native-firebase/app",
+        {
+          "ios": {
+            "disableSPM": true
+          }
+        }
+      ],
+      "@react-native-firebase/crashlytics",
+      "@react-native-firebase/perf",
+      "@react-native-firebase/analytics"
     ],
     "extra": {
       "router": {},

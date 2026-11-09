@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "995905515657",
+    "project_id": "jogae-64192",
+    "storage_bucket": "jogae-64192.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:995905515657:android:54b4116a9f3dec2515d658",
+        "android_client_info": {
+          "package_name": "app.jogae"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB324265Kzq9boG5zVYgR6T43Ic8vb4ttI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
