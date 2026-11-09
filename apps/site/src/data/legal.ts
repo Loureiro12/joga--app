@@ -11,13 +11,13 @@
  *     verdade quando o AdMob entrou, e política que afirma o contrário do app é risco de recusa
  *     na loja e de reclamação na LGPD. A seção 5 passou a descrever o que de fato acontece.
  */
-export const lastUpdated = '8 de outubro de 2026';
+export const lastUpdated = '9 de novembro de 2026';
 
 export const privacy = [
   { title: '1. Quem somos', text: 'O Jogaê é um aplicativo de jogos sociais operado por Jogaê Tecnologia Ltda. Esta política explica quais dados coletamos, por quê e o que você pode fazer a respeito. Ela vale para o app (iOS e Android) e para este site.' },
   {
     title: '2. Dados que coletamos',
-    text: 'Conta: nome, @username, e-mail e cor de avatar. No login social, recebemos da Apple ou do Google apenas nome e e-mail (o Apple permite ocultar o e-mail real).\nPartidas: salas de que você participou, pontos, conquistas e amizades.\nTécnicos: modelo do aparelho, versão do sistema, versão do app, idioma e logs de erro.\nAssinatura: o status é confirmado pela loja; nunca vemos os dados do seu cartão.\nConvidados: quem joga sem cadastro usa uma conta anônima, sem e-mail. O histórico dessa conta fica guardado até você excluí-la em Configurações — ou passa para a sua conta definitiva, se você se cadastrar.\nAnúncios: o identificador de publicidade do aparelho, a região aproximada e o que você faz com o anúncio. Ver a seção 5.',
+    text: 'Conta: nome, @username, e-mail e cor de avatar. No login social, recebemos da Apple ou do Google apenas nome e e-mail (o Apple permite ocultar o e-mail real).\nPartidas: salas de que você participou, pontos, conquistas e amizades.\nTécnicos: modelo do aparelho, versão do sistema, versão do app, idioma e logs de erro.\nAssinatura: o status é confirmado pela loja; nunca vemos os dados do seu cartão.\nConvidados: não é mais possível entrar sem cadastro. Quem já jogava assim tem uma conta anônima, sem e-mail; o histórico dela fica guardado até você excluí-la em Configurações — ou passa para a sua conta definitiva, se você se cadastrar.\nAnúncios: o identificador de publicidade do aparelho, a região aproximada e o que você faz com o anúncio. Ver a seção 5.',
   },
   { title: '3. O que não coletamos', text: 'Não usamos a câmera para nada além de ler o QR Code — a imagem não é gravada nem enviada. Não acessamos contatos, localização precisa, microfone, fotos nem histórico de navegação. Não vendemos seus dados, e o conteúdo das suas partidas nunca é usado para escolher anúncio.' },
   { title: '4. Para que usamos', text: 'Criar e manter salas em tempo real, mostrar o placar do grupo, guardar seu histórico e conquistas, processar sua assinatura, exibir anúncios que mantêm o app gratuito, corrigir erros e responder ao suporte. Base legal (LGPD): execução do contrato, obrigação legal, legítimo interesse em manter o serviço seguro e no ar, e consentimento para anúncio personalizado.' },
@@ -33,7 +33,7 @@ export const privacy = [
 ];
 
 export const terms = [
-  { title: '1. Aceite', text: 'Ao criar uma conta ou usar o Jogaê como convidado, você concorda com estes termos. Se não concordar, não use o app.' },
+  { title: '1. Aceite', text: 'Ao criar uma conta no Jogaê, você concorda com estes termos. Se não concordar, não use o app.' },
   { title: '2. Sua conta', text: 'Você precisa ter 12 anos ou mais. Mantenha seus dados verdadeiros e sua senha em segurança. Você responde pelo que acontece na sua conta.' },
   { title: '3. Conduta', text: 'O conteúdo das partidas é criado pelas pessoas na sala. Não use o app para assediar, ameaçar, discriminar ou expor terceiros. Podemos suspender contas que violem esta regra.' },
   { title: '4. Conteúdo gerado por IA', text: 'As sugestões do Premium são geradas automaticamente e podem conter erros ou temas inadequados ao seu grupo. Revise antes de jogar; a responsabilidade pelo uso é de quem cria a sala.' },

@@ -138,15 +138,6 @@ export class SupabaseAuthService implements AuthService {
     return code;
   }
 
-  async signInAsGuest(): Promise<AuthUser> {
-    // Já é convidado? Reaproveita, para não criar um usuário anônimo novo a cada toque.
-    const current = await this.getCurrentUser();
-    if (current?.isGuest) return current;
-    const { data, error } = await this.supabase.auth.signInAnonymously();
-    if (error) throw translate(error);
-    if (!data.user) throw new AuthError('unknown', 'signInAnonymously sem usuário');
-    return toUser(data.user);
-  }
 
   async sendPasswordReset(email: string): Promise<void> {
     const { error } = await this.supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: this.platform.redirectTo('reset-password') });

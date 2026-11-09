@@ -84,7 +84,7 @@ export function LoginScreen() {
     setError(null);
   };
 
-  // Google / Apple / convidado: cancelar a janela do provedor não é erro.
+  // Google / Apple: cancelar a janela do provedor não é erro.
   const run = async (action: () => Promise<void>) => {
     if (loading) return;
     try {
@@ -122,11 +122,6 @@ export function LoginScreen() {
       header={
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <LogoLockup />
-          <Pressable accessibilityRole="button" onPress={() => run(authActions.guest)} hitSlop={8} style={{ padding: 8 }}>
-            <Txt font="body600" size={14} color={colors.muted}>
-              Entrar como convidado
-            </Txt>
-          </Pressable>
         </View>
       }
     >

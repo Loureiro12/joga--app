@@ -519,3 +519,28 @@ test('o pedido de rastreamento do iOS sai em primeiro plano e sem condição', a
   assert.ok(att.includes("if (Platform.OS !== 'ios') return;"), 'o ATT deixou de ser incondicional no iOS');
   assert.ok(!src.includes('podePedir) await this.pedirRastreamento'), 'o ATT voltou a ficar atrás do resultado do UMP');
 });
+
+/**
+ * Entrar sem login foi removido. O caminho contrário — quem já é convidado virar conta — continua
+ * existindo de propósito: essas pessoas têm histórico e amizades, e deixá-las sem saída seria
+ * punir quem não fez nada. Este teste guarda os dois lados.
+ */
+test('não há mais entrada sem login, e o convidado antigo ainda vira conta', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const base = new URL('../src/features/', import.meta.url);
+
+  const login = await readFile(new URL('auth/screens/LoginScreen.tsx', base), 'utf8');
+  assert.ok(!/Entrar como convidado/i.test(login), 'a entrada sem login voltou para a tela');
+  assert.ok(!login.includes('authActions.guest'), 'a tela de login voltou a criar convidado');
+
+  const acoes = await readFile(new URL('auth/useAuthActions.ts', base), 'utf8');
+  assert.ok(!acoes.includes('signInAsGuest'), 'a ação de entrar como convidado voltou');
+
+  const contrato = await readFile(new URL('auth/AuthService.ts', base), 'utf8');
+  assert.ok(!contrato.includes('signInAsGuest'), 'o contrato voltou a permitir criar convidado');
+  // `isGuest` continua: é por ele que o app reconhece quem já é convidado e oferece a conversão.
+  assert.ok(contrato.includes('isGuest'), 'sem isGuest o app não reconhece mais os convidados que existem');
+
+  const config = await readFile(new URL('settings/SettingsScreen.tsx', base), 'utf8');
+  assert.ok(config.includes('Criar conta e salvar progresso'), 'sumiu a saída para quem já é convidado');
+});

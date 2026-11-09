@@ -88,22 +88,30 @@ test('login: tradução de erros do Supabase', async () => {
   assert.equal(await code(svc({ code: 'algo_novo', message: 'x' }).signInWithEmail('a', 'b')), 'unknown');
 });
 
-test('convidado: reaproveita a sessão anônima existente', async () => {
-  const already = fake({ session: user({ is_anonymous: true, id: 'g1' }) });
-  assert.equal((await new SupabaseAuthService(already.client, platform()).signInAsGuest()).id, 'g1');
-  assert.deepEqual(already.calls, []);
-
-  const fresh = fake();
-  assert.equal((await new SupabaseAuthService(fresh.client, platform()).signInAsGuest()).isGuest, true);
-  assert.deepEqual(names(fresh.calls), ['signInAnonymously']);
+/**
+ * Entrar sem login deixou de existir, mas **quem já era convidado continua entrando**: a sessão
+ * anônima dele está no aparelho, e descartá-la apagaria histórico e amizades de gente que não
+ * fez nada de errado. Estes testes guardam esse caminho de volta.
+ */
+test('quem já é convidado continua entrando pela sessão que tem no aparelho', async () => {
+  const f = fake({ session: user({ is_anonymous: true, id: 'g1' }) });
+  const atual = await new SupabaseAuthService(f.client, platform()).getCurrentUser();
+  assert.equal(atual?.id, 'g1');
+  assert.equal(atual?.isGuest, true, 'sem isso o app não oferece a conversão em conta');
 });
 
-test('convidado: o e-mail vazio que o Auth real devolve vira null no contrato do app', async () => {
+test('convidado antigo: o e-mail vazio que o Auth real devolve vira null no contrato do app', async () => {
   // Pego pelo teste de integração no CI: o GoTrue manda email: '' para usuário anônimo.
-  const f = fake({ results: { signInAnonymously: { data: { user: user({ is_anonymous: true, email: '', user_metadata: {} }) }, error: null } } });
-  const guest = await new SupabaseAuthService(f.client, platform()).signInAsGuest();
-  assert.equal(guest.email, null);
-  assert.equal(guest.name, 'Convidado');
+  const f = fake({ session: user({ is_anonymous: true, email: '', user_metadata: {} }) });
+  const guest = await new SupabaseAuthService(f.client, platform()).getCurrentUser();
+  assert.equal(guest?.email, null);
+  assert.equal(guest?.name, 'Convidado');
+});
+
+test('não existe mais como criar um convidado novo', async () => {
+  // O contrato não tem o método, e nenhuma tela chama: é a porta que foi fechada.
+  const svc = new SupabaseAuthService(fake().client, platform()) as unknown as Record<string, unknown>;
+  assert.equal(typeof svc.signInAsGuest, 'undefined', 'a entrada sem login voltou a existir');
 });
 
 test('Google: abre o navegador com PKCE e troca o code pela sessão', async () => {

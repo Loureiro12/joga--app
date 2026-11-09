@@ -94,6 +94,13 @@ try {
     assert.deepEqual(details.components, [{ '/': '/j/*' }, { '/': '/u/*' }]);
   });
 
+  await check('o site não promete mais entrar sem cadastro', async () => {
+    // A entrada sem login saiu do app; prometê-la no site viraria frustração na primeira abertura.
+    const { body } = await get(site.base, '/');
+    assert.ok(!/sem cadastro obrigat/i.test(body), 'a landing voltou a prometer entrada sem cadastro');
+    assert.ok(!/entrar como convidado/i.test(body), 'a landing voltou a oferecer o modo convidado');
+  });
+
   await check('a política de privacidade fala dos anúncios — e não afirma o contrário', async () => {
     const { body } = await get(site.base, '/privacidade');
     // A frase "não exibimos publicidade de terceiros" ficou no ar depois de o AdMob entrar no app.

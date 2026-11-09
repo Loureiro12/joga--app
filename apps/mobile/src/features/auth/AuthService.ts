@@ -38,7 +38,6 @@ export interface AuthService {
   /** Se a sessão atual for de convidado, converte o convidado em conta (mesmo id, mesmo histórico). */
   signUpWithEmail(name: string, email: string, password: string): Promise<AuthUser>;
   signInWithProvider(provider: AuthProvider): Promise<AuthUser>;
-  signInAsGuest(): Promise<AuthUser>;
 
   sendPasswordReset(email: string): Promise<void>;
   /** Troca o `code` do link de redefinição por uma sessão e grava a nova senha. */
@@ -74,9 +73,6 @@ export class MockAuthService implements AuthService {
   async signInWithProvider(provider: AuthProvider): Promise<AuthUser> {
     await wait(400);
     return { id: newId(), name: 'Vini Costa', email: `vini@${provider === 'google' ? 'gmail.com' : 'icloud.com'}`, isGuest: false };
-  }
-  async signInAsGuest(): Promise<AuthUser> {
-    return { id: newId(), name: 'Convidado', email: null, isGuest: true };
   }
   async sendPasswordReset(): Promise<void> {
     await wait(500);

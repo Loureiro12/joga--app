@@ -24,7 +24,7 @@ export const perks = ['Jogos criados com IA', 'Todos os jogos', 'Categorias excl
 export const premiumEnabled = false;
 
 export const faq = [
-  { q: 'Preciso que todo mundo instale o app?', a: 'Sim, cada pessoa joga no próprio celular — é assim que os papéis ficam secretos. A entrada é rápida: código de 4 dígitos ou QR, sem cadastro obrigatório.' },
+  { q: 'Preciso que todo mundo instale o app?', a: 'Sim, cada pessoa joga no próprio celular — é assim que os papéis ficam secretos. A entrada é rápida: código de 4 dígitos ou QR.' },
   { q: 'Funciona sem internet?', a: 'Não. Os celulares se falam por uma sala online, então todos precisam de conexão — Wi-Fi da casa ou dados móveis. Se alguém cair, o app guarda a vaga por 30 segundos.' },
   { q: 'Quantas pessoas podem jogar?', a: 'De 3 a 12, dependendo do jogo. O Impostor fica melhor entre 5 e 8.' },
   { q: 'É pago?', a: premiumEnabled ? 'Não. Os jogos principais são gratuitos e sem anúncio durante a partida. O Premium libera jogos criados com IA, categorias exclusivas e partidas ilimitadas.' : 'Não. O Jogaê é gratuito e não mostra anúncio durante a partida.' },

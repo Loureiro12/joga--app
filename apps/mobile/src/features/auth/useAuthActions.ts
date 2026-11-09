@@ -40,7 +40,6 @@ export const authActions = {
   signIn: async (email: string, password: string) => enter(await services.auth.signInWithEmail(email, password)),
   signUp: async (name: string, email: string, password: string) => enter(await services.auth.signUpWithEmail(name, email, password)),
   provider: async (provider: 'google' | 'apple') => enter(await services.auth.signInWithProvider(provider)),
-  guest: async () => enter(await services.auth.signInAsGuest()),
   completePasswordReset: async (code: string, password: string) => enter(await services.auth.completePasswordReset(code, password)),
   signOut: async () => {
     await services.auth.signOut().catch(() => {});
