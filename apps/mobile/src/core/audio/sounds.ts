@@ -13,8 +13,9 @@ import { useSettingsStore } from '@/features/settings/settingsStore';
  */
 
 const FILES = {
-  tick: require('../../../assets/audio/tick.wav'),
-  tock: require('../../../assets/audio/tock.wav'),
+  /** Bomba: o fundo de tensão, em duas velocidades. Tocam em laço, não em batida. */
+  tensao: require('../../../assets/audio/tensao-loop.wav'),
+  tensaoRapido: require('../../../assets/audio/tensao-rapido-loop.wav'),
   explosao: require('../../../assets/audio/explosao.wav'),
   tempoAcabando: require('../../../assets/audio/tempo-acabando.wav'),
   revelar: require('../../../assets/audio/revelar.wav'),
@@ -76,6 +77,7 @@ export function preloadSounds(names: SoundName[]) {
 
 /** Libera os players. Chamado ao sair do jogo que os usa. */
 export function releaseSounds() {
+  for (const name of [...fades.keys()]) pararFade(name);
   for (const player of players.values()) {
     try {
       player.remove();
@@ -84,4 +86,84 @@ export function releaseSounds() {
     }
   }
   players.clear();
+}
+
+/* ------------------------------------------------------------------ laços */
+
+/**
+ * Sons que ficam tocando, como o fundo de tensão da bomba.
+ *
+ * Fade e crossfade existem porque o corte seco só serve num lugar: a explosão. Trocar de
+ * velocidade no talho faz o jogador notar a emenda em vez da tensão, e cortar no desarme rouba
+ * o alívio — ali o silêncio chegando aos poucos é parte da recompensa.
+ */
+const fades = new Map<SoundName, ReturnType<typeof setInterval>>();
+
+const pararFade = (name: SoundName) => {
+  const f = fades.get(name);
+  if (f) clearInterval(f);
+  fades.delete(name);
+};
+
+/** Leva o volume até o alvo em `ms`. Com alvo zero, pausa o som ao chegar. */
+function fade(name: SoundName, para: number, ms: number) {
+  const player = players.get(name);
+  if (!player) return;
+  pararFade(name);
+  const passo = 40;
+  const de = player.volume ?? 0;
+  const passos = Math.max(1, Math.round(ms / passo));
+  let i = 0;
+  const timer = setInterval(() => {
+    i += 1;
+    try {
+      player.volume = de + ((para - de) * i) / passos;
+      if (i >= passos) {
+        pararFade(name);
+        if (para === 0) player.pause();
+      }
+    } catch {
+      pararFade(name);
+    }
+  }, passo);
+  fades.set(name, timer);
+}
+
+/** Começa (ou recomeça) um laço do zero. */
+export function playLoop(name: SoundName, volume = 1) {
+  if (!useSettingsStore.getState().sound) return;
+  void configurarModo();
+  const player = playerDe(name);
+  if (!player) return;
+  try {
+    pararFade(name);
+    player.loop = true;
+    player.volume = volume;
+    player.seekTo(0);
+    player.play();
+  } catch {
+    /* som é enfeite */
+  }
+}
+
+/** Corta na hora, sem fade. É o que a explosão precisa: silêncio e estrondo. */
+export function stopLoop(name: SoundName) {
+  const player = players.get(name);
+  pararFade(name);
+  try {
+    player?.pause();
+  } catch {
+    /* já parado */
+  }
+}
+
+/** Some aos poucos. O alívio do desarme mora aqui. */
+export const fadeOutLoop = (name: SoundName, ms: number) => fade(name, 0, ms);
+
+/** Troca um laço pelo outro sem emenda audível. */
+export function crossfadeLoop(de: SoundName, para: SoundName, ms: number, volume = 1) {
+  if (!useSettingsStore.getState().sound) return;
+  playLoop(para, 0);
+  fade(para, volume, ms);
+  fade(de, 0, ms);
 }

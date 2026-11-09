@@ -92,6 +92,22 @@ test('nem a animação nem o som têm como saber quando a bomba estoura', async 
     assert.ok(fonte.includes('Math.random()'), `${arquivo}: sem sorteio próprio, o ritmo vira previsível`);
   }
 
+  /*
+    A tentação específica do som: acelerar a tensão "nos últimos 25% do tempo" ou "nos últimos 5
+    segundos". Faz sentido em bomba de tempo fixo e é o que todo guia sugere — aqui seria um
+    cronômetro sonoro. A aceleração tem de sair de tempo DECORRIDO, que o jogador já percebe
+    sozinho, e nunca de tempo restante.
+  */
+  // Comentários falam de tempo restante para explicar por que ele não pode ser usado; o que não
+  // pode é código lê-lo.
+  const somDaBomba = (await ler('../src/features/bomb/useBombSound.ts'))
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '');
+  for (const proibido of ['remaining', 'restante', 'durationSec', 'endsAt', 'fuse']) {
+    assert.ok(!somDaBomba.includes(proibido), `o som olha "${proibido}" — viraria aviso de que a bomba vai estourar`);
+  }
+  assert.ok(somDaBomba.includes('ESCALADA_MIN_MS'), 'a aceleração deixou de ser por tempo de rodada corrida');
+
   // O som de "tempo acabando" só pode tocar no susto falso. Tocá-lo de verdade perto do fim
   // seria um aviso — e o jogo vive de ninguém saber quando acaba.
   const som = await ler('../src/features/bomb/useBombSound.ts');

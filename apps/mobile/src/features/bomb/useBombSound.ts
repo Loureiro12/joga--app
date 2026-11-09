@@ -1,62 +1,72 @@
 import { useEffect, useRef } from 'react';
 
-import { playSound, preloadSounds, releaseSounds } from '@/core/audio/sounds';
+import { crossfadeLoop, fadeOutLoop, playLoop, playSound, preloadSounds, releaseSounds, stopLoop } from '@/core/audio/sounds';
 
 import type { BombPhase } from '@jogae/engine';
 
 /**
  * O som da Bomba-Relógio.
  *
- * **Vale aqui a mesma regra da animação: nada pode dizer quanto tempo falta.** Um tique-taque que
- * acelerasse junto com o pavio seria um cronômetro sonoro, e o grupo aprenderia a contar as
- * batidas. Por isso este hook recebe só a fase e o contador de sustos — nunca o instante da
- * explosão — e sorteia o próprio ritmo, em ondas de calmaria e agitação.
+ * **Vale aqui a mesma regra da animação: nada pode dizer quanto tempo falta.** Um fundo que
+ * acelerasse junto com o pavio seria um cronômetro sonoro, e o grupo aprenderia a ler as batidas.
+ * Por isso este hook recebe só a fase e o contador de sustos — nunca o instante da explosão.
+ *
+ * A aceleração acontece depois de um tempo **de rodada corrida**, e não de tempo restante. É a
+ * diferença entre "já faz um tempo que isso está na sua mão" (que todo mundo percebe sozinho) e
+ * "falta pouco" (que ninguém pode saber). O instante exato é sorteado dentro de uma janela, para
+ * ninguém decorar nem mesmo esse número.
  *
  * O "tempo acabando" toca **apenas no susto falso**, e é a melhor peça do jogo: o grupo ouve o
  * som de fim, o coração dispara, e nada acontece.
  */
 
-/** Batida calma e batida nervosa, e quanto dura cada onda antes de o ritmo mudar de novo. */
-const CALMO_MS = 820;
-const AGITADO_MS = 380;
-const ONDA_MIN_MS = 2500;
-const ONDA_MAX_MS = 5000;
+/** Janela em que a tensão passa para a versão rápida, contada desde que a bomba acendeu. */
+const ESCALADA_MIN_MS = 10_000;
+const ESCALADA_MAX_MS = 16_000;
+/** Troca de laço com emenda curta: no talho, o jogador ouve o corte em vez da tensão. */
+const CROSSFADE_MS = 250;
+/** No desarme o silêncio chega aos poucos — faz parte do alívio. */
+const ALIVIO_MS = 500;
+/** Fundo, não primeiro plano: tem de incomodar sem cobrir a mesa falando. */
+const VOLUME = 0.55;
+
+const LACOS = ['tensao', 'tensaoRapido'] as const;
+const pararTudo = () => LACOS.forEach(stopLoop);
 
 export function useBombSound(phase: BombPhase, alarmCount: number) {
   const sustos = useRef(alarmCount);
 
   useEffect(() => {
-    // Deixa tudo decodificado antes da primeira batida, senão o tique engasga no começo.
-    preloadSounds(['tick', 'tock', 'explosao', 'tempoAcabando']);
-    return releaseSounds;
+    // Os três carregados antes da rodada: decodificar na hora atrasaria justo a explosão.
+    preloadSounds(['tensao', 'tensaoRapido', 'explosao', 'tempoAcabando']);
+    return () => {
+      pararTudo();
+      releaseSounds();
+    };
   }, []);
 
-  // O tique-taque só existe com a bomba acesa.
   useEffect(() => {
-    if (phase !== 'armed') return;
-    let vivo = true;
-    let batida: ReturnType<typeof setInterval> | undefined;
-    let troca: ReturnType<typeof setTimeout> | undefined;
-    let tac = false;
+    if (phase === 'armed') {
+      playLoop('tensao', VOLUME);
+      const quando = ESCALADA_MIN_MS + Math.random() * (ESCALADA_MAX_MS - ESCALADA_MIN_MS);
+      const subir = setTimeout(() => crossfadeLoop('tensao', 'tensaoRapido', CROSSFADE_MS, VOLUME), quando);
+      return () => clearTimeout(subir);
+    }
 
-    const onda = () => {
-      if (!vivo) return;
-      clearInterval(batida);
-      const periodo = Math.random() < 0.45 ? AGITADO_MS : CALMO_MS;
-      batida = setInterval(() => {
-        // Alterna tick e tock: é o que soa como relógio, em vez de um bipe repetido.
-        playSound(tac ? 'tock' : 'tick', 0.6);
-        tac = !tac;
-      }, periodo);
-      troca = setTimeout(onda, ONDA_MIN_MS + Math.random() * (ONDA_MAX_MS - ONDA_MIN_MS));
-    };
+    if (phase === 'exploded') {
+      // Sem fade, de propósito: o corte seco seguido do estrondo é o que dá o impacto.
+      pararTudo();
+      playSound('explosao');
+      return;
+    }
 
-    onda();
-    return () => {
-      vivo = false;
-      clearInterval(batida);
-      clearTimeout(troca);
-    };
+    if (phase === 'disarmed') {
+      LACOS.forEach((laco) => fadeOutLoop(laco, ALIVIO_MS));
+      return;
+    }
+
+    // Entre rodadas e no fim da partida: silêncio.
+    pararTudo();
   }, [phase]);
 
   // Susto: o som de fim, na hora em que nada vai acontecer.
@@ -65,8 +75,4 @@ export function useBombSound(phase: BombPhase, alarmCount: number) {
     sustos.current = alarmCount;
     if (alarmCount > 0) playSound('tempoAcabando');
   }, [alarmCount]);
-
-  useEffect(() => {
-    if (phase === 'exploded') playSound('explosao');
-  }, [phase]);
 }
