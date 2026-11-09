@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { logger } from '@/core/logging/logger';
 
@@ -24,6 +24,34 @@ import { loadAdsSdk } from './sdk';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const carregarSdk = (): any | null => loadAdsSdk() as any;
 
+/** Respiro depois de o app ficar ativo. A splash sai, a primeira tela assenta, aí sim o prompt. */
+const ASSENTAR_MS = 700;
+/** Teto de espera. Se o app nunca ficar ativo, seguimos sem anúncio em vez de travar para sempre. */
+const ESPERA_MAX_MS = 10_000;
+
+/**
+ * Espera o app estar de fato em primeiro plano.
+ *
+ * O iOS **só mostra o prompt do ATT com o app em estado `active`**. Chamado antes disso — e o
+ * `useEffect` do layout raiz dispara com a splash ainda na tela — `requestTrackingPermissionsAsync`
+ * volta em silêncio, sem mostrar nada. Foi assim que a revisão da Apple não encontrou o pedido.
+ */
+function esperarAppAtivo(): Promise<void> {
+  if (AppState.currentState === 'active') return new Promise((r) => setTimeout(r, ASSENTAR_MS));
+  return new Promise((resolve) => {
+    const concluir = () => {
+      clearTimeout(limite);
+      sub.remove();
+      setTimeout(resolve, ASSENTAR_MS);
+    };
+    const limite = setTimeout(() => {
+      sub.remove();
+      resolve();
+    }, ESPERA_MAX_MS);
+    const sub = AppState.addEventListener('change', (estado) => estado === 'active' && concluir());
+  });
+}
+
 export class GoogleAdsService implements AdsService {
   private sdk: any = null;
   private anuncio: any = null;
@@ -42,7 +70,11 @@ export class GoogleAdsService implements AdsService {
     this.sdk = sdk;
 
     try {
+      // Ordem obrigatória: primeiro o app ativo, senão o prompt do ATT não aparece; depois o
+      // consentimento; só então o SDK inicializa e passa a poder pedir anúncio.
+      await esperarAppAtivo();
       await this.resolverConsentimento();
+      await this.pedirRastreamento();
       await sdk.default().initialize();
       this.precarregar();
     } catch (e) {
@@ -76,7 +108,6 @@ export class GoogleAdsService implements AdsService {
       logger.line(`📺 consentimento não concluído: ${String(e)}`);
     }
 
-    if (Platform.OS === 'ios' && podePedir) await this.pedirRastreamento();
     adsState.setConsentResolved(podePedir);
     if (!podePedir) logger.line('📺 sem consentimento para pedir anúncio');
   }
@@ -84,11 +115,20 @@ export class GoogleAdsService implements AdsService {
   /**
    * O aviso da Apple. Recusar não tira o anúncio — tira só a personalização, e o app segue igual.
    * É por isso que a recusa aqui não mexe no `consentResolved`.
+   *
+   * **Pedido sempre no iOS**, e nunca atrás de uma condição. Antes ele só saía quando o UMP
+   * dizia que dava para pedir anúncio; bastava uma falha de rede naquele instante para o prompt
+   * jamais aparecer — e um app que declara rastreamento sem nunca pedir permissão é recusa certa
+   * na revisão da App Store (Guideline 2.1).
    */
   private async pedirRastreamento(): Promise<void> {
+    if (Platform.OS !== 'ios') return;
     try {
-      const { requestTrackingPermissionsAsync } = await import('expo-tracking-transparency');
-      const { status } = await requestTrackingPermissionsAsync();
+      const { getTrackingPermissionsAsync, requestTrackingPermissionsAsync } = await import('expo-tracking-transparency');
+      // Já respondido alguma vez? O sistema não mostra de novo; não insistimos à toa.
+      const atual = await getTrackingPermissionsAsync();
+      const { status } = atual.canAskAgain ? await requestTrackingPermissionsAsync() : atual;
+      logger.line(`📺 ATT: ${status}`);
       if (status !== 'granted') this.personalizado = false;
     } catch (e) {
       logger.line(`📺 ATT não concluído: ${String(e)}`);

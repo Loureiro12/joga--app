@@ -486,3 +486,36 @@ test('Configurações oferece o caminho que a política de privacidade promete',
   // Só aparece onde há formulário: fora da UE seria um botão que não faz nada.
   assert.ok(src.includes('services.ads.hasPrivacyOptions()'), 'o item deixou de ser condicional e vira botão morto');
 });
+
+/**
+ * A Apple recusou a 1.0.1 por Guideline 2.1: "o app usa o AppTrackingTransparency, mas não
+ * conseguimos localizar o pedido de permissão". Duas causas, e as duas são de ordem:
+ *
+ * 1. O iOS **só mostra o prompt com o app em estado `active`**. O `useEffect` do layout raiz
+ *    dispara com a splash na tela, e ali a chamada volta em silêncio, sem mostrar nada.
+ * 2. O pedido estava atrás do resultado do UMP. Uma falha de rede naquele instante e o prompt
+ *    nunca saía — num app que declara rastreamento, isso é recusa certa.
+ */
+test('o pedido de rastreamento do iOS sai em primeiro plano e sem condição', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL('../src/features/ads/GoogleAdsService.ts', import.meta.url), 'utf8');
+
+  // Espera o app ficar ativo antes de qualquer coisa de anúncio.
+  assert.ok(src.includes('esperarAppAtivo'), 'sumiu a espera pelo app em primeiro plano');
+  assert.ok(src.includes("AppState.currentState === 'active'"), 'a espera deixou de olhar o estado do app');
+  assert.ok(src.includes('ESPERA_MAX_MS'), 'sem teto de espera, um app que nunca fica ativo trava a subida dos anúncios');
+
+  const inicio = src.slice(src.indexOf('async start()'), src.indexOf('private async resolverConsentimento'));
+  const ordem = ['esperarAppAtivo', 'resolverConsentimento', 'pedirRastreamento', 'initialize'];
+  let posicao = -1;
+  for (const passo of ordem) {
+    const i = inicio.indexOf(passo);
+    assert.ok(i > posicao, `"${passo}" saiu de ordem na subida dos anúncios`);
+    posicao = i;
+  }
+
+  // O pedido não pode voltar a depender do UMP: só da plataforma.
+  const att = src.slice(src.indexOf('private async pedirRastreamento'));
+  assert.ok(att.includes("if (Platform.OS !== 'ios') return;"), 'o ATT deixou de ser incondicional no iOS');
+  assert.ok(!src.includes('podePedir) await this.pedirRastreamento'), 'o ATT voltou a ficar atrás do resultado do UMP');
+});
