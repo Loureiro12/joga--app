@@ -382,6 +382,21 @@ export const gamesForRoom = (): GameDefinition[] => GAMES.filter((g) => g.playab
 /** O snapshot traz o id do MOTOR (`impostor`, `likely`), que nem sempre é o id do catálogo. */
 export const getGameByEngine = (engineId: string | undefined) => GAMES.find((g) => g.engineId === engineId);
 
+/** O selo que o card mostra quando o jogo ainda não dá para jogar. */
+export const SOON_LABEL = 'Em breve';
+
+/**
+ * O que o leitor de tela anuncia num card.
+ *
+ * Carrega o "em breve" junto: quem navega por áudio também não deve precisar abrir o jogo para
+ * descobrir que ele não existe ainda — que é exatamente o problema do selo visual.
+ */
+export const cardLabel = (g: GameDefinition): string => {
+  // A tagline já termina em ponto; sem tirar, o leitor de tela diz "rápido.. Em breve".
+  const chamada = g.tagline.replace(/\.+$/, '');
+  return `${g.name}. ${chamada}${g.playable ? '.' : `. ${SOON_LABEL}.`}`;
+};
+
 /** "3–12 jogadores" → "3–12" (meta compacta do Explorar). */
 export const playersShort = (g: GameDefinition) => g.playersLabel.replace(' jogadores', '');
 

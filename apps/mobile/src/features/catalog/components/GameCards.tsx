@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { colors, onColor, radii } from '@/core/theme';
 import { Badge, Display, PressableScale, Txt } from '@/core/ui';
 
-import { playersShort, type GameDefinition } from '../data/games';
+import { SOON_LABEL, cardLabel, playersShort, type GameDefinition } from '../data/games';
 import { GameArt } from './GameArt';
 
 type CardProps = { game: GameDefinition; onPress: () => void };
@@ -14,7 +14,7 @@ export function GameCardHero({ game, onPress }: CardProps) {
   return (
     <PressableScale
       accessibilityRole="button"
-      accessibilityLabel={`${game.name}. ${game.tagline}`}
+      accessibilityLabel={cardLabel(game)}
       pressedScale={0.98}
       onPress={onPress}
       style={{ backgroundColor: game.color, borderRadius: radii.cardLg, padding: 22, paddingBottom: 20, minHeight: 250, justifyContent: 'flex-end', overflow: 'hidden' }}
@@ -25,7 +25,8 @@ export function GameCardHero({ game, onPress }: CardProps) {
       <View style={{ gap: 8 }}>
         <View style={{ flexDirection: 'row', gap: 6 }}>
           <Badge label={game.category} kind="onColor" size={11} />
-          {game.trending && <Badge label="Em alta" kind="hot" size={11} />}
+          {game.trending && game.playable && <Badge label="Em alta" kind="hot" size={11} />}
+          {!game.playable && <Badge label={SOON_LABEL} kind="onColor" size={11} />}
         </View>
         <Display size={52} color={fg}>
           {game.name}
@@ -44,7 +45,7 @@ export function GameCardHero({ game, onPress }: CardProps) {
           </View>
           <View style={{ backgroundColor: colors.text, borderRadius: radii.pill, paddingVertical: 12, paddingHorizontal: 18 }}>
             <Display font="display700" size={17} ls={0.3} color={colors.background}>
-              Jogar agora
+              {game.playable ? 'Jogar agora' : SOON_LABEL}
             </Display>
           </View>
         </View>
@@ -59,7 +60,7 @@ export function GameCardMedium({ game, onPress }: CardProps) {
   return (
     <PressableScale
       accessibilityRole="button"
-      accessibilityLabel={`${game.name}. ${game.tagline}`}
+      accessibilityLabel={cardLabel(game)}
       pressedScale={0.98}
       onPress={onPress}
       style={{ flex: 1, backgroundColor: game.color, borderRadius: radii.card, padding: 16, paddingTop: 18, minHeight: 196, justifyContent: 'flex-end', overflow: 'hidden' }}
@@ -67,9 +68,15 @@ export function GameCardMedium({ game, onPress }: CardProps) {
       <View style={{ position: 'absolute', right: 8, top: 10 }}>
         <GameArt game={game} width={86} />
       </View>
-      <Txt font="body600" size={10} ls={0.6} upper color={fg} opacity={0.7} style={{ marginBottom: 6 }}>
-        {game.category}
-      </Txt>
+      {game.playable ? (
+        <Txt font="body600" size={10} ls={0.6} upper color={fg} opacity={0.7} style={{ marginBottom: 6 }}>
+          {game.category}
+        </Txt>
+      ) : (
+        <View style={{ marginBottom: 6 }}>
+          <Badge label={SOON_LABEL} kind="onColor" size={10} />
+        </View>
+      )}
       <Display size={24} color={fg}>
         {game.name}
       </Display>
@@ -89,15 +96,19 @@ export function GameCardCompact({ game, onPress }: CardProps) {
   return (
     <PressableScale
       accessibilityRole="button"
-      accessibilityLabel={game.name}
+      accessibilityLabel={cardLabel(game)}
       pressedScale={0.98}
       onPress={onPress}
       style={{ flex: 1, backgroundColor: game.color, borderRadius: radii.cardSm, padding: 16, minHeight: 150, justifyContent: 'space-between' }}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Txt font="body600" size={10} ls={0.6} upper color={fg} opacity={0.75}>
-          {game.category}
-        </Txt>
+        {game.playable ? (
+          <Txt font="body600" size={10} ls={0.6} upper color={fg} opacity={0.75}>
+            {game.category}
+          </Txt>
+        ) : (
+          <Badge label={SOON_LABEL} kind="onColor" size={10} />
+        )}
         <Txt size={22}>{game.emoji}</Txt>
       </View>
       <View>

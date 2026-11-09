@@ -604,3 +604,35 @@ test('a sala sem jogo não começa, e o lobby diz o que falta', async () => {
   // E quem não é host precisa saber o que está acontecendo, em vez de olhar um lobby parado.
   assert.ok(lobby.includes('está decidindo o que vocês vão jogar'), 'o convidado ficou sem explicação');
 });
+
+/**
+ * O selo "Em breve" existe para o usuário não precisar abrir o jogo só para descobrir que ele
+ * ainda não existe. Isso vale para os três formatos de card — e para quem navega por áudio, que
+ * tinha o mesmo problema de um jeito pior.
+ */
+test('o card avisa que o jogo é "em breve" antes de alguém abrir', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { cardLabel, GAMES, SOON_LABEL } = await import('../src/features/catalog/data/games');
+
+  const pronto = GAMES.find((g) => g.playable)!;
+  const emBreve = GAMES.find((g) => !g.playable);
+  assert.ok(!cardLabel(pronto).includes(SOON_LABEL), 'jogo pronto não pode ser anunciado como em breve');
+  if (emBreve) {
+    assert.ok(cardLabel(emBreve).includes(SOON_LABEL), 'o leitor de tela não anuncia que o jogo é em breve');
+    // A tagline já acaba em ponto: sem cuidado o leitor diz "rápido.. Em breve".
+    assert.ok(!/\.\./.test(cardLabel(emBreve)), `pontuação dobrada no rótulo: "${cardLabel(emBreve)}"`);
+  }
+  assert.ok(!/\.\./.test(cardLabel(pronto)), `pontuação dobrada no rótulo: "${cardLabel(pronto)}"`);
+
+  // Os três formatos precisam olhar `playable`; um que esqueça vira a tela que o usuário reclamou.
+  const src = await readFile(new URL('../src/features/catalog/components/GameCards.tsx', import.meta.url), 'utf8');
+  for (const card of ['GameCardHero', 'GameCardMedium', 'GameCardCompact']) {
+    const corpo = src.slice(src.indexOf(`export function ${card}`), src.indexOf('\n}', src.indexOf(`export function ${card}`)));
+    assert.ok(corpo.includes('game.playable'), `${card} não distingue jogo pronto de jogo em breve`);
+    assert.ok(corpo.includes('cardLabel(game)'), `${card} deixou o leitor de tela sem o aviso`);
+  }
+
+  // E o card grande não pode convidar a jogar o que ainda não dá.
+  const hero = src.slice(src.indexOf('export function GameCardHero'));
+  assert.ok(hero.includes("game.playable ? 'Jogar agora'"), 'o card grande promete "Jogar agora" num jogo em breve');
+});
